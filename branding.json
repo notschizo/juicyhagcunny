@@ -5,17 +5,17 @@
       "default": true,
       "domains": ["juicyhagcunny.org"],
       "provider": "twitter",
-      "favicon": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/icon.ico",
+      "favicon": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/icon.ico",
       "redirect": "https://www.youtube.com/@AmanogawaShiina",
       "color": "#6363ff",
       "activityIcons": {
-        "default": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/32.png",
-        "svg": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/icon.svg",
-        "16": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/16.png",
-        "24": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/24.png",
-        "32": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/32.png",
-        "48": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/48.png",
-        "64": "https://raw.githubusercontent.com/notschizo/FxEmbed/refs/heads/main/assets/logos/64.png"
+        "default": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/32.png",
+        "svg": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/icon.svg",
+        "16": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/16.png",
+        "24": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/24.png",
+        "32": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/32.png",
+        "48": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/48.png",
+        "64": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/64.png"
       }
     }
   ]
