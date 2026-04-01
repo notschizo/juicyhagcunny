@@ -1,17 +1,12 @@
 name: Deploy to Cloudflare Workers
 
 on:
-  workflow_run:
-    workflows: ['tests']
-    types:
-      - completed
-    branches:
-      - main
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
-    # Only run if the workflow_run event was successful (when triggered by tests workflow)
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: Production
     name: Deploy
