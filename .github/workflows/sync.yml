@@ -2,9 +2,8 @@ name: 'Upstream Sync'
 
 on:
   schedule:
-    - cron:  '0 */6 * * *'
+    - cron:  '0 0/6 * * *'
       timezone: "America/New_York"
-
   workflow_dispatch:
     inputs:
       sync_test_mode:
