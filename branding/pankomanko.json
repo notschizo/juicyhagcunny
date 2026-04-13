@@ -1,0 +1,22 @@
+{
+  "zones": [
+    {
+      "name": "pankomanko",
+      "default": true,
+      "domains": ["pankomanko.com"],
+      "provider": "twitter",
+      "favicon": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/icon.ico",
+      "redirect": "https://www.youtube.com/@komachipanko",
+      "color": "#f1d9c8",
+      "activityIcons": {
+        "default": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/32.png",
+        "svg": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/icon.svg",
+        "16": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/16.png",
+        "24": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/24.png",
+        "32": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/32.png",
+        "48": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/48.png",
+        "64": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/pankomanko/64.png"
+      }
+    }
+  ]
+}

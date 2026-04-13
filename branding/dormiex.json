@@ -1,0 +1,22 @@
+{
+  "zones": [
+    {
+      "name": "dormiex",
+      "default": true,
+      "domains": ["dormiex.com"],
+      "provider": "twitter",
+      "favicon": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/icon.ico",
+      "redirect": "https://dormiex.com",
+      "color": "#fdfdfd",
+      "activityIcons": {
+        "default": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/32.png",
+        "svg": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/icon.svg",
+        "16": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/16.png",
+        "24": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/24.png",
+        "32": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/32.png",
+        "48": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/48.png",
+        "64": "https://raw.githubusercontent.com/notschizo/schizo-embeds/refs/heads/main/assets/logos/dormiex/64.png"
+      }
+    }
+  ]
+}

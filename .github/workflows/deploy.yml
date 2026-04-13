@@ -1,19 +1,49 @@
 name: Deploy to Cloudflare Workers
 
 on:
-  workflow_run:
-    workflows: ['tests']
-    types:
-      - completed
-    branches:
-      - main
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 22 * * *'
+    - cron: '0 23 * * *'
+
+    - cron: '0 5 * * *'
+    - cron: '0 6 * * *'
+
+    - cron: '0 7 * * *'
+    - cron: '0 8 * * *'
 
 jobs:
-  deploy:
-    # Only run if the workflow_run event was successful (when triggered by tests workflow)
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+  cleanup:
     runs-on: ubuntu-latest
-    environment: Production
+    permissions: write-all
+    strategy:
+      matrix:
+        environment: ${{ fromJSON(vars.ENV_LIST) }}
+    name: Cleanup
+    steps:
+      - name: Clean up previous deployments
+        uses: strumwolf/delete-deployment-environment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: ${{ matrix.environment }}
+          onlyRemoveDeployments: true
+
+      - name: Delete old workflow runs
+        if: strategy.job-index == 0
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: 0
+          keep_minimum_runs: 1
+
+  deploy:
+    needs: cleanup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJSON(vars.ENV_LIST) }}
+    environment: ${{ matrix.environment }}
     name: Deploy
     steps:
       - uses: actions/checkout@v7
@@ -31,14 +61,57 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ vars.R2_CREDENTIALS_BUCKET }}
+          R2_PRESIGN_EXPIRES_IN: '900'
         run: |
           set -euo pipefail
-          node tools/credential-tools.mjs pull
+          R2_URL="$(node tools/credential-tools.mjs presign)"
+          curl --fail -fSL -o credentials.enc.json "$R2_URL"
           jq -e '
             (.ciphertext | type == "string" and length > 0) and
             (.iv | type == "string" and length > 0)
           ' credentials.enc.json >/dev/null \
             || { echo "::error::credentials.enc.json must contain non-empty ciphertext and iv strings"; exit 1; }
+
+      - name: Move/edit branding.json
+        run: |
+          cp "./branding/${{ vars.CF_WORKER_NAME }}.json" "./branding.json"
+
+          ENVIRONMENT="${{ matrix.environment }}"
+
+          case "$ENVIRONMENT" in
+            "dormiex")
+              TARGET_TZ="America/Chicago"
+              BIRTHDAY="07-18"
+              JQ_FILTER='.zones[0].name = "happy birthday mimi!!! 🎉🎉🎉"'
+              ;;
+            "juicyhagcunny")
+              TARGET_TZ="America/Los_Angeles"
+              BIRTHDAY="07-06"
+              JQ_FILTER='.zones[0].name = "meemaw birthday!"'
+              ;;
+            "pankomanko")
+              TARGET_TZ="Europe/Rome"
+              BIRTHDAY="06-07"
+              JQ_FILTER='.zones[0].name = "happy birthday panko!"'
+              ;;
+            *)
+              TARGET_TZ=""
+              BIRTHDAY=""
+              ;;
+          esac
+
+          if [ -n "$BIRTHDAY" ]; then
+
+            TODAY=$(TZ="$TARGET_TZ" date +%m-%d)
+
+            if [ "$TODAY" = "$BIRTHDAY" ]; then
+              echo "birthday today, editing branding.json"
+
+              jq "$JQ_FILTER" branding.json > tmp.json && mv tmp.json branding.json
+            else
+              echo "no birthday, continuing"
+            fi
+          fi
 
       - name: Create wrangler.toml
         run: |
@@ -49,6 +122,8 @@ jobs:
           compatibility_date = "${{ vars.CF_COMPATIBILITY_DATE }}"
           send_metrics = false
           no_bundle = true
+          workers_dev = false
+          preview_urls = false
           analytics_engine_datasets = [
             { binding = "AnalyticsEngine" }
           ]
@@ -64,17 +139,16 @@ jobs:
         uses: cloudflare/wrangler-action@v4
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          STANDARD_DOMAIN_LIST: ${{ vars.STANDARD_DOMAIN_LIST }}
+          STANDARD_DOMAIN_LIST: ${{ vars.DOMAIN }},fxtwitter.com,fixupx.com,twittpr.com
           STANDARD_BSKY_DOMAIN_LIST: ${{ vars.STANDARD_BSKY_DOMAIN_LIST }}
           STANDARD_TIKTOK_DOMAIN_LIST: ${{ vars.STANDARD_TIKTOK_DOMAIN_LIST }}
-          STANDARD_INSTAGRAM_DOMAIN_LIST: ${{ vars.STANDARD_INSTAGRAM_DOMAIN_LIST }}
-          DIRECT_MEDIA_DOMAINS: ${{ vars.DIRECT_MEDIA_DOMAINS }}
-          TEXT_ONLY_DOMAINS: ${{ vars.TEXT_ONLY_DOMAINS }}
-          INSTANT_VIEW_DOMAINS: ${{ vars.INSTANT_VIEW_DOMAINS }}
-          GALLERY_DOMAINS: ${{ vars.GALLERY_DOMAINS }}
-          FORCE_MOSAIC_DOMAINS: ${{ vars.FORCE_MOSAIC_DOMAINS }}
+          DIRECT_MEDIA_DOMAINS: d.${{ vars.DOMAIN }},d.fxtwitter.com,dl.fxtwitter.com,d.twittpr.com,dl.twittpr.com,d.fixupx.com,d.xfixup.com,dl.fixupx.com,dl.xfixup.com
+          TEXT_ONLY_DOMAINS: t.${{ vars.DOMAIN }},t.fxtwitter.com,t.twittpr.com,t.fixupx.com
+          INSTANT_VIEW_DOMAINS: i.${{ vars.DOMAIN }},i.fxtwitter.com,i.twittpr.com,i.fixupx.com
+          GALLERY_DOMAINS: g.${{ vars.DOMAIN }},g.fxtwitter.com,g.twittpr.com,g.fixupx.com
+          FORCE_MOSAIC_DOMAINS: m.${{ vars.DOMAIN }},m.fxtwitter.com,m.twittpr.com,m.fixupx.com
           QUIET_DOMAINS: ${{ vars.QUIET_DOMAINS }}
-          OLD_EMBED_DOMAINS: ${{ vars.OLD_EMBED_DOMAINS }}
+          OLD_EMBED_DOMAINS: o.${{ vars.DOMAIN }},o.fxtwitter.com,o.twittpr.com,o.fixupx.com,o.fxbsky.app
           MOSAIC_DOMAIN_LIST: ${{ vars.MOSAIC_DOMAIN_LIST }}
           POLYGLOT_DOMAIN_LIST: ${{ vars.POLYGLOT_DOMAIN_LIST }}
           POLYGLOT_ACCESS_TOKEN: ${{ secrets.POLYGLOT_ACCESS_TOKEN }}
