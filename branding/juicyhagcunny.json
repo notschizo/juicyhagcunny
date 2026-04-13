@@ -1,0 +1,22 @@
+{
+  "zones": [
+    {
+      "name": "juicyhagcunny",
+      "default": true,
+      "domains": ["juicyhagcunny.org"],
+      "provider": "twitter",
+      "favicon": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/icon.ico",
+      "redirect": "https://www.youtube.com/@AmanogawaShiina",
+      "color": "#6363ff",
+      "activityIcons": {
+        "default": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/32.png",
+        "svg": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/icon.svg",
+        "16": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/16.png",
+        "24": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/24.png",
+        "32": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/32.png",
+        "48": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/48.png",
+        "64": "https://raw.githubusercontent.com/notschizo/juicyhagcunny/refs/heads/main/assets/logos/juicyhagcunny/64.png"
+      }
+    }
+  ]
+}
