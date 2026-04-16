@@ -3,7 +3,7 @@ title: FAQ
 description: Frequently asked questions about FxEmbed, FxTwitter, FixupX, and FxBluesky.
 ---
 
-## What's the difference between `fxtwitter.com`, `twittpr.com`, and `fixupx.com`?
+## What's the difference between `fxtwitter.com`, `fixupx.com` and `twittpr.com`?
 
 They all run the exact same worker and function identically.
 
@@ -13,17 +13,18 @@ They all run the exact same worker and function identically.
 
 ## How come embedding takes so long or doesn't work in Telegram?
 
-Telegram's embedding servers sometimes never send a request to embed a URL, possibly due to their servers being overloaded. Try using [Webpage Bot](https://t.me/WebpageBot) to clear the cached embed.
+Telegram's embedding servers sometimes never send a request to embed a URL, often due to their servers being overloaded. Try using [Webpage Bot](https://t.me/WebpageBot) to clear the cached embed.
+
+Be sure to replace the URL *before* sending your message, as embeds usually don't update after you've already sent it.
 
 ## What if I don't want to display all images in a post?
 
-You can pick a specific photo from a post using Twitter/X's own URL syntax. Append `/photo/N` where N is the image number (starting from 1):
+You can pick a specific photo or video from a post using X/Twitter's own URL syntax. Append `/photo/N` or `/video/N` where N is the image or video number (starting from 1):
 
 ```
-https://fxtwitter.com/user/status/123456789/photo/2
+https://fxtwitter.com/user/status/123456789/photo/3
+https://fxtwitter.com/user/status/123456789/video/2
 ```
-
-For Bluesky, there is no standard URL syntax for this yet, but similar functionality may be added in the future.
 
 ## Is FxEmbed associated with [some other website that starts with fx]?
 
@@ -47,7 +48,7 @@ Temporary real-time logging via `wrangler tail` may be used during development a
 
 ## Can I self-host FxEmbed?
 
-Yes! FxEmbed is open source (MIT licensed) and designed to run on Cloudflare Workers. See the [Self-Hosting guide](/deployment/self-hosting/) for setup instructions.
+Yes! See the [Self-Hosting guide](/deployment/self-hosting/) for setup instructions.
 
 ## What platforms does FxEmbed support as embed sources?
 
@@ -55,7 +56,6 @@ Currently:
 
 - **X/Twitter** — via `fxtwitter.com`, `fixupx.com`, `twittpr.com`
 - **Bluesky** — via `fxbsky.app`
-- **Mastodon / ActivityPub** — via the generic API
 
 ## How do I contribute?
 

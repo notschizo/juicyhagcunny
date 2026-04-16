@@ -4,11 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync-readme-assets": "node scripts/sync-readme-assets.mjs",
+    "predev": "npm run sync-readme-assets",
+    "prebuild": "npm run sync-readme-assets",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "extract-openapi": "node scripts/extract-openapi.mjs",
+    "extract-openapi:local": "node scripts/extract-openapi.mjs --local",
     "extract-openapi:placeholder": "node scripts/extract-openapi.mjs --placeholder"
   },
   "dependencies": {

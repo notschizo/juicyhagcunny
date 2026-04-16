@@ -2614,13 +2614,12 @@
   "paths": {
     "/2/status/{id}": {
       "get": {
-        "summary": "Get a single post",
+        "summary": "Get post",
         "description": "Returns one X/Twitter post by snowflake ID. Optional `about_account` / `aboutAccount` adds account metadata when present.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Tweet/post snowflake ID",
               "example": "20"
             },
             "required": true,
@@ -2631,7 +2630,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "If truthy, include `about_account` on author when available",
               "example": "1"
             },
             "required": false,
@@ -2641,8 +2639,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Alias for about_account"
+              "type": "string"
             },
             "required": false,
             "description": "Alias for about_account",
@@ -2652,7 +2649,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -2717,13 +2713,12 @@
     },
     "/2/status/{id}/reposts": {
       "get": {
-        "summary": "List accounts that reposted a post",
+        "summary": "List reposters of a post",
         "description": "Returns users who reposted the given post. Use `cursor.bottom` from the prior response to fetch the next page.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Tweet/post snowflake ID",
               "example": "20"
             },
             "required": true,
@@ -2736,8 +2731,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -2746,8 +2740,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response",
@@ -2801,13 +2794,12 @@
     },
     "/2/status/{id}/quotes": {
       "get": {
-        "summary": "List posts that quote this post",
+        "summary": "List quotes of post",
         "description": "Returns posts whose text quotes the given post (X search operator `quoted_tweet_id`). Uses the Latest search tab. Use `cursor.bottom` from the prior response to fetch the next page.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Tweet/post snowflake ID",
               "example": "20"
             },
             "required": true,
@@ -2820,8 +2812,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -2830,8 +2821,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response",
@@ -2841,7 +2831,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -2896,13 +2885,12 @@
     },
     "/2/thread/{id}": {
       "get": {
-        "summary": "Get a post and its reply thread",
+        "summary": "Get unrolled thread",
         "description": "Same as `/2/status/{id}` but includes the conversation thread when available. Supports `about_account` / `aboutAccount`.",
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Root tweet/post snowflake ID"
+              "type": "string"
             },
             "required": true,
             "description": "Root tweet/post snowflake ID",
@@ -2912,7 +2900,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "If truthy, include `about_account` on author when available",
               "example": "1"
             },
             "required": false,
@@ -2922,8 +2909,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Alias for about_account"
+              "type": "string"
             },
             "required": false,
             "description": "Alias for about_account",
@@ -2933,7 +2919,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -2998,13 +2983,12 @@
     },
     "/2/conversation/{id}": {
       "get": {
-        "summary": "Get a post with its full thread and replies",
+        "summary": "Get unrolled thread and replies",
         "description": "Returns a post, its full thread chain (walking all the way to the root), and replies from other users. Replies are sorted by the chosen ranking mode (default: Likes). Use the returned bottom cursor to paginate through more replies.",
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Focal tweet/post snowflake ID"
+              "type": "string"
             },
             "required": true,
             "description": "Focal tweet/post snowflake ID",
@@ -3018,8 +3002,7 @@
                 "likes",
                 "recency"
               ],
-              "default": "likes",
-              "description": "How replies are ranked (default: likes)"
+              "default": "likes"
             },
             "required": false,
             "description": "How replies are ranked (default: likes)",
@@ -3028,8 +3011,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from a prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from a prior response",
@@ -3039,7 +3021,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "If truthy, include `about_account` on author when available",
               "example": "1"
             },
             "required": false,
@@ -3049,8 +3030,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Alias for about_account"
+              "type": "string"
             },
             "required": false,
             "description": "Alias for about_account",
@@ -3060,7 +3040,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -3125,13 +3104,12 @@
     },
     "/2/profile/{handle}/statuses": {
       "get": {
-        "summary": "List posts for a user",
+        "summary": "List user statuses",
         "description": "Optional `since` (Unix time): when used without `cursor`, returns **204 No Content** if no posts in the page are newer than that instant; otherwise returns the normal JSON timeline. Values ≥ 1e12 are treated as milliseconds; smaller values as seconds.",
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix."
+              "type": "string"
             },
             "required": true,
             "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.",
@@ -3143,8 +3121,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -3153,8 +3130,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response",
@@ -3165,8 +3141,7 @@
             "schema": {
               "type": "number",
               "nullable": true,
-              "minimum": 0,
-              "description": "Unix timestamp (seconds, or ms if ≥ 1e12). Without `cursor`, 204 if no post is strictly newer than this time."
+              "minimum": 0
             },
             "required": false,
             "description": "Unix timestamp (seconds, or ms if ≥ 1e12). Without `cursor`, 204 if no post is strictly newer than this time.",
@@ -3175,8 +3150,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "If truthy (`1`, `true`, `yes`, `on`, or empty), include replies using alternate upstream timelines"
+              "type": "string"
             },
             "required": false,
             "description": "If truthy (`1`, `true`, `yes`, `on`, or empty), include replies using alternate upstream timelines",
@@ -3186,7 +3160,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -3244,12 +3217,11 @@
     },
     "/2/profile/{handle}/articles": {
       "get": {
-        "summary": "List article posts for a user",
+        "summary": "List user articles",
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix."
+              "type": "string"
             },
             "required": true,
             "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.",
@@ -3261,8 +3233,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -3271,8 +3242,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response",
@@ -3282,7 +3252,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -3337,13 +3306,12 @@
     },
     "/2/profile/{handle}/about": {
       "get": {
-        "summary": "Get profile “about this account” metadata",
+        "summary": "Get About Account stats",
         "description": "Returns the same `about_account` object as `/2/profile/{handle}` with `about_account` / `aboutAccount` enabled, without fetching the full profile.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.",
               "example": "X"
             },
             "required": true,
@@ -3388,12 +3356,11 @@
     },
     "/2/profile/{handle}/media": {
       "get": {
-        "summary": "List posts with media (photos and videos) for a user",
+        "summary": "List user posts with media",
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix."
+              "type": "string"
             },
             "required": true,
             "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.",
@@ -3405,8 +3372,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -3415,8 +3381,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response",
@@ -3426,7 +3391,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -3485,8 +3449,7 @@
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix."
+              "type": "string"
             },
             "required": true,
             "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.",
@@ -3498,8 +3461,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -3508,8 +3470,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response",
@@ -3563,12 +3524,11 @@
     },
     "/2/profile/{handle}/following": {
       "get": {
-        "summary": "List accounts a user follows",
+        "summary": "List following of user",
         "parameters": [
           {
             "schema": {
-              "type": "string",
-              "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix."
+              "type": "string"
             },
             "required": true,
             "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.",
@@ -3580,8 +3540,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -3590,8 +3549,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response",
@@ -3651,7 +3609,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Username without @, or numeric user id as `id:<rest_id>` (e.g. `id:783214`). Case-insensitive `id:` prefix.",
               "example": "X"
             },
             "required": true,
@@ -3662,7 +3619,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "If truthy, include `about_account` on author when available",
               "example": "1"
             },
             "required": false,
@@ -3672,8 +3628,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Alias for about_account"
+              "type": "string"
             },
             "required": false,
             "description": "Alias for about_account",
@@ -3722,7 +3677,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Search query (non-empty)",
               "example": "puppies"
             },
             "required": true,
@@ -3738,8 +3692,7 @@
                 "top",
                 "media"
               ],
-              "default": "latest",
-              "description": "Search tab (default latest)"
+              "default": "latest"
             },
             "required": false,
             "description": "Search tab (default latest)",
@@ -3751,8 +3704,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 30,
-              "description": "Page size (default 30)"
+              "default": 30
             },
             "required": false,
             "description": "Page size (default 30)",
@@ -3770,7 +3722,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or 639-5, e.g. `en`, `es`, `zh-cn`) for inline X translations when available; falls back to translation API if missing",
               "example": "es"
             },
             "required": false,
@@ -3831,7 +3782,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Prefix or query string",
               "example": "example"
             },
             "required": true,
@@ -3842,7 +3792,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Comma-separated suggestion kinds to request from X: `events`, `users`, `topics` (default: all three). Other values are ignored. Hashtag-style hits appear under `topics`.",
               "example": "events,users,topics"
             },
             "required": false,
@@ -3853,7 +3802,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Upstream `src` hint (default: search_box)",
               "example": "search_box"
             },
             "required": false,
@@ -3908,7 +3856,7 @@
     },
     "/2/trends": {
       "get": {
-        "summary": "Trending topics",
+        "summary": "Get trending topics",
         "parameters": [
           {
             "schema": {
@@ -3917,7 +3865,6 @@
                 "trending"
               ],
               "default": "trending",
-              "description": "Explore timeline kind. Supported: trending",
               "example": "trending"
             },
             "required": false,
@@ -3930,8 +3877,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 50,
-              "default": 20,
-              "description": "Number of trends (default 20, max 50)"
+              "default": 20
             },
             "required": false,
             "description": "Number of trends (default 20, max 50)",

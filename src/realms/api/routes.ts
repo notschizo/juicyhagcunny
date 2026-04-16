@@ -49,7 +49,7 @@ const langQuery = z.object({
 export const statusV2Route = createRoute({
   method: 'get',
   path: '/2/status/{id}',
-  summary: 'Get a single post',
+  summary: 'Get post',
   description:
     'Returns one X/Twitter post by snowflake ID. Optional `about_account` / `aboutAccount` adds account metadata when present.',
   request: {
@@ -85,7 +85,7 @@ export const statusV2Route = createRoute({
 export const statusRepostsV2Route = createRoute({
   method: 'get',
   path: '/2/status/{id}/reposts',
-  summary: 'List accounts that reposted a post',
+  summary: 'List reposters of a post',
   description:
     'Returns users who reposted the given post. Use `cursor.bottom` from the prior response to fetch the next page.',
   request: {
@@ -126,7 +126,7 @@ export const statusRepostsV2Route = createRoute({
 export const statusQuotesV2Route = createRoute({
   method: 'get',
   path: '/2/status/{id}/quotes',
-  summary: 'List posts that quote this post',
+  summary: 'List quotes of post',
   description:
     'Returns posts whose text quotes the given post (X search operator `quoted_tweet_id`). Uses the Latest search tab. Use `cursor.bottom` from the prior response to fetch the next page.',
   request: {
@@ -168,7 +168,7 @@ export const statusQuotesV2Route = createRoute({
 export const threadV2Route = createRoute({
   method: 'get',
   path: '/2/thread/{id}',
-  summary: 'Get a post and its reply thread',
+  summary: 'Get unrolled thread',
   description:
     'Same as `/2/status/{id}` but includes the conversation thread when available. Supports `about_account` / `aboutAccount`.',
   request: {
@@ -204,7 +204,7 @@ export const threadV2Route = createRoute({
 export const conversationV2Route = createRoute({
   method: 'get',
   path: '/2/conversation/{id}',
-  summary: 'Get a post with its full thread and replies',
+  summary: 'Get unrolled thread and replies',
   description:
     'Returns a post, its full thread chain (walking all the way to the root), and replies from other users. Replies are sorted by the chosen ranking mode (default: Likes). Use the returned bottom cursor to paginate through more replies.',
   request: {
@@ -282,7 +282,7 @@ export const profileV2Route = createRoute({
 export const profileAboutV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/about',
-  summary: 'Get profile “about this account” metadata',
+  summary: 'Get About Account stats',
   description:
     'Returns the same `about_account` object as `/2/profile/{handle}` with `about_account` / `aboutAccount` enabled, without fetching the full profile.',
   request: {
@@ -313,7 +313,7 @@ export const profileAboutV2Route = createRoute({
 export const profileStatusesV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/statuses',
-  summary: 'List posts for a user',
+  summary: 'List user statuses',
   description:
     'Optional `since` (Unix time): when used without `cursor`, returns **204 No Content** if no posts in the page are newer than that instant; otherwise returns the normal JSON timeline. Values ≥ 1e12 are treated as milliseconds; smaller values as seconds.',
   request: {
@@ -370,7 +370,7 @@ export const profileStatusesV2Route = createRoute({
 export const profileArticlesV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/articles',
-  summary: 'List article posts for a user',
+  summary: 'List user articles',
   request: {
     params: z.object({
       handle: z.string().openapi({
@@ -413,7 +413,7 @@ export const profileArticlesV2Route = createRoute({
 export const profileMediaV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/media',
-  summary: 'List posts with media (photos and videos) for a user',
+  summary: 'List user posts with media',
   request: {
     params: z.object({
       handle: z.string().openapi({
@@ -498,7 +498,7 @@ export const profileFollowersV2Route = createRoute({
 export const profileFollowingV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/following',
-  summary: 'List accounts a user follows',
+  summary: 'List following of user',
   request: {
     params: z.object({
       handle: z.string().openapi({
@@ -588,8 +588,7 @@ export const typeaheadV2Route = createRoute({
   method: 'get',
   path: '/2/typeahead',
   summary: 'Search typeahead suggestions',
-  description:
-    'Autocomplete-style suggestions from X REST `1.1/search/typeahead.json`: users (as `APIUser` with counts and bio omitted when unknown), topics (including hashtag-style trends), and events.',
+  description: 'Autocomplete suggestions from X/Twitter search',
   request: {
     query: z.object({
       q: twitterSearchQueryString({
@@ -629,7 +628,7 @@ export const typeaheadV2Route = createRoute({
 export const trendsV2Route = createRoute({
   method: 'get',
   path: '/2/trends',
-  summary: 'Trending topics',
+  summary: 'Get trending topics',
   request: {
     query: z.object({
       type: z

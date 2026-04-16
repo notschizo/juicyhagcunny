@@ -3,13 +3,8 @@ title: Getting Started
 description: Learn how to use FxEmbed to create rich social media embeds in Discord, Telegram, and other platforms.
 ---
 
-FxEmbed enhances links from X/Twitter and Bluesky so that platforms like Discord and Telegram display rich embeds — with videos, images, polls, quotes, and more — instead of the default minimal previews.
+FxEmbed enhances embeds so that platforms like Discord and Telegram display rich embeds with videos, images, polls, quotes, and more.
 
-## How It Works
-
-When you share a social media link in a chat app, the app's bot fetches the URL to generate a preview. FxEmbed intercepts that request and returns a richer embed with full media, engagement counts, and additional context.
-
-All you need to do is slightly modify the URL before sharing it.
 
 ## Quick Start
 
@@ -56,8 +51,9 @@ FxEmbed provides richer embeds than the default behavior:
 
 ## Where It Works
 
-FxEmbed is optimized for:
+We mainly target the following platforms
 
-- **Discord** — Full support for videos, multi-image galleries, polls, quotes, and more
-- **Telegram** — Rich embeds plus [Instant View](/guide/advanced-features/#telegram-instant-view) for thread reading
-- **Other platforms** — Any app that fetches Open Graph / Twitter Card metadata will show improved embeds
+- **Discord** — Full support for videos, GIFs, multi-image galleries, polls, quotes, and more
+- **Telegram** — Same as Discord, plus [Instant View](/guide/built-in-features/#telegram-instant-view) support for thread reading
+
+Any app that fetches OpenGraph metadata (WhatsApp, Slack, iMessage, etc.) will show improved embeds, but not all features may be supported by your platform.

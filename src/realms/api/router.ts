@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { registerOpenApiJsonRoute } from './openapi-json-route';
 import { apiOpenapiValidationHook } from './openapi-validation-hook';
 import { statusRequest } from '../twitter/routes/status';
 import { profileRequest } from '../twitter/routes/profile';
@@ -81,7 +82,7 @@ api.openapi(trendsV2Route, trendsAPIRequest);
 
 api.get('/2/owoembed', oembed);
 
-api.doc('/2/openapi.json', {
+registerOpenApiJsonRoute(api, '/2/openapi.json', {
   openapi: '3.0.0',
   info: {
     title: 'FxTwitter API',

@@ -1338,13 +1338,12 @@
   "paths": {
     "/2/status/{handle}/{rkey}": {
       "get": {
-        "summary": "Get a single Bluesky post",
+        "summary": "Get post",
         "description": "Returns one Bluesky post by handle and record key (rkey), in the same envelope as FxTwitter API v2 (`code`, `status`, `thread`, `author`).",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -1355,7 +1354,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Post record key from the `at://` URI",
               "example": "3l6xyz"
             },
             "required": true,
@@ -1366,7 +1364,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or BCP 47) for inline translation when available",
               "example": "es"
             },
             "required": false,
@@ -1421,13 +1418,12 @@
     },
     "/2/status/{handle}/{rkey}/reposts": {
       "get": {
-        "summary": "List accounts that reposted a post",
+        "summary": "List reposters of post",
         "description": "Returns users who reposted the given post, in the same envelope as FxTwitter `GET /2/status/{id}/reposts` (`code`, `results`, `cursor`). Pagination uses Bluesky `app.bsky.feed.getRepostedBy`: pass the prior `cursor.bottom` as the `cursor` query param. `handle` may be a handle or DID (`did:plc:…`). `cursor.top` is always null.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -1438,7 +1434,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Post record key from the `at://` URI",
               "example": "3l6xyz"
             },
             "required": true,
@@ -1451,8 +1446,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -1461,8 +1455,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -1516,13 +1509,12 @@
     },
     "/2/status/{handle}/{rkey}/likes": {
       "get": {
-        "summary": "List accounts that liked a post",
+        "summary": "List likers of post",
         "description": "Returns users who liked the given post, in the same envelope as FxTwitter-style user list results (`code`, `results`, `cursor`). Pagination uses Bluesky `app.bsky.feed.getLikes`: pass the prior `cursor.bottom` as the `cursor` query param. `handle` may be a handle or DID (`did:plc:…`). `cursor.top` is always null.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -1533,7 +1525,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Post record key from the `at://` URI",
               "example": "3l6xyz"
             },
             "required": true,
@@ -1546,8 +1537,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -1556,8 +1546,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -1611,13 +1600,12 @@
     },
     "/2/thread/{handle}/{rkey}": {
       "get": {
-        "summary": "Get a Bluesky thread (main post + parents + self-thread replies)",
+        "summary": "Get unrolled thread",
         "description": "Returns the post chain for a Bluesky thread, matching the shape of FxTwitter `GET /2/thread/{id}`.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle",
               "example": "bsky.app"
             },
             "required": true,
@@ -1628,7 +1616,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Post record key",
               "example": "3l6xyz"
             },
             "required": true,
@@ -1639,7 +1626,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or BCP 47) for inline translation when available",
               "example": "es"
             },
             "required": false,
@@ -1694,13 +1680,12 @@
     },
     "/2/conversation/{handle}/{rkey}": {
       "get": {
-        "summary": "Get a Bluesky post with full thread and paginated replies",
+        "summary": "Get unrolled thread and replies",
         "description": "Returns the focal post, ancestor chain and author self-thread (same as `/2/thread/{handle}/{rkey}` on the first page), plus **direct** replies from other participants. Replies are sorted by `ranking_mode` (default likes). Pagination uses an opaque `cursor` query param (`cursor.bottom` from the prior response); Bluesky `getPostThread` has no native reply cursor, so each page refetches the thread slice. Optional `count` (1–100, default 20) sets the reply page size. Very large reply lists still require a large upstream payload when loading direct replies.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -1711,7 +1696,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Post record key",
               "example": "3l6xyz"
             },
             "required": true,
@@ -1726,8 +1710,7 @@
                 "likes",
                 "recency"
               ],
-              "default": "likes",
-              "description": "How direct replies are ranked (default: likes). Ignored when `cursor` is set; the cursor carries the mode used for the session."
+              "default": "likes"
             },
             "required": false,
             "description": "How direct replies are ranked (default: likes). Ignored when `cursor` is set; the cursor carries the mode used for the session.",
@@ -1736,8 +1719,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Opaque pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Opaque pagination cursor from prior response (`cursor.bottom`)",
@@ -1749,8 +1731,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Reply page size for the first request (default 20). Subsequent pages use the size embedded in `cursor`."
+              "default": 20
             },
             "required": false,
             "description": "Reply page size for the first request (default 20). Subsequent pages use the size embedded in `cursor`.",
@@ -1760,7 +1741,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or BCP 47) for inline translation when available",
               "example": "es"
             },
             "required": false,
@@ -1815,13 +1795,12 @@
     },
     "/2/search": {
       "get": {
-        "summary": "Search posts",
+        "summary": "Search posts by query",
         "description": "Search posts via Bluesky `app.bsky.feed.searchPosts`. Response shape matches FxTwitter `GET /2/search` (`code`, `results`, `cursor`). `cursor.top` is always null; pass `cursor.bottom` as the `cursor` query param. `feed=latest` and `feed=top` map to Bluesky `sort`. `feed=media` uses `sort=latest` then keeps posts with image, video, or external link embeds (may return fewer hits than `count`). `lang` is used for inline translation only, not the upstream post-language filter.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Search query (non-empty)",
               "example": "puppies"
             },
             "required": true,
@@ -1837,8 +1816,7 @@
                 "top",
                 "media"
               ],
-              "default": "latest",
-              "description": "Search tab (default latest). `media` is a client-side filter on the current result page (no native Bluesky media tab)."
+              "default": "latest"
             },
             "required": false,
             "description": "Search tab (default latest). `media` is a client-side filter on the current result page (no native Bluesky media tab).",
@@ -1850,8 +1828,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 30,
-              "description": "Page size (default 30)"
+              "default": 30
             },
             "required": false,
             "description": "Page size (default 30)",
@@ -1860,8 +1837,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -1871,7 +1847,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or BCP 47) for inline translation when available",
               "example": "es"
             },
             "required": false,
@@ -1926,13 +1901,12 @@
     },
     "/2/profile/{handle}": {
       "get": {
-        "summary": "Get Bluesky actor profile",
+        "summary": "Get profile",
         "description": "Returns profile fields in the same envelope as FxTwitter `GET /2/profile/{handle}` (`code`, `message`, `user`). `handle` may be a handle (e.g. `user.bsky.social`) or a DID (`did:plc:…`).",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -1987,13 +1961,12 @@
     },
     "/2/profile/{handle}/followers": {
       "get": {
-        "summary": "List followers of an actor",
+        "summary": "List followers of user",
         "description": "Returns a page in the same shape as FxTwitter `GET /2/profile/{handle}/followers` (`code`, `results`, `cursor`). `handle` may be a handle or DID. Pagination uses Bluesky `app.bsky.graph.getFollowers`: pass the prior `cursor.bottom` as the `cursor` query param. `cursor.top` is always null.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -2006,8 +1979,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -2016,8 +1988,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -2071,13 +2042,12 @@
     },
     "/2/profile/{handle}/following": {
       "get": {
-        "summary": "List accounts an actor follows",
+        "summary": "List following of user",
         "description": "Returns a page in the same shape as FxTwitter `GET /2/profile/{handle}/following` (`code`, `results`, `cursor`). `handle` may be a handle or DID. Pagination uses Bluesky `app.bsky.graph.getFollows`: pass the prior `cursor.bottom` as the `cursor` query param. `cursor.top` is always null.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -2090,8 +2060,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -2100,8 +2069,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -2161,7 +2129,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -2174,8 +2141,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -2184,8 +2150,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -2195,7 +2160,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or BCP 47) for inline translation when available",
               "example": "es"
             },
             "required": false,
@@ -2256,7 +2220,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -2269,8 +2232,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -2279,8 +2241,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -2290,7 +2251,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or BCP 47) for inline translation when available",
               "example": "es"
             },
             "required": false,
@@ -2355,13 +2315,12 @@
     },
     "/2/profile/{handle}/statuses": {
       "get": {
-        "summary": "List posts for an actor",
+        "summary": "List user statuses",
         "description": "Returns a timeline page in the same shape as FxTwitter `GET /2/profile/{handle}/statuses` (`code`, `results`, `cursor`). `handle` may be a handle or DID. Pagination uses Bluesky `app.bsky.feed.getAuthorFeed`: `cursor.bottom` is the opaque next-page token (pass as `cursor` query param). `cursor.top` is always null—there is no reverse cursor on this upstream endpoint. Optional `since` (Unix time): when used without `cursor`, returns **204 No Content** if no posts are strictly newer than that instant. Values ≥ 1e12 are treated as milliseconds.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Bluesky handle (e.g. `user.bsky.social`) or DID (`did:plc:…`)",
               "example": "bsky.app"
             },
             "required": true,
@@ -2374,8 +2333,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "default": 20,
-              "description": "Page size (default 20)"
+              "default": 20
             },
             "required": false,
             "description": "Page size (default 20)",
@@ -2384,8 +2342,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "Pagination cursor from prior response (`cursor.bottom`)"
+              "type": "string"
             },
             "required": false,
             "description": "Pagination cursor from prior response (`cursor.bottom`)",
@@ -2396,8 +2353,7 @@
             "schema": {
               "type": "number",
               "nullable": true,
-              "minimum": 0,
-              "description": "Unix timestamp (seconds, or ms if ≥ 1e12). Without `cursor`, 204 if no post is strictly newer than this time."
+              "minimum": 0
             },
             "required": false,
             "description": "Unix timestamp (seconds, or ms if ≥ 1e12). Without `cursor`, 204 if no post is strictly newer than this time.",
@@ -2406,8 +2362,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "description": "If truthy (`1`, `true`, `yes`, `on`, or empty), include replies (`posts_with_replies` upstream); otherwise `posts_no_replies`."
+              "type": "string"
             },
             "required": false,
             "description": "If truthy (`1`, `true`, `yes`, `on`, or empty), include replies (`posts_with_replies` upstream); otherwise `posts_no_replies`.",
@@ -2417,7 +2372,6 @@
           {
             "schema": {
               "type": "string",
-              "description": "Target language (ISO 639-1 or BCP 47) for inline translation when available",
               "example": "es"
             },
             "required": false,
