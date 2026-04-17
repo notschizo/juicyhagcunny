@@ -50,6 +50,8 @@ We do not collect:
 - Who clicks on a link
 - Any data that could identify a user or post (unless there's an error, see above)
 
+We also strip tracking parameters (like `?s` and `&t`) from X/Twitter URLs to prevent them from being used for telemetry and advertising.
+
 ## Can I self-host FxEmbed?
 
 Yes! See the [Self-Hosting guide](/deployment/self-hosting/) for setup instructions.
