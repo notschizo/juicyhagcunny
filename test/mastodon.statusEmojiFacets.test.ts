@@ -22,7 +22,9 @@ const baseAccount = (): MastodonAccount => ({
   statuses_count: 0
 });
 
-const minimalStatus = (overrides: Partial<MastodonStatus> & Pick<MastodonStatus, 'content'>): MastodonStatus => ({
+const minimalStatus = (
+  overrides: Partial<MastodonStatus> & Pick<MastodonStatus, 'content'>
+): MastodonStatus => ({
   id: '99',
   uri: 'https://mastodon.social/users/self/statuses/99',
   created_at: '2020-01-01T00:00:00.000Z',
@@ -48,7 +50,11 @@ const minimalStatus = (overrides: Partial<MastodonStatus> & Pick<MastodonStatus,
 describe('buildAPIMastodonPost custom emoji facets', () => {
   test('content img becomes :shortcode: with mention and hashtag facets', async () => {
     const emojis = [
-      { shortcode: 'ruby', url: 'https://files.example/e/ruby.png', static_url: 'https://files.example/s/ruby.png' }
+      {
+        shortcode: 'ruby',
+        url: 'https://files.example/e/ruby.png',
+        static_url: 'https://files.example/s/ruby.png'
+      }
     ];
     const status = minimalStatus({
       content:

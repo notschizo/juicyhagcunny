@@ -9,12 +9,10 @@ const indicesTuple = z
   .openapi({ description: 'Start and end UTF-16 indices' });
 
 export const APIFacetSchema = z.object({
-  type: z
-    .string()
-    .openapi({
-      description:
-        'Facet kind: e.g. url, mention, hashtag, bold, media, custom_emoji (Mastodon custom emoji image)'
-    }),
+  type: z.string().openapi({
+    description:
+      'Facet kind: e.g. url, mention, hashtag, bold, media, custom_emoji (Mastodon custom emoji image)'
+  }),
   indices: indicesTuple,
   original: z.string().optional(),
   replacement: z.string().optional(),

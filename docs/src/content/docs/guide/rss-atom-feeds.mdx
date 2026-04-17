@@ -9,30 +9,29 @@ Many readers can automatically detect the feed from an FxTwitter / FixupX link, 
 
 ## Feed URLs
 
-| Format | All Recent Posts |
-| ------ | ---------------- 
-| **RSS** | `https://fxtwitter.com/{handle}/feed.xml` |
+| Format   | All Recent Posts                               |
+| -------- | ---------------------------------------------- |
+| **RSS**  | `https://fxtwitter.com/{handle}/feed.xml`      |
 | **Atom** | `https://fxtwitter.com/{handle}/feed.atom.xml` |
 
-
-| Format| Media-only Posts |
-| ------ | ---------------- |
-| **RSS** | `https://fxtwitter.com/{handle}/media.xml` |
+| Format   | Media-only Posts                                |
+| -------- | ----------------------------------------------- |
+| **RSS**  | `https://fxtwitter.com/{handle}/media.xml`      |
 | **Atom** | `https://fxtwitter.com/{handle}/media.atom.xml` |
 
-- **Timeline feeds** include recent posts (original posts and reposts as returned by the profile timeline API).  
+- **Timeline feeds** include recent posts (original posts and reposts as returned by the profile timeline API).
 - **Media feeds** only include posts that have photos or videos—useful if you want a gallery-style stream.
 
 ## Query parameters
 
 All parameters are optional.
 
-| Parameter | Applies to | Description |
-| --------- | ---------- | ----------- |
-| `count` | Timeline and media | Number of items to fetch, **1–100** (default **90**). |
-| `with_replies` or `withReplies` | Timeline only | Include reply posts |
-| `safe` | Timeline and media | Hides posts (and quoted bodies) marked sensitive. |
-| `lang` or `language` | Timeline and media | Same meaning as on the JSON API—controls localization for fetched content when supported. |
+| Parameter                       | Applies to         | Description                                                                               |
+| ------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `count`                         | Timeline and media | Number of items to fetch, **1–100** (default **90**).                                     |
+| `with_replies` or `withReplies` | Timeline only      | Include reply posts                                                                       |
+| `safe`                          | Timeline and media | Hides posts (and quoted bodies) marked sensitive.                                         |
+| `lang` or `language`            | Timeline and media | Same meaning as on the JSON API—controls localization for fetched content when supported. |
 
 Example:
 

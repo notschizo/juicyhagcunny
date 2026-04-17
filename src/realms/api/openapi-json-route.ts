@@ -51,7 +51,8 @@ export function registerOpenApiJsonRoute(
   configureGenerator?: Parameters<OpenAPIHono['doc']>[2]
 ): void {
   app.get(path, c => {
-    const objectConfig = typeof configureObject === 'function' ? configureObject(c) : configureObject;
+    const objectConfig =
+      typeof configureObject === 'function' ? configureObject(c) : configureObject;
     const generatorConfig =
       typeof configureGenerator === 'function' ? configureGenerator(c) : configureGenerator;
     try {

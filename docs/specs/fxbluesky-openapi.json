@@ -41,12 +41,7 @@
             ]
           }
         },
-        "required": [
-          "code",
-          "status",
-          "thread",
-          "author"
-        ]
+        "required": ["code", "status", "thread", "author"]
       },
       "APIBlueskyStatus": {
         "type": "object",
@@ -105,11 +100,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "label",
-                    "count",
-                    "percentage"
-                  ]
+                  "required": ["label", "count", "percentage"]
                 }
               },
               "total_votes": {
@@ -122,12 +113,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "choices",
-              "total_votes",
-              "ends_at",
-              "time_left_en"
-            ]
+            "required": ["choices", "total_votes", "ends_at", "time_left_en"]
           },
           "author": {
             "$ref": "#/components/schemas/APIUser"
@@ -140,9 +126,7 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "video"
-                    ]
+                    "enum": ["video"]
                   },
                   "url": {
                     "type": "string"
@@ -157,10 +141,7 @@
                     "type": "number"
                   }
                 },
-                "required": [
-                  "type",
-                  "url"
-                ]
+                "required": ["type", "url"]
               },
               "photos": {
                 "type": "array",
@@ -175,10 +156,7 @@
                     },
                     "type": {
                       "type": "string",
-                      "enum": [
-                        "photo",
-                        "gif"
-                      ]
+                      "enum": ["photo", "gif"]
                     },
                     "url": {
                       "type": "string"
@@ -197,12 +175,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "type",
-                    "url",
-                    "width",
-                    "height"
-                  ]
+                  "required": ["type", "url", "width", "height"]
                 }
               },
               "videos": {
@@ -218,10 +191,7 @@
                     },
                     "type": {
                       "type": "string",
-                      "enum": [
-                        "video",
-                        "gif"
-                      ]
+                      "enum": ["video", "gif"]
                     },
                     "url": {
                       "type": "string"
@@ -253,20 +223,11 @@
                         "properties": {
                           "container": {
                             "type": "string",
-                            "enum": [
-                              "mp4",
-                              "webm",
-                              "m3u8"
-                            ]
+                            "enum": ["mp4", "webm", "m3u8"]
                           },
                           "codec": {
                             "type": "string",
-                            "enum": [
-                              "h264",
-                              "hevc",
-                              "vp9",
-                              "av1"
-                            ]
+                            "enum": ["h264", "hevc", "vp9", "av1"]
                           },
                           "bitrate": {
                             "type": "number"
@@ -284,9 +245,7 @@
                             "type": "number"
                           }
                         },
-                        "required": [
-                          "url"
-                        ]
+                        "required": ["url"]
                       }
                     },
                     "publisher": {
@@ -300,14 +259,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "type",
-                    "url",
-                    "width",
-                    "height",
-                    "duration",
-                    "formats"
-                  ]
+                  "required": ["type", "url", "width", "height", "duration", "formats"]
                 }
               },
               "all": {
@@ -325,10 +277,7 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "photo",
-                            "gif"
-                          ]
+                          "enum": ["photo", "gif"]
                         },
                         "url": {
                           "type": "string"
@@ -347,12 +296,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "type",
-                        "url",
-                        "width",
-                        "height"
-                      ]
+                      "required": ["type", "url", "width", "height"]
                     },
                     {
                       "type": "object",
@@ -365,10 +309,7 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "video",
-                            "gif"
-                          ]
+                          "enum": ["video", "gif"]
                         },
                         "url": {
                           "type": "string"
@@ -400,20 +341,11 @@
                             "properties": {
                               "container": {
                                 "type": "string",
-                                "enum": [
-                                  "mp4",
-                                  "webm",
-                                  "m3u8"
-                                ]
+                                "enum": ["mp4", "webm", "m3u8"]
                               },
                               "codec": {
                                 "type": "string",
-                                "enum": [
-                                  "h264",
-                                  "hevc",
-                                  "vp9",
-                                  "av1"
-                                ]
+                                "enum": ["h264", "hevc", "vp9", "av1"]
                               },
                               "bitrate": {
                                 "type": "number"
@@ -431,9 +363,7 @@
                                 "type": "number"
                               }
                             },
-                            "required": [
-                              "url"
-                            ]
+                            "required": ["url"]
                           }
                         },
                         "publisher": {
@@ -447,14 +377,7 @@
                           ]
                         }
                       },
-                      "required": [
-                        "type",
-                        "url",
-                        "width",
-                        "height",
-                        "duration",
-                        "formats"
-                      ]
+                      "required": ["type", "url", "width", "height", "duration", "formats"]
                     },
                     {
                       "type": "object",
@@ -467,9 +390,7 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "mosaic_photo"
-                          ]
+                          "enum": ["mosaic_photo"]
                         },
                         "url": {
                           "type": "string"
@@ -490,19 +411,10 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "webp",
-                            "jpeg"
-                          ]
+                          "required": ["webp", "jpeg"]
                         }
                       },
-                      "required": [
-                        "type",
-                        "url",
-                        "width",
-                        "height",
-                        "formats"
-                      ]
+                      "required": ["type", "url", "width", "height", "formats"]
                     },
                     {
                       "type": "object",
@@ -526,12 +438,7 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "type",
-                        "url",
-                        "width",
-                        "height"
-                      ]
+                      "required": ["type", "url", "width", "height"]
                     }
                   ]
                 }
@@ -547,9 +454,7 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "mosaic_photo"
-                    ]
+                    "enum": ["mosaic_photo"]
                   },
                   "url": {
                     "type": "string"
@@ -570,19 +475,10 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "webp",
-                      "jpeg"
-                    ]
+                    "required": ["webp", "jpeg"]
                   }
                 },
-                "required": [
-                  "type",
-                  "url",
-                  "width",
-                  "height",
-                  "formats"
-                ]
+                "required": ["type", "url", "width", "height", "formats"]
               },
               "broadcast": {
                 "type": "object",
@@ -598,10 +494,7 @@
                   },
                   "state": {
                     "type": "string",
-                    "enum": [
-                      "LIVE",
-                      "ENDED"
-                    ]
+                    "enum": ["LIVE", "ENDED"]
                   },
                   "broadcaster": {
                     "type": "object",
@@ -616,11 +509,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "username",
-                      "display_name",
-                      "id"
-                    ]
+                    "required": ["username", "display_name", "id"]
                   },
                   "stream": {
                     "type": "object",
@@ -629,9 +518,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "url"
-                    ]
+                    "required": ["url"]
                   },
                   "title": {
                     "type": "string"
@@ -641,10 +528,7 @@
                   },
                   "orientation": {
                     "type": "string",
-                    "enum": [
-                      "landscape",
-                      "portrait"
-                    ]
+                    "enum": ["landscape", "portrait"]
                   },
                   "broadcast_id": {
                     "type": "string"
@@ -668,9 +552,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "url"
-                        ]
+                        "required": ["url"]
                       },
                       "small": {
                         "type": "object",
@@ -679,9 +561,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "url"
-                        ]
+                        "required": ["url"]
                       },
                       "medium": {
                         "type": "object",
@@ -690,9 +570,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "url"
-                        ]
+                        "required": ["url"]
                       },
                       "large": {
                         "type": "object",
@@ -701,9 +579,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "url"
-                        ]
+                        "required": ["url"]
                       },
                       "x_large": {
                         "type": "object",
@@ -712,14 +588,10 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "url"
-                        ]
+                        "required": ["url"]
                       }
                     },
-                    "required": [
-                      "original"
-                    ]
+                    "required": ["original"]
                   }
                 },
                 "required": [
@@ -777,17 +649,11 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "type",
-                    "indices"
-                  ]
+                  "required": ["type", "indices"]
                 }
               }
             },
-            "required": [
-              "text",
-              "facets"
-            ]
+            "required": ["text", "facets"]
           },
           "lang": {
             "type": "string",
@@ -812,13 +678,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "text",
-              "source_lang",
-              "source_lang_en",
-              "target_lang",
-              "provider"
-            ]
+            "required": ["text", "source_lang", "source_lang_en", "target_lang", "provider"]
           },
           "possibly_sensitive": {
             "type": "boolean"
@@ -834,10 +694,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "screen_name",
-              "status"
-            ]
+            "required": ["screen_name", "status"]
           },
           "source": {
             "type": "string",
@@ -845,18 +702,11 @@
           },
           "embed_card": {
             "type": "string",
-            "enum": [
-              "tweet",
-              "summary",
-              "summary_large_image",
-              "player"
-            ]
+            "enum": ["tweet", "summary", "summary_large_image", "player"]
           },
           "provider": {
             "type": "string",
-            "enum": [
-              "bluesky"
-            ]
+            "enum": ["bluesky"]
           },
           "reposted_by": {
             "$ref": "#/components/schemas/APIRepostedBy"
@@ -943,17 +793,11 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "type",
-                    "indices"
-                  ]
+                  "required": ["type", "indices"]
                 }
               }
             },
-            "required": [
-              "text",
-              "facets"
-            ]
+            "required": ["text", "facets"]
           },
           "location": {
             "type": "string"
@@ -993,10 +837,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "url",
-              "display_url"
-            ]
+            "required": ["url", "display_url"]
           },
           "birthday": {
             "type": "object",
@@ -1022,12 +863,7 @@
               "type": {
                 "type": "string",
                 "nullable": true,
-                "enum": [
-                  "organization",
-                  "government",
-                  "individual",
-                  null
-                ]
+                "enum": ["organization", "government", "individual", null]
               },
               "verified_at": {
                 "type": "string",
@@ -1037,10 +873,7 @@
                 "type": "boolean"
               }
             },
-            "required": [
-              "verified",
-              "type"
-            ]
+            "required": ["verified", "type"]
           },
           "about_account": {
             "$ref": "#/components/schemas/APIAboutAccount"
@@ -1098,10 +931,7 @@
                 "nullable": true
               }
             },
-            "required": [
-              "count",
-              "last_changed_at"
-            ]
+            "required": ["count", "last_changed_at"]
           }
         }
       },
@@ -1125,29 +955,20 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "screen_name"
-        ]
+        "required": ["id", "name", "screen_name"]
       },
       "ApiQueryError": {
         "type": "object",
         "properties": {
           "code": {
             "type": "number",
-            "enum": [
-              400
-            ]
+            "enum": [400]
           },
           "message": {
             "type": "string"
           }
         },
-        "required": [
-          "code",
-          "message"
-        ]
+        "required": ["code", "message"]
       },
       "APIUserListResults": {
         "type": "object",
@@ -1173,17 +994,10 @@
                 "nullable": true
               }
             },
-            "required": [
-              "top",
-              "bottom"
-            ]
+            "required": ["top", "bottom"]
           }
         },
-        "required": [
-          "code",
-          "results",
-          "cursor"
-        ]
+        "required": ["code", "results", "cursor"]
       },
       "SocialConversationBluesky": {
         "type": "object",
@@ -1228,19 +1042,10 @@
                 "nullable": true
               }
             },
-            "required": [
-              "bottom"
-            ]
+            "required": ["bottom"]
           }
         },
-        "required": [
-          "code",
-          "status",
-          "thread",
-          "replies",
-          "author",
-          "cursor"
-        ]
+        "required": ["code", "status", "thread", "replies", "author", "cursor"]
       },
       "APISearchResultsBluesky": {
         "type": "object",
@@ -1266,17 +1071,10 @@
                 "nullable": true
               }
             },
-            "required": [
-              "top",
-              "bottom"
-            ]
+            "required": ["top", "bottom"]
           }
         },
-        "required": [
-          "code",
-          "results",
-          "cursor"
-        ]
+        "required": ["code", "results", "cursor"]
       },
       "UserAPIResponse": {
         "type": "object",
@@ -1291,10 +1089,7 @@
             "$ref": "#/components/schemas/APIUser"
           }
         },
-        "required": [
-          "code",
-          "message"
-        ]
+        "required": ["code", "message"]
       },
       "APIProfileRelationshipList": {
         "type": "object",
@@ -1320,17 +1115,10 @@
                 "nullable": true
               }
             },
-            "required": [
-              "top",
-              "bottom"
-            ]
+            "required": ["top", "bottom"]
           }
         },
-        "required": [
-          "code",
-          "results",
-          "cursor"
-        ]
+        "required": ["code", "results", "cursor"]
       }
     },
     "parameters": {}
@@ -1706,10 +1494,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "likes",
-                "recency"
-              ],
+              "enum": ["likes", "recency"],
               "default": "likes"
             },
             "required": false,
@@ -1811,11 +1596,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "latest",
-                "top",
-                "media"
-              ],
+              "enum": ["latest", "top", "media"],
               "default": "latest"
             },
             "required": false,

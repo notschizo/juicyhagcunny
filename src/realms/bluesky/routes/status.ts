@@ -88,7 +88,9 @@ export const blueskyStatusRequest = async (c: Context) => {
         Embeds will return as usual to bots as if direct media was never specified. */
       if (!isBotUA && !flags.api && !flags.direct) {
         return c.redirect(
-          flags.horizon ? horizonBskyStatusUrl : `${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`,
+          flags.horizon
+            ? horizonBskyStatusUrl
+            : `${Constants.BLUESKY_ROOT}/profile/${handle}/post/${actualId}`,
           302
         );
       }

@@ -192,7 +192,9 @@ export const handleStatus = async (
     if (provider === DataProvider.Bluesky) {
       return returnError(
         c,
-        thread.code === 404 ? Strings.ERROR_BLUESKY_POST_NOT_FOUND : Strings.ERROR_BLUESKY_UNAVAILABLE
+        thread.code === 404
+          ? Strings.ERROR_BLUESKY_POST_NOT_FOUND
+          : Strings.ERROR_BLUESKY_UNAVAILABLE
       );
     } else {
       return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
@@ -204,7 +206,7 @@ export const handleStatus = async (
     case 401:
       return returnError(c, Strings.ERROR_PRIVATE);
     case 404:
-    return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
+      return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
     case 503:
       if (provider === DataProvider.Bluesky) {
         return returnError(c, Strings.ERROR_BLUESKY_UNAVAILABLE);
