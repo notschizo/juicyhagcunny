@@ -50,12 +50,12 @@ function fetchLocalOpenApi(port, hostHeader) {
     const req = http.request(
       {
         hostname: '127.0.0.1',
-        port: Number(port, 10),
+        port: Number(port),
         path: '/2/openapi.json',
         method: 'GET',
         timeout: 30_000,
         headers: {
-          'Host': hostHeader,
+          Host: hostHeader,
           'User-Agent': 'FxEmbed-Docs-Builder/1.0'
         }
       },
