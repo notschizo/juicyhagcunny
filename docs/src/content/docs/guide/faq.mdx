@@ -31,20 +31,24 @@ https://fxtwitter.com/user/status/123456789/video/2
 No. FxEmbed only operates on these domains:
 
 - `fxtwitter.com` / `twittpr.com`
-- `fixupx.com` (also `xfixup.com`)
+- `fixupx.com`
 - `fxbsky.app`
 
-## Is FxEmbed private?
+## How does FxEmbed handle privacy?
 
-Yes. FxEmbed is built with privacy as a core principle:
+We believe privacy is a fundamental human right and avoid collecting data that is unnecessary.
 
-- **No persistent logging** of embedded posts
-- **No database or file system** — the Cloudflare Worker architecture means memory doesn't persist between requests
-- **No ads or tracking** — FxEmbed doesn't monetize user data
-- **Anonymous statistics only** — Cloudflare Analytics Engine aggregates basic, anonymous stats that cannot identify individual users or posts
-- **Tracking parameter removal** — Parameters like `?s` and `&t` are stripped on redirect
+The TL;DR is that we only log errors and don't share or sell any data or make it available to third parties.
 
-Temporary real-time logging via `wrangler tail` may be used during development and debugging, but these logs are never saved. URLs that cause runtime exceptions may be logged to diagnose bugs.
+We collect:
+- Runtime errors: We will collect URLs and basic headers for errors that break embeds
+- Account errors (X/Twitter): We collect only basic request information )post ID) to diagnose issues within our account proxy 
+- Basic analytics: We use Cloudflare Analytics Engine to collect basic, anonymous statistics that cannot identify individual users or posts. (i.e. bot user agent popularity, whether a request succeeded or not, etc.)
+
+We do not collect:
+- Who posts a link
+- Who clicks on a link
+- Any data that could identify a user or post (unless there's an error, see above)
 
 ## Can I self-host FxEmbed?
 
