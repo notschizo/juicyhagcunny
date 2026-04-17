@@ -13,6 +13,7 @@ import {
   blueskyProfileStatusesV2Route,
   blueskyProfileV2Route,
   blueskySearchV2Route,
+  blueskyTrendsV2Route,
   blueskyStatusLikesV2Route,
   blueskyStatusRepostsV2Route,
   blueskyStatusV2Route,
@@ -27,6 +28,7 @@ import {
   blueskyProfileMediaAPIRequest,
   blueskyProfileStatusesAPIRequest,
   blueskySearchAPIRequest,
+  blueskyTrendsAPIRequest,
   blueskyStatusAPIRequest,
   blueskyStatusLikesAPIRequest,
   blueskyStatusRepostsAPIRequest,
@@ -56,6 +58,7 @@ blueskyApi.openapi(blueskyStatusLikesV2Route, blueskyStatusLikesAPIRequest);
 blueskyApi.openapi(blueskyThreadV2Route, blueskyThreadAPIRequest);
 blueskyApi.openapi(blueskyConversationV2Route, blueskyConversationAPIRequest);
 blueskyApi.openapi(blueskySearchV2Route, blueskySearchAPIRequest);
+blueskyApi.openapi(blueskyTrendsV2Route, blueskyTrendsAPIRequest);
 blueskyApi.openapi(blueskyProfileV2Route, blueskyProfileAPIRequest);
 blueskyApi.openapi(blueskyProfileFollowersV2Route, blueskyProfileFollowersAPIRequest);
 blueskyApi.openapi(blueskyProfileFollowingV2Route, blueskyProfileFollowingAPIRequest);

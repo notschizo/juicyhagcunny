@@ -17,6 +17,7 @@ import {
   blueskyProfileFollowingAPI
 } from '../../providers/bluesky/profileFollowers';
 import { blueskySearchAPI } from '../../providers/bluesky/search';
+import { blueskyTrendsAPI } from '../../providers/bluesky/trends';
 import { blueskyStatusLikesAPI } from '../../providers/bluesky/statusLikes';
 import { blueskyStatusRepostsAPI } from '../../providers/bluesky/statusReposts';
 import {
@@ -28,6 +29,7 @@ import {
   blueskyProfileStatusesV2Route,
   blueskyProfileV2Route,
   blueskySearchV2Route,
+  blueskyTrendsV2Route,
   blueskyStatusLikesV2Route,
   blueskyStatusRepostsV2Route,
   blueskyStatusV2Route,
@@ -43,7 +45,7 @@ export const blueskyStatusAPIRequest: RouteHandler<typeof blueskyStatusV2Route> 
   const processedResponse = await constructBlueskyThread(rkey, handle, false, c, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
-    [200, 400, 404, 500] as const,
+    [200, 400, 404, 500, 503] as const,
     'blueskyStatusAPIRequest'
   );
   c.status(httpStatus);
@@ -101,7 +103,7 @@ export const blueskyThreadAPIRequest: RouteHandler<typeof blueskyThreadV2Route> 
   const processedResponse = await constructBlueskyThread(rkey, handle, true, c, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
-    [200, 400, 404, 500] as const,
+    [200, 400, 404, 500, 503] as const,
     'blueskyThreadAPIRequest'
   );
   c.status(httpStatus);
@@ -134,7 +136,7 @@ export const blueskyConversationAPIRequest: RouteHandler<
   const processedResponse = result.data;
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
-    [200, 400, 404, 500] as const,
+    [200, 400, 404, 500, 503] as const,
     'blueskyConversationAPIRequest'
   );
   c.status(httpStatus);
@@ -179,6 +181,23 @@ export const blueskySearchAPIRequest: RouteHandler<typeof blueskySearchV2Route> 
     c.header(header, value);
   }
   return jsonAfterNormalize<typeof blueskySearchV2Route>(c, payload, httpStatus);
+};
+
+export const blueskyTrendsAPIRequest: RouteHandler<typeof blueskyTrendsV2Route> = async c => {
+  const query = c.req.valid('query');
+  const type = query.type ?? 'trending';
+  const count = query.count ?? 20;
+  const trendsResponse = await blueskyTrendsAPI(type, count, c);
+  const { httpStatus, payload } = normalizeApiJsonResponse(
+    trendsResponse,
+    [200, 400, 404, 500] as const,
+    'blueskyTrendsAPIRequest'
+  );
+  c.status(httpStatus);
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  return jsonAfterNormalize<typeof blueskyTrendsV2Route>(c, payload, httpStatus);
 };
 
 export const blueskyProfileFollowersAPIRequest: RouteHandler<
