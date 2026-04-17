@@ -4,9 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync-readme-assets": "node scripts/sync-readme-assets.mjs",
-    "predev": "npm run sync-readme-assets",
-    "prebuild": "npm run sync-readme-assets",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

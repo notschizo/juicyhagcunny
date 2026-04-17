@@ -45,7 +45,7 @@ We use Vitest for testing. To test the full suite of code, run `npm test`.
 
 ### Docs site (`docs/`)
 
-- Guide screenshots under `docs/public/guide/readme/` are copied from `assets/readme/*.png` automatically before `npm run dev` and `npm run build` (`sync-readme-assets`).
+- Guide screenshots are static assets under `docs/public/guide/readme/` (served as `/guide/readme/*` in the docs site).
 - Refresh API reference specs from **production**: `cd docs && npm run extract-openapi`
 - Refresh from your **local worker** (after `wrangler dev --local`): `cd docs && npm run extract-openapi:local` (default port `8787`; custom: `npm run extract-openapi:local -- 9000`). The script sets `Host` to `api.fxtwitter.com` / `api.fxbsky.app` so routing matches production.
 - Then `npm run dev` in `docs/` to preview.

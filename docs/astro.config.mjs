@@ -40,7 +40,7 @@ export default defineConfig({
               items: [
                 { label: 'Overview', link: '/guide/url-modifiers/' },
                 { label: 'Direct media (d.)', slug: 'guide/url-modifiers/direct-media' },
-                { label: 'Select photo', slug: 'guide/url-modifiers/select-photo' },
+                { label: 'Select media', slug: 'guide/url-modifiers/select-photo' },
                 { label: 'Translate', slug: 'guide/url-modifiers/translate' },
                 { label: 'Mosaic (m.)', slug: 'guide/url-modifiers/mosaic' },
                 { label: 'Gallery (g.)', slug: 'guide/url-modifiers/gallery' },
@@ -49,8 +49,13 @@ export default defineConfig({
                 { label: 'Old embeds (o.)', slug: 'guide/url-modifiers/old-embeds' }
               ]
             },
-            { label: 'Embedding Media', slug: 'guide/embedding-media' },
-            { label: 'RSS & Atom feeds', slug: 'guide/rss-atom-feeds' },
+            {
+              label: 'Advanced',
+              items: [
+                { label: 'RSS & Atom feeds', slug: 'guide/advanced/rss-atom-feeds' },
+                { label: 'Custom Redirect', slug: 'guide/advanced/custom-redirect' }
+              ]
+            },
             { label: 'Compare Features', slug: 'guide/compare' },
             { label: 'FAQ', slug: 'guide/faq' }
           ]
