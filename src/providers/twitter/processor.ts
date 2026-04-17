@@ -284,9 +284,6 @@ export const buildAPITwitterStatus = async (
   } else {
     apiStatus.views = null;
   }
-  if (status.note_tweet) {
-    console.log('Note tweet found', JSON.stringify(status.note_tweet));
-  }
   const noteTweetText = status.note_tweet?.note_tweet_results?.result?.text;
 
   if (noteTweetText) {
@@ -569,7 +566,6 @@ export const buildAPITwitterStatus = async (
   /* Populate a Twitter card */
 
   if (status.card ?? status.tweet_card) {
-    console.log('Rendering card', JSON.stringify(status.card ?? status.tweet_card));
     const card = await renderCard(c, status.card ?? status.tweet_card);
     if (card.external_media) {
       apiStatus.embed_card = 'player';
