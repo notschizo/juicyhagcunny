@@ -63,6 +63,7 @@ export default defineConfig({
           label: 'Deployment',
           items: [
             { label: 'Self-Hosting', slug: 'deployment/self-hosting' },
+            { label: 'Mosaic', slug: 'deployment/mosaic' },
             { label: 'Configuration', slug: 'deployment/configuration' },
             { label: 'Credentials', slug: 'deployment/credentials' }
           ]
