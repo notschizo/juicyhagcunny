@@ -29,7 +29,7 @@ Bluesky / AT Protocol data, with response shapes aligned to the FxTwitter API wh
 
 ## Versioning
 
-All current endpoints are under the `/2/` path prefix (API v2). The legacy v1 endpoints (e.g., `/:handle/status/:id`) still work for backward compatibility but return data through the older embed pipeline.
+All current endpoints are under the `/2/` path prefix (API v2). The legacy v1 endpoints (i.e., `/:handle/status/:id`) still work for backward compatibilit but don't support all the latest features.
 
 ## Response Format
 
@@ -66,7 +66,9 @@ List endpoints (search results, timelines, followers, etc.) return a `cursor` ob
 
 ## Rate limiting
 
-API v2 has a rate limit of 600 requests per minute (10 requests per second) per IP address. If you need more, it might be worth [self-hosting](/deployment/) your own instance.
+API v2 has a rate limit of 1000 requests per minute (16.7 requests per second) per IP address.
+We believe this is generous enough for most legitimate applications.
+If you need more, it might be worth [self-hosting](/deployment/) your own instance.
 
 ## OpenAPI specifications
 
