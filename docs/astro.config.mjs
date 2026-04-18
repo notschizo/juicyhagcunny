@@ -3,9 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
 
 export default defineConfig({
-  redirects: {
-    '/api/overview/': '/api/introduction/'
-  },
+  redirects: {},
   integrations: [
     starlight({
       title: 'FxEmbed',
@@ -67,7 +65,7 @@ export default defineConfig({
         {
           label: 'Deployment',
           items: [
-            { label: 'Self-Hosting', slug: 'deployment/self-hosting' },
+            { label: 'Self-Hosting', slug: 'deployment' },
             { label: 'Mosaic', slug: 'deployment/mosaic' },
             { label: 'Configuration', slug: 'deployment/configuration' },
             { label: 'Credentials', slug: 'deployment/credentials' }
