@@ -7,6 +7,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'FxEmbed',
+      favicon: '/fxembed.svg',
       logo: {
         src: './src/assets/fxembed.svg'
       },
