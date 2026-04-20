@@ -23,6 +23,7 @@ import { normalizeLanguage } from '../helpers/language';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
 import { InputFlags } from '../types/types';
+import { formatRuntime } from '../helpers/runtime';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.
@@ -63,6 +64,7 @@ export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
   return c.html(
     Strings.BASE_HTML.format({
+      runtime: formatRuntime(),
       brandingName: branding.name,
       lang: '',
       headers: [
@@ -192,7 +194,7 @@ export const handleStatus = async (
     if (provider === DataProvider.Bluesky) {
       return returnError(
         c,
-        thread.code === 404 ? Strings.ERROR_BLUESKY_POST_NOT_FOUND : Strings.ERROR_BLUESKY_UNAVAILABLE
+        thread.code === 404 ? Strings.ERROR_TWEET_NOT_FOUND : Strings.ERROR_API_FAIL
       );
     } else {
       return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
@@ -204,7 +206,7 @@ export const handleStatus = async (
     case 401:
       return returnError(c, Strings.ERROR_PRIVATE);
     case 404:
-    return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
+      return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
     case 503:
       if (provider === DataProvider.Bluesky) {
         return returnError(c, Strings.ERROR_BLUESKY_UNAVAILABLE);
@@ -841,6 +843,7 @@ export const handleStatus = async (
   /* Finally, after all that work we return the response HTML! */
   return c.html(
     Strings.BASE_HTML.format({
+      runtime: formatRuntime(),
       lang: `lang="${lang}"`,
       headers: headers.join(''),
       body: ivbody

@@ -1,3 +1,5 @@
+import { Constants } from './constants';
+
 declare global {
   interface String {
     format(options: { [find: string]: string }): string;
@@ -28,8 +30,7 @@ export const Strings = {
 ███      ███  ███   ███████  ███  ███  ███   ██████     ▐████▌   ▐██████▌
 ███
 ███   A better way to embed posts on Discord, Telegram, and more.
-███   Worker build ${RELEASE_NAME}
-
+███   Build ${Constants.RELEASE_NAME} ({runtime})
 --><head>{headers}</head><body>{body}</body></html>`,
   ERROR_HTML: `<!DOCTYPE html>
 <html lang="en">
@@ -60,7 +61,7 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
   <body>
     <h1>Owie :(</h1>
     <h2>You hit a snag that broke {brandingName}. It's not your fault though&mdash;This is usually caused by an upstream outage or a new bug.</h2>
-    <p>${RELEASE_NAME}</p>
+    <p>${Constants.RELEASE_NAME}</p>
   </body>
 </html>`
     .replace(/( {2})/g, '')
@@ -92,20 +93,13 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
   <body>
     <h1>Gateway Timeout</h1>
     <h2>A downstream timeout occurred while trying to generate the embed. Please try again in a little while.</h2>
-    <p>${RELEASE_NAME}</p>
+    <p>${Constants.RELEASE_NAME}</p>
   </body>
 </html>`
     .replace(/( {2})/g, '')
     .replace(/>\s+</gm, '><'),
-  VERSION_HTML: `<!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta content="{brandingName}" property="og:title"/>
-      <meta content="#6363ff" name="theme-color"/>
-      <meta content="Worker release: ${RELEASE_NAME}
-      
+  VERSION_OG_DESCRIPTION_NERDS: `Build ${Constants.RELEASE_NAME} ({runtime})
+
       Stats for nerds: 
       🕵️‍♂️ {ua}
       🌐 {ip}
@@ -113,8 +107,21 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
       🛴 {asn}
 
       Edge Connection:
-      {rtt} 📶 {httpversion} 🔒 {tlsversion} ➡ ⛅ {colo}
-      " property="og:description"/></head>
+      {rtt} 📶 {httpversion} 🔒 {tlsversion} ➡ ⛅ {colo}`,
+  VERSION_STATS_BODY: `      <br>
+      <h3>Stats for nerds:</h3>
+      <h2>Edge Connection:
+      {rtt} 📶 {httpversion} 🔒 {tlsversion} ➡ <img class="cf" referrerpolicy="no-referrer" src="https://cdn.discordapp.com/emojis/988895299693080616.webp?size=96&quality=lossless"> {colo}</h2>
+      <h2>User Agent:
+      {ua}</h2>`,
+  VERSION_HTML: `<!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta content="{brandingName}" property="og:title"/>
+      <meta content="#6363ff" name="theme-color"/>
+      <meta content="{ogDescription}" property="og:description"/></head>
       <title>{brandingName}</title>
       <style>
         body {
@@ -144,13 +151,9 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
     <body>
       <h1>{brandingName}</h1>
       <h3>A better way to embed posts on Discord, Telegram, and more.</h2>
-      <h2>Worker release: ${RELEASE_NAME}</h2>
-      <br>
-      <h3>Stats for nerds:</h3>
-      <h2>Edge Connection:
-      {rtt} 📶 {httpversion} 🔒 {tlsversion} ➡ <img class="cf" referrerpolicy="no-referrer" src="https://cdn.discordapp.com/emojis/988895299693080616.webp?size=96&quality=lossless"> {colo}</h2>
-      <h2>User Agent:
-      {ua}</h2>
+      <h2>Build ${Constants.RELEASE_NAME}</h2>
+      <h2>Runtime: {runtime}</h2>
+      {statsBody}
     </body>
   </html>`
     .replace(/( {2})/g, '')
@@ -229,7 +232,7 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
 # Do you want an easy way to fetch posts but Elon Musk wants to charge you $100 per month?
 # Did you know we have a fetch API you can use for free, no API keys required?
 
-# Check out the docs at https://${API_HOST_LIST.split(',')[0]} to learn how to use it
+# Check out the docs at ${Constants.API_HOST_ROOT} to learn how to use it
 
 # Good luck, have fun and try not to take over the world!
 

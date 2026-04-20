@@ -92,18 +92,18 @@ export const app = new Hono<{
   }
 });
 
-if (SENTRY_DSN) {
+if (process.env.SENTRY_DSN) {
   app.use(
     '*',
     sentry({
-      dsn: SENTRY_DSN,
+      dsn: process.env.SENTRY_DSN,
       requestDataOptions: {
         allowedHeaders: /(.*)/,
         allowedSearchParams: /(.*)/
       },
 
       integrations: [rewriteFramesIntegration({ root: '/' })],
-      release: RELEASE_NAME
+      release: Constants.RELEASE_NAME
     })
   );
 }

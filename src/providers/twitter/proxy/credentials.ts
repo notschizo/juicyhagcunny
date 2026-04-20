@@ -23,12 +23,9 @@ function base64ToBytes(b64: string): Uint8Array {
 
 /** True when the worker bundle includes an encrypted credential payload (from credentials.enc.json at build time). */
 export function hasBundledEncryptedCredentials(): boolean {
-  return (
-    typeof ENCRYPTED_CREDENTIALS === 'string' &&
-    ENCRYPTED_CREDENTIALS.length > 0 &&
-    typeof CREDENTIALS_IV === 'string' &&
-    CREDENTIALS_IV.length > 0
-  );
+  const enc = process.env.ENCRYPTED_CREDENTIALS;
+  const iv = process.env.CREDENTIALS_IV;
+  return typeof enc === 'string' && enc.length > 0 && typeof iv === 'string' && iv.length > 0;
 }
 
 /**
@@ -48,8 +45,8 @@ export async function initCredentials(credentialKey: string | undefined): Promis
         if (keyBytes.byteLength !== 32) {
           throw new Error('CREDENTIAL_KEY must decode to 32 bytes (AES-256, base64url)');
         }
-        const iv = base64ToBytes(CREDENTIALS_IV);
-        const ciphertext = base64ToBytes(ENCRYPTED_CREDENTIALS);
+        const iv = base64ToBytes(process.env.CREDENTIALS_IV ?? '');
+        const ciphertext = base64ToBytes(process.env.ENCRYPTED_CREDENTIALS ?? '');
 
         const cryptoKey = await crypto.subtle.importKey(
           'raw',
