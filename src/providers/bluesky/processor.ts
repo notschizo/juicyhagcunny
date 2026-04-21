@@ -33,7 +33,8 @@ const apiUserFromAuthor = (author: BlueskyAuthor): APIUser => ({
   joined: author.createdAt,
   birthday: { day: 0, month: 0, year: 0 },
   website: null,
-  profile_embed: true
+  profile_embed: true,
+  type: 'profile'
 });
 
 const tombstoneAuthor = (handleOrDid: string): APIUser => ({
@@ -55,7 +56,8 @@ const tombstoneAuthor = (handleOrDid: string): APIUser => ({
   joined: '',
   birthday: { day: 0, month: 0, year: 0 },
   website: null,
-  profile_embed: true
+  profile_embed: true,
+  type: 'profile'
 });
 
 /** Map a hydrated record embed view into the `BlueskyPost` shape our pipeline expects. */
@@ -341,7 +343,8 @@ export const buildAPIBlueskyPost = async (
     replying_to: await resolveReplyingTo(status, bskyFetchOpts),
     source: 'Bluesky Social',
     embed_card: 'tweet',
-    provider: DataProvider.Bluesky
+    provider: DataProvider.Bluesky,
+    type: 'status'
   };
 
   await applyEmbedsToStatus(apiStatus, status);

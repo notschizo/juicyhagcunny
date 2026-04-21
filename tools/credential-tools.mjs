@@ -65,10 +65,8 @@ function encrypt() {
 
   const plaintext = readFileSync(PLAINTEXT_PATH, 'utf-8');
   const parsed = JSON.parse(plaintext);
-  const hasTwitter =
-    Array.isArray(parsed?.twitter?.accounts) && parsed.twitter.accounts.length > 0;
-  const hasBluesky =
-    Array.isArray(parsed?.bluesky?.accounts) && parsed.bluesky.accounts.length > 0;
+  const hasTwitter = Array.isArray(parsed?.twitter?.accounts) && parsed.twitter.accounts.length > 0;
+  const hasBluesky = Array.isArray(parsed?.bluesky?.accounts) && parsed.bluesky.accounts.length > 0;
   if (!hasTwitter && !hasBluesky) {
     console.error(
       'credentials.json must include a non-empty twitter.accounts and/or bluesky.accounts array (see credentials.example.json).'

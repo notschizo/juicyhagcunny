@@ -312,7 +312,8 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail): APIUser => {
         type: null,
         verified_at: null,
         identity_verified: false
-      }
+      },
+      type: 'profile'
     };
   } else if (isMobileApiData(video)) {
     const author = video.author;
@@ -338,7 +339,8 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail): APIUser => {
       statuses: author?.aweme_count || 0,
       joined: '',
       birthday: null,
-      website: null
+      website: null,
+      type: 'profile'
     };
   }
   return {
@@ -359,7 +361,8 @@ const extractAuthor = (video: TikTokItemInfo | TikTokAwemeDetail): APIUser => {
     statuses: 0,
     joined: '',
     birthday: { day: 0, month: 0, year: 0 },
-    website: null
+    website: null,
+    type: 'profile'
   };
 };
 
@@ -543,7 +546,8 @@ export const buildAPITikTokStatus = async (
     replying_to: null,
     source: music ? `♪ ${music.title} - ${music.author}` : 'TikTok',
     embed_card: 'tweet',
-    provider: DataProvider.TikTok
+    provider: DataProvider.TikTok,
+    type: 'status'
   };
 
   // Handle video posts first (prioritize videos over images)

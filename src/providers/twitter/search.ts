@@ -132,6 +132,197 @@ export const processTimelineInstructions = (
   return { statuses, cursors };
 };
 
+/** One timeline row: a single tweet or a grouped conversation module (profile timelines). */
+export type GroupedTimelineEntry =
+  | { kind: 'status'; status: GraphQLTwitterStatus }
+  | {
+      kind: 'thread';
+      conversation_id: string;
+      statuses: GraphQLTwitterStatus[];
+      all_status_ids?: string[];
+    };
+
+const conversationIdFromModuleEntry = (
+  entryId: string | undefined,
+  moduleStatuses: GraphQLTwitterStatus[]
+): string => {
+  if (entryId) {
+    const m = entryId.match(/profile-conversation-(\d+)/);
+    if (m) return m[1];
+    const m2 = entryId.match(/conversationthread-(\d+)/);
+    if (m2) return m2[1];
+  }
+  const conv = moduleStatuses[0]?.legacy?.conversation_id_str;
+  if (conv) return conv;
+  return moduleStatuses[0]?.rest_id ?? moduleStatuses[0]?.legacy?.id_str ?? 'unknown';
+};
+
+/** X sometimes nests `conversationMetadata` under `metadata` or on the module/entry root. */
+const conversationMetadataAllTweetIds = (source: unknown): string[] | undefined => {
+  if (!source || typeof source !== 'object') return undefined;
+  const o = source as Record<string, unknown>;
+  const readIds = (cm: unknown): string[] | undefined => {
+    if (!cm || typeof cm !== 'object') return undefined;
+    const ids = (cm as { allTweetIds?: unknown }).allTweetIds;
+    if (Array.isArray(ids) && ids.length > 0 && ids.every(x => typeof x === 'string')) {
+      return ids as string[];
+    }
+    return undefined;
+  };
+  const fromNested = readIds(o.conversationMetadata);
+  if (fromNested) return fromNested;
+  const meta = o.metadata;
+  if (meta && typeof meta === 'object') {
+    const fromMeta = readIds((meta as { conversationMetadata?: unknown }).conversationMetadata);
+    if (fromMeta) return fromMeta;
+  }
+  return undefined;
+};
+
+const allTweetIdsForConversationModule = (
+  module: GraphQLTimelineModule,
+  timelineEntry?: unknown
+): string[] | undefined => {
+  return conversationMetadataAllTweetIds(module) ?? conversationMetadataAllTweetIds(timelineEntry);
+};
+
+/**
+ * Like {@link processTimelineInstructions} but preserves `TimelineTimelineModule` groups
+ * for profile-style conversation rows.
+ */
+export const processGroupedTimelineInstructions = (
+  instructions: TimelineInstruction[]
+): { entries: GroupedTimelineEntry[]; cursors: GraphQLTimelineCursor[] } => {
+  const entries: GroupedTimelineEntry[] = [];
+  const cursors: GraphQLTimelineCursor[] = [];
+
+  type ItemContentWithTweet = {
+    __typename?: string;
+    tweet_results?: { result?: { __typename?: string; tweet?: unknown } };
+  };
+
+  const tweetFromItemContent = (itemContent: ItemContentWithTweet): GraphQLTwitterStatus | null => {
+    if (itemContent?.__typename !== 'TimelineTweet') return null;
+    const result = itemContent.tweet_results?.result;
+    const entryType = result?.__typename;
+    if (entryType === 'Tweet') {
+      return result as GraphQLTwitterStatus;
+    }
+    if (entryType === 'TweetWithVisibilityResults') {
+      return (result as { tweet: GraphQLTwitterStatus }).tweet;
+    }
+    return null;
+  };
+
+  const getItemContent = (
+    item: GraphQLTimelineItem
+  ): GraphQLTimelineTweet | GraphQLTimelineCursor | undefined => {
+    return item.itemContent ?? item.content;
+  };
+
+  const pushModuleAsEntries = (
+    module: GraphQLTimelineModule,
+    outerEntryId: string | undefined,
+    timelineEntry?: unknown
+  ): void => {
+    const statuses: GraphQLTwitterStatus[] = [];
+    module.items?.forEach(item => {
+      const inner = getItemContent(item.item);
+      if (!inner) return;
+      if (inner.__typename === 'TimelineTweet') {
+        const st = tweetFromItemContent(inner as ItemContentWithTweet);
+        if (st) statuses.push(st);
+      } else if (inner.__typename === 'TimelineTimelineCursor') {
+        cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
+      }
+    });
+    if (statuses.length === 0) return;
+
+    const allIds = allTweetIdsForConversationModule(module, timelineEntry);
+    const useThread =
+      statuses.length > 1 || (allIds !== undefined && allIds.length > statuses.length);
+
+    if (useThread) {
+      entries.push({
+        kind: 'thread',
+        conversation_id: conversationIdFromModuleEntry(outerEntryId, statuses),
+        statuses,
+        all_status_ids: allIds
+      });
+    } else {
+      entries.push({ kind: 'status', status: statuses[0] });
+    }
+  };
+
+  instructions?.forEach(instruction => {
+    const kind =
+      (instruction as { type?: string }).type ??
+      (instruction as { __typename?: string }).__typename;
+
+    if (kind === 'TimelineReplaceEntry') {
+      const content = (instruction as TimelineReplaceEntryInstruction).entry?.content;
+      if (content?.__typename === 'TimelineTimelineCursor') {
+        cursors.push(normalizeCursor(content));
+      }
+      return;
+    }
+
+    if (kind === 'TimelineAddToModule') {
+      (instruction as TimelineAddModulesInstruction).moduleItems?.forEach(_moduleItem => {
+        const moduleItem = _moduleItem as {
+          item?: { itemContent?: unknown; content?: unknown };
+        };
+        const itemContent = moduleItem?.item?.itemContent ?? moduleItem?.item?.content;
+        if (!itemContent) return;
+        const st = tweetFromItemContent(itemContent as ItemContentWithTweet);
+        if (st) entries.push({ kind: 'status', status: st });
+        if (
+          typeof itemContent === 'object' &&
+          itemContent !== null &&
+          (itemContent as { __typename?: string }).__typename === 'TimelineTimelineCursor'
+        ) {
+          cursors.push(normalizeCursor(itemContent as GraphQLTimelineCursor));
+        }
+      });
+      return;
+    }
+
+    if (kind === 'TimelineAddEntries') {
+      (instruction as TimelineAddEntriesInstruction).entries?.forEach(_entry => {
+        const entry = _entry as GraphQLTimelineTweetEntry | GraphQLConversationThread;
+        const content = entry.content as
+          | GraphQLTimelineItem
+          | GraphQLTimelineCursor
+          | GraphQLTimelineModule
+          | undefined;
+        const entryId = (entry as { entryId?: string }).entryId;
+
+        if (typeof content === 'undefined') return;
+
+        if ((content as GraphQLTimelineItem).__typename === 'TimelineTimelineItem') {
+          const inner = getItemContent(content as GraphQLTimelineItem);
+          if (inner) {
+            if (inner.__typename === 'TimelineTweet') {
+              const st = tweetFromItemContent(inner as ItemContentWithTweet);
+              if (st) entries.push({ kind: 'status', status: st });
+            } else if (inner.__typename === 'TimelineTimelineCursor') {
+              cursors.push(normalizeCursor(inner as GraphQLTimelineCursor));
+            }
+          }
+        } else if (isGraphQLTimelineCursor(content)) {
+          cursors.push(normalizeCursor(content));
+        } else if (
+          (content as unknown as GraphQLTimelineModule).__typename === 'TimelineTimelineModule'
+        ) {
+          pushModuleAsEntries(content as GraphQLTimelineModule, entryId, entry);
+        }
+      });
+    }
+  });
+
+  return { entries, cursors };
+};
+
 type ItemContentWithUser = {
   __typename?: string;
   user_results?: { result?: { __typename?: string } };

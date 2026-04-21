@@ -96,6 +96,9 @@ export const APIAboutAccountSchema = z
 
 export const APIUserSchema = z
   .object({
+    type: z
+      .literal('profile')
+      .openapi({ description: 'Discriminator: full user profile (API v2).' }),
     id: z.string(),
     name: z.string(),
     screen_name: z.string(),
@@ -485,12 +488,16 @@ export type APITwitterStatus = {
     | null;
   reposted_by: z.infer<typeof APIRepostedBySchema> | null;
   card?: z.infer<typeof APICardSchema>;
+  type: 'status';
 };
 
 /* Self-referential `z.lazy` needs `z.ZodType<APITwitterStatus>` so output is not widened to `unknown`. */
 export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
   .lazy(() =>
     z.object({
+      type: z
+        .literal('status')
+        .openapi({ description: 'Discriminator: single post/status (API v2).' }),
       id: z.string(),
       url: z.string(),
       text: z.string(),
@@ -575,11 +582,15 @@ export type APIBlueskyStatus = {
   provider: 'bluesky';
   /** Present when this row is a repost (`reasonRepost` in author feed). */
   reposted_by?: z.infer<typeof APIRepostedBySchema>;
+  type: 'status';
 };
 
 export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
   .lazy(() =>
     z.object({
+      type: z
+        .literal('status')
+        .openapi({ description: 'Discriminator: single post/status (API v2).' }),
       id: z.string(),
       cid: z.string().optional(),
       at_uri: z.string().optional(),
@@ -705,8 +716,64 @@ export const APISearchResultsBlueskySchema = z
   })
   .openapi('APISearchResultsBluesky');
 
+/** Grouped thread snippet in a profile/search-style timeline (`?groupthreads=1`). */
+export const TimelineThreadTwitterSchema = z
+  .object({
+    type: z.literal('thread').openapi({
+      description: 'Discriminator: grouped conversation snippet in a timeline (API v2).'
+    }),
+    conversation_id: z.string(),
+    statuses: z.array(APITwitterStatusSchema),
+    all_status_ids: z.array(z.string()).optional(),
+    truncated: z.boolean().openapi({
+      description:
+        'True when the conversation has more posts than listed in `statuses` (Twitter: `allTweetIds` length vs visible). False when counts match or upstream did not provide `allTweetIds`.'
+    })
+  })
+  .openapi('TimelineThreadTwitter');
+
+export const TimelineEntryTwitterSchema = z
+  .discriminatedUnion('type', [APITwitterStatusSchema, TimelineThreadTwitterSchema])
+  .openapi('TimelineEntryTwitter');
+
+export const APIGroupedSearchResultsSchema = z
+  .object({
+    code: z.number(),
+    results: z.array(TimelineEntryTwitterSchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APIGroupedSearchResults');
+
+export const TimelineThreadBlueskySchema = z
+  .object({
+    type: z.literal('thread').openapi({
+      description: 'Discriminator: grouped conversation snippet in a timeline (API v2).'
+    }),
+    conversation_id: z.string(),
+    statuses: z.array(APIBlueskyStatusSchema),
+    all_status_ids: z.array(z.string()).optional(),
+    truncated: z.boolean().openapi({
+      description:
+        'Always false for Bluesky grouped timelines (no native full-thread id list on feed rows).'
+    })
+  })
+  .openapi('TimelineThreadBluesky');
+
+export const TimelineEntryBlueskySchema = z
+  .discriminatedUnion('type', [APIBlueskyStatusSchema, TimelineThreadBlueskySchema])
+  .openapi('TimelineEntryBluesky');
+
+export const APIGroupedSearchResultsBlueskySchema = z
+  .object({
+    code: z.number(),
+    results: z.array(TimelineEntryBlueskySchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APIGroupedSearchResultsBluesky');
+
 /** Mastodon / ActivityPub normalized post (same baseline as Bluesky API v2). */
 export type APIMastodonStatus = {
+  type: 'status';
   id: string;
   url: string;
   text: string;
@@ -740,6 +807,9 @@ export type APIMastodonStatus = {
 export const APIMastodonStatusSchema: z.ZodType<APIMastodonStatus> = z
   .lazy(() =>
     z.object({
+      type: z
+        .literal('status')
+        .openapi({ description: 'Discriminator: single post/status (API v2).' }),
       id: z.string(),
       url: z.string(),
       text: z.string(),
@@ -929,6 +999,12 @@ export type ProfileAboutAPIResponse = z.infer<typeof ProfileAboutAPIResponseSche
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
 export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
 export type APISearchResultsBluesky = z.infer<typeof APISearchResultsBlueskySchema>;
+export type TimelineThreadTwitter = z.infer<typeof TimelineThreadTwitterSchema>;
+export type TimelineEntryTwitter = z.infer<typeof TimelineEntryTwitterSchema>;
+export type APIGroupedSearchResults = z.infer<typeof APIGroupedSearchResultsSchema>;
+export type TimelineThreadBluesky = z.infer<typeof TimelineThreadBlueskySchema>;
+export type TimelineEntryBluesky = z.infer<typeof TimelineEntryBlueskySchema>;
+export type APIGroupedSearchResultsBluesky = z.infer<typeof APIGroupedSearchResultsBlueskySchema>;
 export type APISearchResultsMastodon = z.infer<typeof APISearchResultsMastodonSchema>;
 export type APIProfileRelationshipList = z.infer<typeof APIProfileRelationshipListSchema>;
 export type APIUserListResults = z.infer<typeof APIUserListResultsSchema>;

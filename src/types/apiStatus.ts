@@ -66,6 +66,7 @@ export interface APIStatus {
   cid?: string;
   /** `at://…/app.bsky.feed.post/…` (Bluesky only). */
   at_uri?: string;
+  type?: 'status';
 }
 
 export interface APIBlueskyStatus extends APIStatus {
@@ -81,6 +82,7 @@ export interface APIMastodonStatus extends APIStatus {
 export interface APITikTokStatus extends APIStatus {
   provider: DataProvider.TikTok;
   views?: number | null;
+  type?: 'status';
 }
 
 export interface SocialPost {
