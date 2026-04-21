@@ -1,4 +1,5 @@
 import type { RouteHandler } from '@hono/zod-openapi';
+import type { APIBlueskyStatus } from '../api/schemas';
 import { Constants } from '../../constants';
 import { jsonAfterNormalize, normalizeApiJsonResponse } from '../api/normalizeApiJsonResponse';
 import { isParamTruthy } from '../../helpers/utils';
@@ -311,6 +312,7 @@ export const blueskyProfileStatusesAPIRequest = (async (
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
   const withReplies = isParamTruthy(query.with_replies ?? c.req.query('withReplies'));
+  const groupThreads = isParamTruthy(query.groupthreads ?? c.req.query('groupthreads'));
   const sinceParam = query.since;
 
   const statusesResponse = await blueskyProfileStatusesAPI(
@@ -319,7 +321,8 @@ export const blueskyProfileStatusesAPIRequest = (async (
       count,
       cursor,
       withReplies,
-      language: query.lang
+      language: query.lang,
+      groupThreads
     },
     c
   );
@@ -329,7 +332,14 @@ export const blueskyProfileStatusesAPIRequest = (async (
 
   if (applySinceNoContent) {
     const sinceMs = unixTimestampParamToMs(sinceParam);
-    const hasNewerPost = statusesResponse.results.some(s => {
+    const hasNewerPost = statusesResponse.results.some(item => {
+      if ('type' in item && item.type === 'thread') {
+        return item.statuses.some(s => {
+          const tMs = s.created_timestamp * 1000;
+          return Number.isFinite(tMs) && tMs > sinceMs;
+        });
+      }
+      const s = item as APIBlueskyStatus;
       const tMs = s.created_timestamp * 1000;
       return Number.isFinite(tMs) && tMs > sinceMs;
     });

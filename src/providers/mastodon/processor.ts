@@ -211,7 +211,10 @@ const facetFromMastodonNoteAnchor = (
   }
 
   const isMentionClass = /\bmention\b/.test(cls);
-  const acctFromUrl = absHref && /^https?:\/\//i.test(absHref) ? accountFromProfileHref(absHref, instanceDomain) : null;
+  const acctFromUrl =
+    absHref && /^https?:\/\//i.test(absHref)
+      ? accountFromProfileHref(absHref, instanceDomain)
+      : null;
 
   if (isMentionClass || acctFromUrl) {
     const acct = acctFromUrl ?? guessAcctFromMentionPlain(innerPlain, instanceDomain);
@@ -263,7 +266,8 @@ const plainTextAndFacetsFromMastodonNote = (
 
   const facets: APIFacet[] = [];
   const anchorRe = /<a\s+([^>]*)>([\s\S]*?)<\/a>/gi;
-  const parts: Array<{ kind: 'text'; html: string } | { kind: 'a'; attrs: string; inner: string }> = [];
+  const parts: Array<{ kind: 'text'; html: string } | { kind: 'a'; attrs: string; inner: string }> =
+    [];
   let lastIdx = 0;
   let m: RegExpExecArray | null;
   while ((m = anchorRe.exec(normalized)) !== null) {
@@ -288,7 +292,14 @@ const plainTextAndFacetsFromMastodonNote = (
     text += innerPlain;
     const end = text.length;
     const href = extractAttr(p.attrs, 'href');
-    const facet = facetFromMastodonNoteAnchor(p.attrs, href, innerPlain, start, end, instanceDomain);
+    const facet = facetFromMastodonNoteAnchor(
+      p.attrs,
+      href,
+      innerPlain,
+      start,
+      end,
+      instanceDomain
+    );
     if (facet) facets.push(facet);
   }
 
@@ -422,7 +433,8 @@ export const mastodonAccountToApiUser = (account: MastodonAccount, domain: strin
             verified_at: null
           }
         }
-      : {})
+      : {}),
+    type: 'profile'
   };
 };
 
@@ -556,7 +568,8 @@ export const buildAPIMastodonPost = async (
     replying_to,
     source: core.application?.name ?? 'Mastodon',
     embed_card: 'tweet',
-    provider: 'mastodon'
+    provider: 'mastodon',
+    type: 'status'
   };
 
   applyMedia(apiStatus, core);

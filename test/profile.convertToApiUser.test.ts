@@ -75,6 +75,7 @@ test('convertToApiUser expands bio t.co from entities.description.urls and build
 
   const apiUser = convertToApiUser(user, false);
 
+  expect(apiUser.type).toBe('profile');
   expect(apiUser.description).toContain('http://grok.com/download');
   expect(apiUser.description).not.toMatch(/t\.co\//);
   expect(apiUser.raw_description.text).toEqual(rawBio);

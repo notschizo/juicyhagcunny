@@ -45,7 +45,8 @@ export const blueskyProfileViewToApiUser = (view: BlueskyProfileView): APIUser =
     joined,
     birthday: { day: 0, month: 0, year: 0 },
     website: null,
-    profile_embed: false
+    profile_embed: false,
+    type: 'profile'
   };
 
   if (view.verification?.verifiedStatus === 'valid') {

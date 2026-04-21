@@ -1,29 +1,17 @@
 # AGENTS.md
 
-This is the repository for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. There is a public API provided for X/Twitter, Bluesky and such, the modern v2 API generates an OpenAPI spec. Typically deployed using Cloudflare Workers, this TypeScript app uses Hono for routing, i18next localization, zod API validation. 
+This is the repository for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. There is a public API provided for X/Twitter, Bluesky and such, the modern v2 API generates an OpenAPI spec. Typically deployed using Cloudflare Workers, this TypeScript app uses Hono for routing, i18next localization, zod API validation.
 
 ## Environment variables
 
 Environment variables are generally set in .env, not in Wrangler, except for certain secrets such as CREDENTIAL_KEY. When adding an environment variable, you generally have to add them in the following places for them to be included correctly during a build:
+
 - `.env.example` (for documentation)
 - `esbuild.config.mjs` (so it's passed to the worker during build)
 - `vitest.config.mts` (for tests)
 - `.github/workflows/deploy.yml` (So GitHub Actions variables/secrets are given to it during deployment)
 - `src/types/env.d.ts` (for type documentation)
 - `src/constants.ts` (We typically load all environment variables under the Constants object)
-
-## Formatting
-
-We use Prettier for formatting. To format the code, run `npm run prettier`.
-
-## Linting
-
-We use ESLint for linting. To lint the code, run `npm run lint:eslint`.
-
-## Testing
-
-We use Vitest for testing. To test the full suite of code, run `npm test`.
-
 ## Cursor Cloud specific instructions
 
 ### Prerequisites
@@ -33,14 +21,14 @@ We use Vitest for testing. To test the full suite of code, run `npm test`.
 
 ### Key commands
 
-| Task | Command |
-|---|---|
-| Install deps | `npm install` |
-| Lint | `npm run lint:eslint` |
-| Format | `npm run prettier` |
-| Build (local) | `npm run build-local` |
-| Test | `npm run test` |
-| Dev server | `npx wrangler dev --local` (serves on `http://localhost:8787`) |
+| Task          | Command                                                        |
+| ------------- | -------------------------------------------------------------- |
+| Install deps  | `npm install`                                                  |
+| Lint          | `npm run lint:eslint`                                          |
+| Format        | `npm run prettier`                                             |
+| Build (local) | `npm run build-local`                                          |
+| Test          | `npm run test`                                                 |
+| Dev server    | `npx wrangler dev --local` (serves on `http://localhost:8787`) |
 
 ### Dev server testing notes
 

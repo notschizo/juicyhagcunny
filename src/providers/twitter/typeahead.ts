@@ -118,7 +118,8 @@ export const typeaheadUserToApiUser = (u: TwitterTypeaheadUser): APIUser | null 
     likes: 0,
     joined: '',
     website: null,
-    verification
+    verification,
+    type: 'profile'
   };
 };
 

@@ -30,7 +30,8 @@ test('APIBlueskyStatusSchema parses minimal bluesky-shaped payload', () => {
       media_count: 0,
       likes: 0,
       joined: '',
-      website: null
+      website: null,
+      type: 'profile' as const
     },
     media: { photos: [] },
     raw_text: { text: 'hi', facets: [] },
@@ -39,7 +40,8 @@ test('APIBlueskyStatusSchema parses minimal bluesky-shaped payload', () => {
     replying_to: null,
     source: 'Bluesky Social',
     embed_card: 'tweet',
-    provider: 'bluesky' as const
+    provider: 'bluesky' as const,
+    type: 'status' as const
   };
 
   const r = APIBlueskyStatusSchema.safeParse(sample);

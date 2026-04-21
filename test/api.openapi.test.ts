@@ -29,3 +29,40 @@ test('GET /2/openapi.json returns OpenAPI 3 document with v2 paths', async () =>
   expect(doc.paths['/2/hit']).toBeUndefined();
   expect(doc.paths['/2/go']).toBeUndefined();
 });
+
+test('FxTwitter OpenAPI includes grouped timeline and v2 type discriminators', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/2/openapi.json', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toBe(200);
+  const doc = (await result.json()) as {
+    components?: { schemas?: Record<string, { properties?: Record<string, unknown> }> };
+  };
+  const schemas = doc.components?.schemas;
+  expect(schemas?.TimelineEntryTwitter).toBeDefined();
+  expect(schemas?.APIGroupedSearchResults).toBeDefined();
+  expect(schemas?.APITwitterStatus?.properties?.type).toBeDefined();
+  expect(schemas?.APIUser?.properties?.type).toBeDefined();
+});
+
+test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
+  const result = await app.request(
+    new Request('https://api.fxbsky.app/2/openapi.json', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toBe(200);
+  const doc = (await result.json()) as {
+    components?: { schemas?: Record<string, unknown> };
+  };
+  expect(doc.components?.schemas?.TimelineEntryBluesky).toBeDefined();
+  expect(doc.components?.schemas?.APIGroupedSearchResultsBluesky).toBeDefined();
+});

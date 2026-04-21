@@ -219,7 +219,7 @@ export const buildAPITwitterStatus = async (
     console.log('Tweet missing author on core', status.rest_id ?? status.legacy?.id_str);
     return null;
   }
-  const apiUser = convertToApiUser(graphQLUser);
+  const apiUser = convertToApiUser(graphQLUser, legacyAPI);
 
   /* Sometimes, `rest_id` is undefined for some reason. Inconsistent behavior. See: https://github.com/FxEmbed/FxEmbed/issues/416 */
   const id = status.rest_id ?? status.legacy.id_str ?? status.legacy?.conversation_id_str;
@@ -233,6 +233,9 @@ export const buildAPITwitterStatus = async (
   }
 
   /* Populating a lot of the basics */
+  if (!legacyAPI) {
+    apiStatus.type = 'status';
+  }
   apiStatus.url = `${Constants.TWITTER_ROOT}/${apiUser.screen_name}/status/${id}`;
   apiStatus.id = id;
   apiStatus.text = unescapeText(
@@ -444,12 +447,14 @@ export const buildAPITwitterStatus = async (
 
     if (status.author_community_relationship.community_results.result.admin_results?.result) {
       apiStatus.community.admin = convertToApiUser(
-        status.author_community_relationship.community_results.result.admin_results.result
+        status.author_community_relationship.community_results.result.admin_results.result,
+        legacyAPI
       );
     }
     if (status.author_community_relationship.community_results.result.creator_results?.result) {
       apiStatus.community.creator = convertToApiUser(
-        status.author_community_relationship.community_results.result.creator_results.result
+        status.author_community_relationship.community_results.result.creator_results.result,
+        legacyAPI
       );
     }
   }
