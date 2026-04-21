@@ -1,48 +1,48 @@
 export const Constants = {
-  /* These constants are populated by variables in .env, then set by Webpack */
-  STANDARD_DOMAIN_LIST: STANDARD_DOMAIN_LIST.split(','),
-  STANDARD_BSKY_DOMAIN_LIST: STANDARD_BSKY_DOMAIN_LIST.split(','),
-  STANDARD_TIKTOK_DOMAIN_LIST: STANDARD_TIKTOK_DOMAIN_LIST.split(','),
-  DIRECT_MEDIA_DOMAINS: DIRECT_MEDIA_DOMAINS.split(','),
-  TEXT_ONLY_DOMAINS: TEXT_ONLY_DOMAINS.split(','),
-  INSTANT_VIEW_DOMAINS: INSTANT_VIEW_DOMAINS.split(','),
-  GALLERY_DOMAINS: GALLERY_DOMAINS.split(','),
-  FORCE_MOSAIC_DOMAINS: FORCE_MOSAIC_DOMAINS.split(','),
-  OLD_EMBED_DOMAINS: OLD_EMBED_DOMAINS.split(','),
-  MOSAIC_DOMAIN_LIST: MOSAIC_DOMAIN_LIST.split(','),
-  MOSAIC_BSKY_DOMAIN_LIST: MOSAIC_BSKY_DOMAIN_LIST.split(','),
-  POLYGLOT_DOMAIN_LIST: POLYGLOT_DOMAIN_LIST.split(','),
-  POLYGLOT_ACCESS_TOKEN: POLYGLOT_ACCESS_TOKEN,
-  API_HOST_LIST: API_HOST_LIST.split(','),
-  API_HOST_ROOT: `https://${API_HOST_LIST.split(',')[0]}`,
-  BLUESKY_API_HOST_LIST: (BLUESKY_API_HOST_LIST ?? '')
+  /* Populated from process.env (.env under Bun/Node, or each key inlined by esbuild for Workers). */
+  STANDARD_DOMAIN_LIST: (process.env.STANDARD_DOMAIN_LIST ?? '').split(','),
+  STANDARD_BSKY_DOMAIN_LIST: (process.env.STANDARD_BSKY_DOMAIN_LIST ?? '').split(','),
+  STANDARD_TIKTOK_DOMAIN_LIST: (process.env.STANDARD_TIKTOK_DOMAIN_LIST ?? '').split(','),
+  DIRECT_MEDIA_DOMAINS: (process.env.DIRECT_MEDIA_DOMAINS ?? '').split(','),
+  TEXT_ONLY_DOMAINS: (process.env.TEXT_ONLY_DOMAINS ?? '').split(','),
+  INSTANT_VIEW_DOMAINS: (process.env.INSTANT_VIEW_DOMAINS ?? '').split(','),
+  GALLERY_DOMAINS: (process.env.GALLERY_DOMAINS ?? '').split(','),
+  FORCE_MOSAIC_DOMAINS: (process.env.FORCE_MOSAIC_DOMAINS ?? '').split(','),
+  OLD_EMBED_DOMAINS: (process.env.OLD_EMBED_DOMAINS ?? '').split(','),
+  MOSAIC_DOMAIN_LIST: (process.env.MOSAIC_DOMAIN_LIST ?? '').split(','),
+  MOSAIC_BSKY_DOMAIN_LIST: (process.env.MOSAIC_BSKY_DOMAIN_LIST ?? '').split(','),
+  POLYGLOT_DOMAIN_LIST: (process.env.POLYGLOT_DOMAIN_LIST ?? '').split(','),
+  POLYGLOT_ACCESS_TOKEN: process.env.POLYGLOT_ACCESS_TOKEN ?? '',
+  API_HOST_LIST: (process.env.API_HOST_LIST ?? '').split(','),
+  API_HOST_ROOT: `https://${(process.env.API_HOST_LIST ?? '').split(',')[0]}`,
+  BLUESKY_API_HOST_LIST: (process.env.BLUESKY_API_HOST_LIST ?? '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean),
   BLUESKY_API_HOST_ROOT: (() => {
-    const h = (BLUESKY_API_HOST_LIST ?? '')
+    const h = (process.env.BLUESKY_API_HOST_LIST ?? '')
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)[0];
     return h ? `https://${h}` : '';
   })(),
-  GENERIC_API_HOST_LIST: (GENERIC_API_HOST_LIST ?? '')
+  GENERIC_API_HOST_LIST: (process.env.GENERIC_API_HOST_LIST ?? '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean),
   GENERIC_API_HOST_ROOT: (() => {
-    const h = (GENERIC_API_HOST_LIST ?? '')
+    const h = (process.env.GENERIC_API_HOST_LIST ?? '')
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)[0];
     return h ? `https://${h}` : '';
   })(),
-  RELEASE_NAME: RELEASE_NAME,
-  GIF_TRANSCODE_DOMAIN_LIST: GIF_TRANSCODE_DOMAIN_LIST.split(','),
-  VIDEO_TRANSCODE_DOMAIN_LIST: VIDEO_TRANSCODE_DOMAIN_LIST.split(','),
-  VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: VIDEO_TRANSCODE_BSKY_DOMAIN_LIST.split(','),
+  RELEASE_NAME: process.env.RELEASE_NAME || 'local',
+  GIF_TRANSCODE_DOMAIN_LIST: (process.env.GIF_TRANSCODE_DOMAIN_LIST ?? '').split(','),
+  VIDEO_TRANSCODE_DOMAIN_LIST: (process.env.VIDEO_TRANSCODE_DOMAIN_LIST ?? '').split(','),
+  VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: (process.env.VIDEO_TRANSCODE_BSKY_DOMAIN_LIST ?? '').split(','),
   API_DOCS_URL: `https://github.com/FxEmbed/FxEmbed/wiki/API-Home`,
-  TWITTER_ROOT: TWITTER_ROOT || 'https://x.com',
+  TWITTER_ROOT: process.env.TWITTER_ROOT || 'https://x.com',
   HORIZON_WEB_ROOT: 'https://app.fxtwitter.com',
   TWITTER_API_ROOT: 'https://api.x.com',
   TWITTER_VIDEO_BASE: 'https://video.twimg.com',
@@ -96,7 +96,7 @@ export const Constants = {
   RESPONSE_HEADERS: {
     'allow': 'OPTIONS, GET, PURGE, HEAD',
     'content-type': 'text/html;charset=UTF-8',
-    'x-powered-by': `${RELEASE_NAME}`,
+    'x-powered-by': `${process.env.RELEASE_NAME || 'local'}`,
     'x-trans-rights': 'true',
     'Vary': 'Accept-Encoding, User-Agent'
   },

@@ -5,11 +5,13 @@ import { userAPI } from './providers/twitter/profile';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { getBranding } from './helpers/branding';
 import { InputFlags } from './types/types';
+import { formatRuntime } from './helpers/runtime';
 
 export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
   return c.html(
     Strings.BASE_HTML.format({
+      runtime: formatRuntime(),
       lang: '',
       headers: [
         `<meta property="og:title" content="${branding.name}"/>`,
@@ -73,6 +75,7 @@ export const handleProfile = async (
 
   return c.html(
     Strings.BASE_HTML.format({
+      runtime: formatRuntime(),
       brandingName: branding.name,
       lang: `lang="en"`,
       headers: headers.join('')

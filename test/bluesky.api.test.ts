@@ -325,7 +325,36 @@ test('GET /2/profile/{handle}/statuses returns feed, cursor.bottom, and reposted
   expect(body.results.length).toBe(2);
   expect(body.results[0].id).toBe('rkeymain');
   expect(body.results[0].text).toContain('Hello timeline');
+  expect((body.results[0] as { type?: string }).type).toBe('status');
   expect(body.results[1].reposted_by?.screen_name).toBe('reposter.test');
+});
+
+test('GET /2/profile/{handle}/statuses?groupthreads=1 returns discriminated timeline rows', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo) => {
+    const u = typeof input === 'string' ? input : input.url;
+    if (u.includes('app.bsky.feed.getAuthorFeed')) {
+      return new Response(JSON.stringify(authorFeed), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    throw new Error(`Unexpected fetch: ${u}`);
+  });
+
+  const res = await app.request(
+    'https://api.fxbsky.app/2/profile/author.test/statuses?groupthreads=1',
+    { headers: { 'User-Agent': 'FxEmbedTest/1.0' } }
+  );
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as {
+    code: number;
+    results: Array<{ type: 'status' | 'thread'; statuses?: unknown[]; conversation_id?: string }>;
+  };
+  expect(body.code).toBe(200);
+  expect(body.results.length).toBe(2);
+  for (const row of body.results) {
+    expect(row.type === 'status' || row.type === 'thread').toBe(true);
+  }
 });
 
 test('GET /2/profile/{handle}/media uses posts_with_media filter and cursor.bottom', async () => {

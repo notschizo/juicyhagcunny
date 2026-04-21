@@ -210,6 +210,10 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
     };
   }
 
+  if (!legacyAPI) {
+    apiUser.type = 'profile';
+  }
+
   return apiUser;
 };
 

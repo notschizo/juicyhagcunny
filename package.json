@@ -25,15 +25,15 @@
   "author": "dangered wolf",
   "license": "MIT",
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.1032.0",
-    "@aws-sdk/s3-request-presigner": "^3.1032.0",
-    "@cloudflare/vitest-pool-workers": "^0.14.7",
-    "@cloudflare/workers-types": "^4.20260418.1",
+    "@aws-sdk/client-s3": "^3.1033.0",
+    "@aws-sdk/s3-request-presigner": "^3.1033.0",
+    "@cloudflare/vitest-pool-workers": "^0.14.8",
+    "@cloudflare/workers-types": "^4.20260421.1",
     "@eslint/js": "^10.0.1",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@sentry/esbuild-plugin": "^5.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
     "dotenv": "^17.4.2",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
@@ -45,9 +45,9 @@
     "ts-loader": "^9.5.7",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.58.2",
+    "typescript-eslint": "^8.59.0",
     "vitest": "^4.1.4",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.84.0"
   },
   "dependencies": {
     "@hono/sentry": "^1.2.2",

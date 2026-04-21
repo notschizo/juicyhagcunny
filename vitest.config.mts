@@ -1,47 +1,61 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
+import { WORKER_TEST_PROCESS_ENV } from './test/helpers/env';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function readCompatDateFromWrangler(configPath: string): string | null {
+  try {
+    const text = fs.readFileSync(configPath, 'utf8');
+    const m = text.match(/^\s*compatibility_date\s*=\s*"([^"]+)"/m);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveWranglerConfigPath(): string | undefined {
+  for (const name of ['wrangler.toml', 'wrangler.jsonc', 'wrangler.json']) {
+    const p = path.join(__dirname, name);
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  const example = path.join(__dirname, 'wrangler.example.toml');
+  if (fs.existsSync(example)) {
+    return example;
+  }
+  return undefined;
+}
+
+const wranglerConfigPath = resolveWranglerConfigPath();
+const compatibilityDate =
+  (wranglerConfigPath && readCompatDateFromWrangler(wranglerConfigPath)) ?? '2026-03-21';
 
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      // Auto-discovers wrangler.toml. Disable remote bindings so CI does not need
-      // Cloudflare login (e.g. AI binding remote proxy).
       remoteBindings: false,
-      miniflare: {}
+      // Use Miniflare options only (not `wrangler.configPath`): loading the full Wrangler project
+      // changes isolate setup and can surface empty `process.env` for app code, breaking realm routing
+      // (e.g. api.fxbsky.app must match BLUESKY_API_HOST_LIST, not the embed bluesky realm).
+      miniflare: {
+        compatibilityDate
+      }
     })
   ],
-  define: {
-    // Build-time replacements for global variables
-    RELEASE_NAME: JSON.stringify('fixtweet-test'),
-    TEXT_ONLY_DOMAINS: JSON.stringify('t.fxtwitter.com,t.twittpr.com,t.fixupx.com'),
-    INSTANT_VIEW_DOMAINS: JSON.stringify('i.fxtwitter.com,i.twittpr.com,i.fixupx.com'),
-    GALLERY_DOMAINS: JSON.stringify('g.fxtwitter.com,g.twittpr.com,g.fixupx.com'),
-    FORCE_MOSAIC_DOMAINS: JSON.stringify('m.fxtwitter.com,m.twittpr.com,m.fixupx.com'),
-    OLD_EMBED_DOMAINS: JSON.stringify('o.fxtwitter.com,o.twittpr.com,o.fixupx.com'),
-    STANDARD_DOMAIN_LIST: JSON.stringify('fxtwitter.com,fixupx.com,twittpr.com'),
-    STANDARD_TIKTOK_DOMAIN_LIST: JSON.stringify('dxtiktok.com,cocktiktok.com'),
-    STANDARD_BSKY_DOMAIN_LIST: JSON.stringify('fxbsky.app'),
-    DIRECT_MEDIA_DOMAINS: JSON.stringify(
-      'd.fxtwitter.com,dl.fxtwitter.com,d.fixupx.com,dl.fixupx.com'
-    ),
-    MOSAIC_DOMAIN_LIST: JSON.stringify('mosaic.fxtwitter.com'),
-    POLYGLOT_DOMAIN_LIST: JSON.stringify('polyglot.fxembed.com'),
-    POLYGLOT_ACCESS_TOKEN: JSON.stringify('example-token'),
-    MOSAIC_BSKY_DOMAIN_LIST: JSON.stringify('mosaic.fxbsky.app'),
-    API_HOST_LIST: JSON.stringify('api.fxtwitter.com'),
-    BLUESKY_API_HOST_LIST: JSON.stringify('api.fxbsky.app'),
-    GENERIC_API_HOST_LIST: JSON.stringify('api.fxembed.com'),
-    GIF_TRANSCODE_DOMAIN_LIST: JSON.stringify('gif.fxtwitter.com'),
-    VIDEO_TRANSCODE_DOMAIN_LIST: JSON.stringify('video.fxtwitter.com'),
-    VIDEO_TRANSCODE_BSKY_DOMAIN_LIST: JSON.stringify('video.fxbsky.app'),
-    SENTRY_DSN: null,
-    TWITTER_ROOT: JSON.stringify('https://x.com'),
-    ENCRYPTED_CREDENTIALS: JSON.stringify(''),
-    CREDENTIALS_IV: JSON.stringify('')
+  // Vite SSR can replace `process.env` with `{}` unless this is set; pool Workers tests then see
+  // empty env and mis-route hosts (e.g. API hits the embed realm → 302). See workers-sdk#8718.
+  ssr: {
+    keepProcessEnv: true
   },
   test: {
     include: ['test/*.ts'],
     globals: true,
+    env: { ...WORKER_TEST_PROCESS_ENV },
     coverage: {
       include: ['src/**/*.{ts,js}']
     }

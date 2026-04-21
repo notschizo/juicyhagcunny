@@ -23,6 +23,7 @@ import { normalizeLanguage } from '../helpers/language';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { constructTikTokVideo } from '../providers/tiktok/conversation';
 import { InputFlags } from '../types/types';
+import { formatRuntime } from '../helpers/runtime';
 
 /**
  * Check if the tweet text is essentially just an article URL with no meaningful additional content.
@@ -63,6 +64,7 @@ export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
   return c.html(
     Strings.BASE_HTML.format({
+      runtime: formatRuntime(),
       brandingName: branding.name,
       lang: '',
       headers: [
@@ -843,6 +845,7 @@ export const handleStatus = async (
   /* Finally, after all that work we return the response HTML! */
   return c.html(
     Strings.BASE_HTML.format({
+      runtime: formatRuntime(),
       lang: `lang="${lang}"`,
       headers: headers.join(''),
       body: ivbody

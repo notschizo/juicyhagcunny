@@ -27,12 +27,40 @@ test('API profile statuses returns tweets and cursors for known user', async () 
   expect(typeof response.cursor.bottom).toBe('string');
 
   const first = response.results[0] as APITwitterStatus;
+  expect(first.type).toBe('status');
+  expect(first.author.type).toBe('profile');
   expect(first.id).toEqual('2036082537949434164');
   expect(first.quotes).toEqual(383);
   expect(first.text).toBeTruthy();
   expect(first.url).toContain(twitterBaseUrl);
   expect(first.url).toContain('/status/');
   expect(first.author?.screen_name).toBeTruthy();
+});
+
+test('API profile statuses with groupthreads=1 returns discriminated results', async () => {
+  const result = await app.request(
+    new Request('https://api.fxtwitter.com/2/profile/x/statuses?groupthreads=1&count=5', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(result.status).toEqual(200);
+  const response = (await result.json()) as {
+    code: number;
+    results: Array<{ type: 'status' | 'thread' } & Record<string, unknown>>;
+  };
+  expect(response.code).toEqual(200);
+  expect(response.results.length).toBeGreaterThan(0);
+  for (const row of response.results) {
+    expect(row.type === 'status' || row.type === 'thread').toBe(true);
+    if (row.type === 'thread') {
+      expect(Array.isArray(row.statuses)).toBe(true);
+      expect(typeof row.conversation_id).toBe('string');
+      expect(typeof row.truncated).toBe('boolean');
+    }
+  }
 });
 
 test('API profile statuses accepts count and cursor query params', async () => {

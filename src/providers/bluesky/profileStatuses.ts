@@ -3,10 +3,13 @@ import { Constants } from '../../constants';
 import type {
   APIBlueskyStatus,
   APIRepostedBy,
-  APISearchResultsBluesky
+  APIGroupedSearchResultsBluesky,
+  APISearchResultsBluesky,
+  TimelineEntryBluesky
 } from '../../realms/api/schemas';
 import { buildAPIBlueskyPost } from './processor';
 import { fetchActorLikes, fetchAuthorFeed } from './client';
+import { rkeyFromPostAtUri } from './uris';
 
 const REASON_REPOST = 'app.bsky.feed.defs#reasonRepost';
 
@@ -35,26 +38,99 @@ function normalizePostView(post: BlueskyPost): BlueskyPost {
   };
 }
 
+async function buildStatusFromFeedItem(
+  c: Context,
+  item: BlueskyFeedViewPost,
+  language?: string
+): Promise<APIBlueskyStatus | null> {
+  const raw = item.post;
+  if (!raw?.uri || !raw.cid) return null;
+  const post = normalizePostView(raw);
+  try {
+    const status = await buildAPIBlueskyPost(c, post, language);
+    const rb = repostedByFromFeedReason(item.reason);
+    return (rb ? { ...status, reposted_by: rb } : status) as APIBlueskyStatus;
+  } catch (err) {
+    console.error('Error building Bluesky profile timeline post', err);
+    return null;
+  }
+}
+
+/** Consecutive rows where each post replies to the previous (same author), feed order newest-first. */
+export function groupConsecutiveSelfReplies(feed: BlueskyFeedViewPost[]): BlueskyFeedViewPost[][] {
+  const groups: BlueskyFeedViewPost[][] = [];
+  let i = 0;
+  while (i < feed.length) {
+    if (feed[i].reason) {
+      groups.push([feed[i]]);
+      i++;
+      continue;
+    }
+    let j = i;
+    while (j + 1 < feed.length && !feed[j + 1].reason) {
+      const newer = feed[j];
+      const older = feed[j + 1];
+      const newerDid = newer.post?.author?.did;
+      const olderDid = older.post?.author?.did;
+      if (!newerDid || newerDid !== olderDid) break;
+      const rec = newer.post?.record as { reply?: { parent?: { uri?: string } } } | undefined;
+      const parentUri = rec?.reply?.parent?.uri;
+      if (parentUri !== older.post?.uri) break;
+      j++;
+    }
+    if (j > i) {
+      groups.push(feed.slice(i, j + 1));
+      i = j + 1;
+    } else {
+      groups.push([feed[i]]);
+      i++;
+    }
+  }
+  return groups;
+}
+
+async function feedViewPostsToGroupedTimeline(
+  c: Context,
+  feed: BlueskyFeedViewPost[],
+  language?: string
+): Promise<TimelineEntryBluesky[]> {
+  const groups = groupConsecutiveSelfReplies(feed);
+  const out: TimelineEntryBluesky[] = [];
+
+  for (const g of groups) {
+    if (g.length === 1) {
+      const s = await buildStatusFromFeedItem(c, g[0], language);
+      if (s) out.push(s);
+      continue;
+    }
+    const built = (
+      await Promise.all(g.map(item => buildStatusFromFeedItem(c, item, language)))
+    ).filter((s): s is APIBlueskyStatus => s !== null);
+    if (built.length === 0) continue;
+    if (built.length === 1) {
+      out.push(built[0]);
+      continue;
+    }
+    const newestRec = g[0].post?.record as { reply?: { root?: { uri?: string } } } | undefined;
+    const rootUri = newestRec?.reply?.root?.uri;
+    const conversation_id = rkeyFromPostAtUri(rootUri) ?? built[built.length - 1].id;
+    const chronological = [...built].reverse();
+    out.push({
+      type: 'thread',
+      conversation_id,
+      statuses: chronological,
+      truncated: false
+    });
+  }
+  return out;
+}
+
 async function feedViewPostsToTimeline(
   c: Context,
   feed: BlueskyFeedViewPost[],
   language?: string
 ): Promise<APIBlueskyStatus[]> {
-  const built = await Promise.all(
-    feed.map(async item => {
-      const raw = item.post;
-      if (!raw?.uri || !raw.cid) return null;
-      const post = normalizePostView(raw);
-      try {
-        const status = await buildAPIBlueskyPost(c, post, language);
-        const rb = repostedByFromFeedReason(item.reason);
-        return (rb ? { ...status, reposted_by: rb } : status) as APIBlueskyStatus;
-      } catch (err) {
-        console.error('Error building Bluesky profile timeline post', err);
-        return null;
-      }
-    })
-  );
+  const built = await Promise.all(feed.map(item => buildStatusFromFeedItem(c, item, language)));
   return built.filter((s): s is APIBlueskyStatus => s !== null);
 }
 
@@ -65,9 +141,10 @@ async function blueskyAuthorFeedSearchPage(
     cursor: string | null;
     filter: BlueskyAuthorFeedFilter;
     language?: string;
+    groupThreads?: boolean;
   },
   c: Context
-): Promise<APISearchResultsBluesky> {
+): Promise<APISearchResultsBluesky | APIGroupedSearchResultsBluesky> {
   const result = await fetchAuthorFeed(
     {
       actor,
@@ -87,7 +164,9 @@ async function blueskyAuthorFeedSearchPage(
 
   const feed = result.data.feed ?? [];
   const nextCursor = result.data.cursor ?? null;
-  const results = await feedViewPostsToTimeline(c, feed, options.language);
+  const results = options.groupThreads
+    ? await feedViewPostsToGroupedTimeline(c, feed, options.language)
+    : await feedViewPostsToTimeline(c, feed, options.language);
 
   return {
     code: 200,
@@ -103,16 +182,23 @@ export const blueskyProfileStatusesAPI = async (
     cursor: string | null;
     withReplies: boolean;
     language?: string;
+    groupThreads?: boolean;
   },
   c: Context
-): Promise<APISearchResultsBluesky> => {
+): Promise<APISearchResultsBluesky | APIGroupedSearchResultsBluesky> => {
   const filter: BlueskyAuthorFeedFilter = options.withReplies
     ? 'posts_with_replies'
     : 'posts_no_replies';
 
   return blueskyAuthorFeedSearchPage(
     actor,
-    { count: options.count, cursor: options.cursor, filter, language: options.language },
+    {
+      count: options.count,
+      cursor: options.cursor,
+      filter,
+      language: options.language,
+      groupThreads: options.groupThreads
+    },
     c
   );
 };

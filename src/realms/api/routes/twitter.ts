@@ -1,3 +1,4 @@
+import type { APITwitterStatus } from '../schemas';
 import {
   constructTwitterThread,
   constructTwitterConversation,
@@ -212,6 +213,7 @@ export const profileStatusesAPIRequest = (async (c): Promise<TwitterProfileStatu
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
   const withReplies = isParamTruthy(query.with_replies ?? c.req.query('withReplies'));
+  const groupThreads = isParamTruthy(query.groupthreads ?? c.req.query('groupthreads'));
   const sinceParam = query.since;
 
   const statusesResponse = await profileStatusesAPI(
@@ -220,7 +222,8 @@ export const profileStatusesAPIRequest = (async (c): Promise<TwitterProfileStatu
     cursor,
     c,
     withReplies,
-    query.lang
+    query.lang,
+    groupThreads
   );
 
   const applySinceNoContent =
@@ -228,7 +231,14 @@ export const profileStatusesAPIRequest = (async (c): Promise<TwitterProfileStatu
 
   if (applySinceNoContent) {
     const sinceMs = unixTimestampParamToMs(sinceParam);
-    const hasNewerPost = statusesResponse.results.some(s => {
+    const hasNewerPost = statusesResponse.results.some(item => {
+      if ('type' in item && item.type === 'thread') {
+        return item.statuses.some(s => {
+          const tMs = s.created_timestamp * 1000;
+          return Number.isFinite(tMs) && tMs > sinceMs;
+        });
+      }
+      const s = item as APITwitterStatus;
       const tMs = s.created_timestamp * 1000;
       return Number.isFinite(tMs) && tMs > sinceMs;
     });

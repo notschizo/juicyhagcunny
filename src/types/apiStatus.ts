@@ -66,6 +66,8 @@ export interface APIStatus {
   cid?: string;
   /** `at://…/app.bsky.feed.post/…` (Bluesky only). */
   at_uri?: string;
+  /** Discriminator: single post/status (non-Twitter providers; Twitter uses `APITwitterStatus`). */
+  type: 'status';
 }
 
 export interface APIBlueskyStatus extends APIStatus {

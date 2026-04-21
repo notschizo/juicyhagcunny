@@ -8,6 +8,7 @@ import {
   APIProfileRelationshipListSchema,
   APIUserListResultsSchema,
   APISearchResultsSchema,
+  APIGroupedSearchResultsSchema,
   APITypeaheadResponseSchema,
   APITrendsResponseSchema,
   ApiQueryErrorSchema,
@@ -347,13 +348,21 @@ export const profileStatusesV2Route = createRoute({
         description:
           'If truthy (`1`, `true`, `yes`, `on`, or empty), include replies using alternate upstream timelines'
       }),
+      groupthreads: z.string().optional().openapi({
+        description:
+          'If truthy (`1`, `true`, etc.), return `results` as a mix of `type: "status"` and `type: "thread"` entries (grouped conversation rows).'
+      }),
       ...langQuery.shape
     })
   },
   responses: {
     200: {
-      description: 'Timeline page',
-      content: { 'application/json': { schema: APISearchResultsSchema } }
+      description: 'Timeline page (flat or grouped when `groupthreads` is set)',
+      content: {
+        'application/json': {
+          schema: z.union([APISearchResultsSchema, APIGroupedSearchResultsSchema])
+        }
+      }
     },
     204: {
       description:

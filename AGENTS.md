@@ -12,19 +12,6 @@ Environment variables are generally set in .env, not in Wrangler, except for cer
 - `.github/workflows/deploy.yml` (So GitHub Actions variables/secrets are given to it during deployment)
 - `src/types/env.d.ts` (for type documentation)
 - `src/constants.ts` (We typically load all environment variables under the Constants object)
-
-## Formatting
-
-We use Prettier for formatting. To format the code, run `npm run prettier`.
-
-## Linting
-
-We use ESLint for linting. To lint the code, run `npm run lint:eslint`.
-
-## Testing
-
-We use Vitest for testing. To test the full suite of code, run `npm test`.
-
 ## Cursor Cloud specific instructions
 
 ### Prerequisites
@@ -42,6 +29,7 @@ We use Vitest for testing. To test the full suite of code, run `npm test`.
 | Build (local) | `npm run build-local`                                          |
 | Test          | `npm run test`                                                 |
 | Dev server    | `npx wrangler dev --local` (serves on `http://localhost:8787`) |
+<<<<<<< starlight-docs
 
 ### Docs site (`docs/`)
 
@@ -49,6 +37,8 @@ We use Vitest for testing. To test the full suite of code, run `npm test`.
 - Refresh API reference specs from **production**: `cd docs && npm run extract-openapi`
 - Refresh from your **local worker** (after `wrangler dev --local`): `cd docs && npm run extract-openapi:local` (default port `8787`; custom: `npm run extract-openapi:local -- 9000`). The script sets `Host` to `api.fxtwitter.com` / `api.fxbsky.app` so routing matches production.
 - Then `npm run dev` in `docs/` to preview.
+=======
+>>>>>>> main
 
 ### Dev server testing notes
 

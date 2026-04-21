@@ -433,7 +433,8 @@ export const mastodonAccountToApiUser = (account: MastodonAccount, domain: strin
             verified_at: null
           }
         }
-      : {})
+      : {}),
+    type: 'profile'
   };
 };
 
@@ -567,7 +568,8 @@ export const buildAPIMastodonPost = async (
     replying_to,
     source: core.application?.name ?? 'Mastodon',
     embed_card: 'tweet',
-    provider: 'mastodon'
+    provider: 'mastodon',
+    type: 'status'
   };
 
   applyMedia(apiStatus, core);

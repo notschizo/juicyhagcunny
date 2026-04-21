@@ -4,6 +4,7 @@ import {
   APIUserListResultsSchema,
   ApiQueryErrorSchema,
   APISearchResultsBlueskySchema,
+  APIGroupedSearchResultsBlueskySchema,
   APITrendsResponseSchema,
   SocialConversationBlueskySchema,
   SocialThreadBlueskySchema,
@@ -603,13 +604,21 @@ export const blueskyProfileStatusesV2Route = createRoute({
         description:
           'If truthy (`1`, `true`, `yes`, `on`, or empty), include replies (`posts_with_replies` upstream); otherwise `posts_no_replies`.'
       }),
+      groupthreads: z.string().optional().openapi({
+        description:
+          'If truthy, return `results` as a mix of `type: "status"` and `type: "thread"` entries (consecutive self-reply chains grouped).'
+      }),
       ...langQuery.shape
     })
   },
   responses: {
     200: {
-      description: 'Timeline page',
-      content: { 'application/json': { schema: APISearchResultsBlueskySchema } }
+      description: 'Timeline page (flat or grouped when `groupthreads` is set)',
+      content: {
+        'application/json': {
+          schema: z.union([APISearchResultsBlueskySchema, APIGroupedSearchResultsBlueskySchema])
+        }
+      }
     },
     204: {
       description:

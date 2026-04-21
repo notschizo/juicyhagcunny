@@ -33,11 +33,17 @@ import {
   getTwitterUserRestIdByScreenName,
   type ProfileHandleOrId
 } from './profile';
-import { processTimelineInstructions, processUserRelationshipTimelineInstructions } from './search';
+import {
+  processTimelineInstructions,
+  processGroupedTimelineInstructions,
+  processUserRelationshipTimelineInstructions
+} from './search';
 import type {
   APIProfileRelationshipList,
+  APIGroupedSearchResults,
   APISearchResults,
-  APITwitterStatus
+  APITwitterStatus,
+  TimelineEntryTwitter
 } from '../../realms/api/schemas';
 
 export const profileStatusesAPI = async (
@@ -46,8 +52,9 @@ export const profileStatusesAPI = async (
   cursor: string | null,
   c: Context,
   withReplies = false,
-  language?: string
-): Promise<APISearchResults> => {
+  language?: string,
+  groupThreads = false
+): Promise<APISearchResults | APIGroupedSearchResults> => {
   const userId =
     handleOrId.type === 'userId'
       ? handleOrId.value
@@ -107,6 +114,64 @@ export const profileStatusesAPI = async (
   const instructions = getProfileStatusesTimelineInstructions(results.tweets.data);
   if (!instructions) {
     return { code: 404, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  if (groupThreads) {
+    const { entries, cursors } = processGroupedTimelineInstructions(instructions);
+    const topCursor = cursors.find(cur => cur.cursorType === 'Top')?.value ?? null;
+    const bottomCursor = cursors.find(cur => cur.cursorType === 'Bottom')?.value ?? null;
+
+    const builtResults = (
+      await Promise.all(
+        entries.map(async (e): Promise<TimelineEntryTwitter | null> => {
+          if (e.kind === 'status') {
+            const s = await buildAPITwitterStatus(c, e.status, language, null, false, false).catch(
+              err => {
+                console.error('Error building status', err);
+                return null;
+              }
+            );
+            return s !== null && !(s as FetchResults)?.status ? s : null;
+          }
+          const built = (
+            await Promise.all(
+              e.statuses.map(st =>
+                buildAPITwitterStatus(c, st, language, null, false, false).catch(err => {
+                  console.error('Error building status', err);
+                  return null;
+                })
+              )
+            )
+          ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+
+          if (built.length === 0) return null;
+
+          if (built.length === 1 && (!e.all_status_ids || e.all_status_ids.length <= 1)) {
+            return built[0];
+          }
+
+          const allIds = e.all_status_ids;
+          const truncated = allIds !== undefined && allIds.length > built.length;
+
+          return {
+            type: 'thread' as const,
+            conversation_id: e.conversation_id,
+            statuses: built,
+            truncated,
+            ...(allIds && allIds.length > 0 ? { all_status_ids: allIds } : {})
+          };
+        })
+      )
+    ).filter((x): x is TimelineEntryTwitter => x !== null);
+
+    return {
+      code: 200,
+      results: builtResults,
+      cursor: {
+        top: topCursor,
+        bottom: bottomCursor
+      }
+    };
   }
 
   const { statuses, cursors } = processTimelineInstructions(instructions);
