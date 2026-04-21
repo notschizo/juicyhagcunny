@@ -52,7 +52,8 @@ export default defineConfig({
               label: 'Advanced',
               items: [
                 { label: 'RSS & Atom feeds', slug: 'guide/advanced/rss-atom-feeds' },
-                { label: 'Custom Redirect', slug: 'guide/advanced/custom-redirect' }
+                { label: 'Custom Redirect', slug: 'guide/advanced/custom-redirect' },
+                { label: 'Custom Embed Branding', slug: 'guide/advanced/custom-branding' }
               ]
             },
             { label: 'Compare Features', slug: 'guide/compare' },
