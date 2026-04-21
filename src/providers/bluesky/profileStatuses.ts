@@ -107,6 +107,10 @@ async function feedViewPostsToGroupedTimeline(
       await Promise.all(g.map(item => buildStatusFromFeedItem(c, item, language)))
     ).filter((s): s is APIBlueskyStatus => s !== null);
     if (built.length === 0) continue;
+    if (built.length === 1) {
+      out.push(built[0]);
+      continue;
+    }
     const newestRec = g[0].post?.record as { reply?: { root?: { uri?: string } } } | undefined;
     const rootUri = newestRec?.reply?.root?.uri;
     const conversation_id = rkeyFromPostAtUri(rootUri) ?? built[built.length - 1].id;
