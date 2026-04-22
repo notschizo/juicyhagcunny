@@ -160,7 +160,9 @@ export const APIUserSchema = z
         verified: z.boolean(),
         type: z.enum(['organization', 'government', 'individual']).nullable(),
         verified_at: z.string().nullable().optional(),
-        identity_verified: z.boolean().optional()
+        identity_verified: z.boolean().optional(),
+        /** Bluesky: issuer handle (`bsky.app`), issuer DID, or `trusted_verifier` when upstream omits `verifications`. */
+        verified_by: z.string().optional()
       })
       .optional(),
     about_account: APIAboutAccountSchema.optional(),

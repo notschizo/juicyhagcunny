@@ -5,6 +5,7 @@ import type { APIUser, UserAPIResponse } from '../../realms/api/schemas';
 import { blueskyFacetsToApiFacets } from './facets';
 import { detectBlueskyDescriptionFacets } from './detectDescriptionFacets';
 import { fetchActorProfile } from './client';
+import { blueskyVerificationToApiUserVerification } from './verification';
 
 export const blueskyProfileToApiUser = (profile: BlueskyProfileViewDetailed): APIUser => {
   const handle = profile.handle;
@@ -41,13 +42,8 @@ export const blueskyProfileToApiUser = (profile: BlueskyProfileViewDetailed): AP
     type: 'profile'
   };
 
-  if (profile.verification?.verifiedStatus === 'valid') {
-    apiUser.verification = {
-      verified: true,
-      type: null,
-      verified_at: null
-    };
-  }
+  const v = blueskyVerificationToApiUserVerification(profile.verification);
+  if (v) apiUser.verification = v;
 
   return apiUser;
 };
