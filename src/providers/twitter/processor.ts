@@ -7,7 +7,14 @@ import { processMedia, convertFormatToVariant } from '../../helpers/media';
 import { convertToApiUser } from './profile';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
-import type { APIFacet, APIRepostedBy, APITwitterStatus } from '../../realms/api/schemas';
+import type {
+  APIFacet,
+  APIRepostedBy,
+  APIStatusTombstone,
+  APITombstoneReason,
+  APITwitterStatus
+} from '../../realms/api/schemas';
+import { isTombstone, tombstoneMessageForReason } from '../../helpers/tombstone';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
@@ -183,6 +190,72 @@ function isRetweetWithoutNestedOriginal(
   return /^\s*RT @\S+/u.test(text);
 }
 
+/** Where `buildAPITwitterStatus` is used: root post vs nested quote/thread (affects unavailable handling). */
+export type TwitterStatusBuildContext = 'root' | 'quote' | 'thread';
+
+const twitterTombstone = (
+  reason: APITombstoneReason,
+  partial: { id?: string; url?: string; author?: Partial<APIUser> } = {}
+): APIStatusTombstone => ({
+  type: 'tombstone',
+  provider: 'twitter',
+  reason,
+  message: tombstoneMessageForReason(reason),
+  ...partial
+});
+
+const reasonFromTweetTombstoneText = (text: string): APITombstoneReason => {
+  const t = text.toLowerCase();
+  if (t.includes('suspended account')) return 'suspended';
+  if (t.includes('deleted')) return 'deleted';
+  if ((t.includes('limit') && t.includes('view')) || t.includes('private')) return 'private';
+  return 'unavailable';
+};
+
+/** TweetDetail / timeline `TweetTombstone` → API v2 tombstone (also used from `conversation.ts`). */
+export const twitterTweetTombstoneFromGraphQL = (
+  tomb: TweetTombstone,
+  idHint?: string
+): APIStatusTombstone => {
+  const text = tomb.tombstone?.text?.text ?? '';
+  const reason = reasonFromTweetTombstoneText(text);
+  const id = idHint;
+  return twitterTombstone(reason, {
+    id,
+    url: id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+  });
+};
+
+const tweetUnavailableToTombstone = (status: TweetStub | GraphQLTwitterStatus): APIStatusTombstone => {
+  if ((status as TweetStub).__typename !== 'TweetUnavailable') {
+    return twitterTombstone('unavailable');
+  }
+  const stub = status as TweetStub;
+  switch (stub.reason) {
+    case 'Protected':
+      return twitterTombstone('private');
+    case 'NsfwLoggedOut':
+      return twitterTombstone('unavailable');
+    case 'Suspended':
+      return twitterTombstone('suspended');
+    case 'Deleted':
+      return twitterTombstone('deleted');
+    default:
+      return twitterTombstone('unavailable');
+  }
+};
+
+/** Unwrap `quoted_*` GraphQL wrappers to an inner tweet node (or empty object). */
+const unwrapQuoteGraphql = (quote: unknown): unknown => {
+  if (!quote || typeof quote !== 'object') return quote;
+  let q: Record<string, unknown> = quote as Record<string, unknown>;
+  if ('result' in q && q.result !== undefined) q = q.result as Record<string, unknown>;
+  if (q.__typename === 'TweetWithVisibilityResults' && q.tweet) {
+    q = q.tweet as Record<string, unknown>;
+  }
+  return q;
+};
+
 export const buildAPITwitterStatus = async (
   c: Context,
   status: GraphQLTwitterStatus,
@@ -190,8 +263,10 @@ export const buildAPITwitterStatus = async (
   threadAuthor: null | APIUser,
   legacyAPI = false,
   /** When false (timelines, search, conversation), only use GraphQL inline translation — no Grok/Polyglot/AI calls. */
-  manualTranslationFallback = true
-): Promise<APITwitterStatus | FetchResults | null> => {
+  manualTranslationFallback = true,
+  buildContext: TwitterStatusBuildContext = 'root',
+  tombstoneIdHint?: string
+): Promise<APITwitterStatus | APIStatusTombstone | FetchResults | null> => {
   const apiStatus = {} as APITwitterStatus;
   let repostedBy: APIRepostedBy | null = null;
 
@@ -214,8 +289,26 @@ export const buildAPITwitterStatus = async (
     repostedBy = repostedByFromGraphQLUser(retweeterUserFromStatus(status));
   }
 
+  if ((status as unknown as { __typename?: string }).__typename === 'TweetTombstone') {
+    if (legacyAPI) return null;
+    return twitterTweetTombstoneFromGraphQL(
+      status as unknown as TweetTombstone,
+      tombstoneIdHint ?? status.rest_id
+    );
+  }
+
   if (typeof status.core === 'undefined') {
     console.log('Status still not valid', status);
+    if (buildContext !== 'root' && !legacyAPI) {
+      if ((status as unknown as TweetStub).__typename === 'TweetUnavailable') {
+        return tweetUnavailableToTombstone(status as TweetStub);
+      }
+      const id = tombstoneIdHint ?? status.rest_id;
+      return twitterTombstone('unavailable', {
+        id,
+        url: id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+      });
+    }
     if (status.__typename === 'TweetUnavailable' && status.reason === 'Protected') {
       return { status: 401 };
     } else {
@@ -502,22 +595,52 @@ export const buildAPITwitterStatus = async (
     status.quoted_tweet_results ??
     status.tweet?.quoted_tweet_results;
   if (quote) {
-    const buildQuote = await buildAPITwitterStatus(
-      c,
-      quote,
-      language,
-      threadAuthor,
-      legacyAPI,
-      manualTranslationFallback
-    );
-    if ((buildQuote as FetchResults).status) {
-      apiStatus.quote = undefined;
-    } else {
-      apiStatus.quote = buildQuote as APITwitterStatus;
+    const unwrapped = unwrapQuoteGraphql(quote) as Record<string, unknown>;
+    const isEmptyUnwrapped =
+      unwrapped && typeof unwrapped === 'object' && Object.keys(unwrapped).length === 0;
+    const qid = status.legacy?.quoted_status_id_str;
+    const qPerm = status.legacy?.quoted_status_permalink?.expanded;
+
+    if (isEmptyUnwrapped && !legacyAPI) {
+      apiStatus.quote = twitterTombstone('unavailable', {
+        id: qid,
+        url: qPerm ?? (qid ? `${Constants.TWITTER_ROOT}/i/status/${qid}` : undefined)
+      });
+    } else if (unwrapped?.__typename === 'TweetTombstone' && !legacyAPI) {
+      apiStatus.quote = twitterTweetTombstoneFromGraphQL(unwrapped as unknown as TweetTombstone, qid);
+    } else if (!isEmptyUnwrapped) {
+      const buildQuote = await buildAPITwitterStatus(
+        c,
+        quote as GraphQLTwitterStatus,
+        language,
+        threadAuthor,
+        legacyAPI,
+        manualTranslationFallback,
+        'quote',
+        qid
+      );
+      if (isTombstone(buildQuote)) {
+        apiStatus.quote = buildQuote;
+      } else if ((buildQuote as FetchResults).status) {
+        if (!legacyAPI && qid) {
+          apiStatus.quote = twitterTombstone('unavailable', {
+            id: qid,
+            url: qPerm ?? `${Constants.TWITTER_ROOT}/i/status/${qid}`
+          });
+        } else {
+          apiStatus.quote = undefined;
+        }
+      } else {
+        apiStatus.quote = buildQuote as APITwitterStatus;
+      }
     }
 
     /* Only override the embed_card if it's a basic status, since media always takes precedence  */
-    if (apiStatus.embed_card === 'tweet' && typeof apiStatus.quote !== 'undefined') {
+    if (
+      apiStatus.embed_card === 'tweet' &&
+      apiStatus.quote &&
+      !isTombstone(apiStatus.quote)
+    ) {
       apiStatus.embed_card = apiStatus.quote.embed_card;
     }
   }
@@ -852,7 +975,7 @@ export const buildAPITwitterStatus = async (
         }
       });
     }
-    if (apiStatus.quote?.media?.videos) {
+    if (apiStatus.quote && !isTombstone(apiStatus.quote) && apiStatus.quote.media?.videos) {
       apiStatus.quote.media.videos.forEach(video => {
         if (video.formats && video.formats.length > 0) {
           // @ts-expect-error Part of legacy API that is deprecated
@@ -860,7 +983,7 @@ export const buildAPITwitterStatus = async (
         }
       });
     }
-    if (apiStatus.quote?.media?.all) {
+    if (apiStatus.quote && !isTombstone(apiStatus.quote) && apiStatus.quote.media?.all) {
       apiStatus.quote.media.all.forEach(media => {
         if (media.type === 'video' || media.type === 'gif') {
           const video = media as APIVideo;

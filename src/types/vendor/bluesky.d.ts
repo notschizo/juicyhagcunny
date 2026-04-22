@@ -58,6 +58,8 @@ declare type BlueskyMedia = {
 /** `app.bsky.embed.record#viewRecord` and variants from AppView (forward-decl for BlueskyEmbed). */
 declare type BlueskyEmbedViewRecord = {
   $type?: string;
+  /** e.g. `app.bsky.embed.record#viewDetached` */
+  detached?: boolean;
   uri?: string;
   cid?: string;
   notFound?: boolean;
@@ -163,8 +165,23 @@ declare type BlueskyFacet = {
   };
 };
 
+/** Missing post in a thread (AppView). */
+declare type BlueskyFeedNotFoundPost = {
+  $type?: string;
+  uri: string;
+};
+
+/** Blocked post in a thread (AppView). */
+declare type BlueskyFeedBlockedPost = {
+  $type?: string;
+  uri: string;
+};
+
+declare type BlueskyThreadParent = BlueskyThread | BlueskyFeedNotFoundPost | BlueskyFeedBlockedPost;
+
 declare type BlueskyThread = {
-  parent: BlueskyThread;
+  $type?: string;
+  parent?: BlueskyThreadParent;
   post: BlueskyPost;
   replies?: BlueskyThread[];
 };

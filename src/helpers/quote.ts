@@ -1,7 +1,13 @@
 import i18next from 'i18next';
+import type { APIStatusTombstone } from '../realms/api/schemas';
+import { isTombstone } from './tombstone';
 
 /* Helper for Quote Tweets */
-export const handleQuote = (quote: APIStatus): string | null => {
+export const handleQuote = (quote: APIStatus | APIStatusTombstone): string | null => {
+  if (isTombstone(quote)) {
+    return `\n${i18next.t('quotedFromTombstone')}: ${quote.message}`;
+  }
+
   console.log('Quoting status ', quote.id);
 
   let str = `\n`;

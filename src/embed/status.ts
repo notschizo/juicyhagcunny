@@ -4,6 +4,7 @@ import i18next from 'i18next';
 import icu from 'i18next-icu';
 import { Constants } from '../constants';
 import { handleQuote } from '../helpers/quote';
+import { isTombstone } from '../helpers/tombstone';
 import { formatImageUrl, sanitizeText, truncateWithEllipsis } from '../helpers/utils';
 import { Strings } from '../strings';
 import { getSocialProof } from '../helpers/socialproof';
@@ -141,6 +142,7 @@ export const handleStatus = async (
       fetchWithThreads,
       c,
       useActivity ? undefined : useLanguage,
+      flags?.api ?? false,
       undefined,
       blueskyActivityPdsOut
     );
@@ -242,7 +244,7 @@ export const handleStatus = async (
       !!(
         status.media?.photos?.[0] || // Force instant view for photos for now https://bugs.telegram.org/c/33679
         status.media?.mosaic ||
-        status.quote ||
+        (status.quote && !isTombstone(status.quote)) ||
         flags?.forceInstantView ||
         (status as APITwitterStatus)?.article ||
         (thread?.thread?.length ?? 0) > 1
@@ -431,7 +433,11 @@ export const handleStatus = async (
   // Skip for activity to make embed generate faster for mosaic and such
   if (!useActivity && !flags?.textOnly) {
     const media =
-      status.media?.all && status.media?.all.length > 0 ? status.media : status.quote?.media || {};
+      status.media?.all && status.media?.all.length > 0
+        ? status.media
+        : !isTombstone(status.quote)
+          ? status.quote?.media || {}
+          : {};
     if (overrideMedia) {
       let instructions: ResponseInstructions;
 
@@ -617,13 +623,17 @@ export const handleStatus = async (
   // Check if this is an article-only tweet (text is just the article URL)
   const articleOnly = twitterStatus.article && isArticleOnlyTweet(twitterStatus);
 
+  const quoteHasDisplayableMedia =
+    !!status.quote &&
+    !isTombstone(status.quote) &&
+    (!!status.quote.media?.photos?.length || !!status.quote.media?.videos?.length);
+
   /* If we have no media to display, instead we'll display the user profile picture in the embed,
      OR if this is an article-only tweet, use the article cover image */
   if (
     !status.media?.videos &&
     !status.media?.photos &&
-    !status.quote?.media?.photos &&
-    !status.quote?.media?.videos &&
+    !quoteHasDisplayableMedia &&
     !flags?.textOnly
   ) {
     // Check if we have an article with cover media to use instead
@@ -671,7 +681,12 @@ export const handleStatus = async (
     text = sanitizeText(twitterStatus.article.preview_text);
   }
 
-  const useCard = status.embed_card === 'tweet' ? status.quote?.embed_card : status.embed_card;
+  const useCard =
+    status.embed_card === 'tweet'
+      ? status.quote && !isTombstone(status.quote)
+        ? status.quote.embed_card
+        : 'summary'
+      : status.embed_card;
 
   headers.push(`<meta property="twitter:card" content="${useCard}"/>`);
 

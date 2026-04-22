@@ -20,6 +20,7 @@ import {
   facetUtf16RangeOnPlainText,
   normalizeUtf16EntityRange
 } from '../helpers/twitterTextIndices';
+import { isTombstone } from '../helpers/tombstone';
 
 const convertArticleMediaToAttachment = (
   media: TwitterApiMedia
@@ -169,16 +170,19 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
     text = formatStatus(convertedStatusText, status) + '<br><br>';
   }
   if (status.quote) {
-    // console.log('quote!!', status.quote);
-    const quoteText = (status.quote.translation?.text ?? status.quote.text)
-      .trim()
-      .replace(/\n/g, '<br>︀︀');
-    text += `<blockquote><b>${i18next.t('ivQuoteHeader').format({
-      authorName: status.quote.author.name,
-      authorURL: status.quote.author.url,
-      authorHandle: status.quote.author.screen_name,
-      url: status.quote.url
-    })}</b><br>︀<br>${formatStatus(quoteText, status.quote)}</blockquote>`;
+    if (isTombstone(status.quote)) {
+      text += `<blockquote><i>${status.quote.message}</i></blockquote>`;
+    } else {
+      const quoteText = (status.quote.translation?.text ?? status.quote.text)
+        .trim()
+        .replace(/\n/g, '<br>︀︀');
+      text += `<blockquote><b>${i18next.t('ivQuoteHeader').format({
+        authorName: status.quote.author.name,
+        authorURL: status.quote.author.url,
+        authorHandle: status.quote.author.screen_name,
+        url: status.quote.url
+      })}</b><br>︀<br>${formatStatus(quoteText, status.quote)}</blockquote>`;
+    }
   }
   if (status.replying_to) {
     text = `<sub>↩ <a href="${status.replying_to.profile_url}" class="u-url mention">${status.replying_to.display_name} (@${status.replying_to.screen_name})</a></sub><br>${text}`;
@@ -403,6 +407,7 @@ export const handleActivity = async (
       false,
       c,
       language ?? undefined,
+      false,
       preferredProxyServiceHost ? { preferredProxyServiceHost } : undefined
     );
   } else if (provider === DataProvider.TikTok) {
@@ -497,7 +502,9 @@ export const handleActivity = async (
   const rawMediaList =
     (thread.status.media?.all?.length ?? 0) > 0
       ? thread.status.media?.all
-      : (thread.status.quote?.media?.all ?? []);
+      : !isTombstone(thread.status.quote)
+        ? (thread.status.quote?.media?.all ?? [])
+        : [];
   let mediaList = rawMediaList;
 
   if (!textOnly) {
@@ -514,9 +521,12 @@ export const handleActivity = async (
     if (
       forceMosaic &&
       mediaList?.length !== 1 &&
-      (thread.status.media?.mosaic || thread.status.quote?.media?.mosaic)
+      (thread.status.media?.mosaic ||
+        (!isTombstone(thread.status.quote) && thread.status.quote?.media?.mosaic))
     ) {
-      const mosaic = thread.status.media?.mosaic || thread.status.quote?.media?.mosaic;
+      const mosaic =
+        thread.status.media?.mosaic ||
+        (!isTombstone(thread.status.quote) ? thread.status.quote?.media?.mosaic : undefined);
       response.media_attachments = [
         {
           id: '114163769487684704',

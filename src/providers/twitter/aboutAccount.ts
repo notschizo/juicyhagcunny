@@ -1,4 +1,5 @@
 import { Context } from 'hono';
+import { isTombstone } from '../../helpers/tombstone';
 import { AboutAccountQuery } from './graphql/queries';
 import { validateAboutAccountQuery } from './graphql/validators';
 import { graphQLOrchestrator, GraphQLOrchestratorResult } from './graphql/orchestrator';
@@ -26,7 +27,9 @@ const collectScreenNames = (response: SocialThread): Map<string, string> => {
   }
 
   response.thread?.forEach(status => {
-    addScreenName(status.author);
+    if (!isTombstone(status)) {
+      addScreenName(status.author);
+    }
   });
 
   return screenNames;
@@ -48,7 +51,9 @@ const applyAboutAccountData = (response: SocialThread, results: GraphQLOrchestra
 
   apply(response.author);
   apply(response.status?.author);
-  response.thread?.forEach(status => apply(status.author));
+  response.thread?.forEach(status => {
+    if (!isTombstone(status)) apply(status.author);
+  });
 };
 
 export const attachAboutAccountData = async (

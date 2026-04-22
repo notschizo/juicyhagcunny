@@ -1,6 +1,12 @@
 {
   "translatedFrom": "Translated from {language}",
   "quotedFrom": "Quoting {name} (@{screen_name})",
+  "quotedFromTombstone": "Quoting unavailable post",
+  "tombstoneMessageDeleted": "This post is deleted",
+  "tombstoneMessageSuspended": "This post is from a suspended account",
+  "tombstoneMessagePrivate": "This post is from a private account",
+  "tombstoneMessageBlocked": "This post has been blocked from view by its author",
+  "tombstoneMessageUnavailable": "This post is unavailable",
   "replyingTo": "Replying to @{screen_name}",
   "threadPartHeader": "A part of @{screen_name}'s thread",
   "ivAuthorActionReply": "<a href=\"{statusUrl}\">Reply</a> from <b>{authorName}</b> (<a href=\"{authorUrl}\">@{authorScreenName}</a>):",

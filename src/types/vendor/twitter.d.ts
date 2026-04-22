@@ -865,7 +865,7 @@ type TweetResultByIdResponse = {
 
 type TweetStub = {
   __typename: 'TweetUnavailable';
-  reason: 'NsfwLoggedOut' | 'Protected';
+  reason: 'NsfwLoggedOut' | 'Protected' | 'Suspended' | 'Deleted';
 };
 
 interface GraphQLProcessBucket {

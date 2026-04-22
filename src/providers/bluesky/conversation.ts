@@ -1,12 +1,15 @@
 import { Context } from 'hono';
 import type {
   APIBlueskyStatus,
+  APIStatusTombstone,
   SocialConversationBluesky,
   SocialThreadBluesky
 } from '../../realms/api/schemas';
+import { isTombstone, stripTombstones } from '../../helpers/tombstone';
 import { type BlueskyFetchOpts, fetchPostThread, fetchPostThreadResult } from './client';
-import { buildAPIBlueskyPost } from './processor';
+import { buildAPIBlueskyPost, buildBlueskyTombstone } from './processor';
 import { atUriForFeedPost } from './uris';
+import type { SocialThread } from '../../types/apiStatus';
 
 const THREAD_FETCH_DEPTH = 10;
 const THREAD_PARENT_HEIGHT_FIRST_PAGE = 80;
@@ -40,6 +43,8 @@ export const fetchBlueskyThread = async (
   return fetchPostThread(uri, depth, undefined, opts);
 };
 
+type BlueskyThreadBucketItem = BlueskyPost | APIStatusTombstone;
+
 const followReplyChain = (thread: BlueskyThread): BlueskyPost[] => {
   if (!thread.replies?.length) return [];
   const parentCid = thread.post.cid;
@@ -64,14 +69,25 @@ const collectProcessedThreadPosts = async (
   thread: BlueskyThread,
   author: string,
   fetchOpts?: BlueskyFetchOpts
-): Promise<BlueskyPost[]> => {
-  const bucket: BlueskyPost[] = [];
+): Promise<BlueskyThreadBucketItem[]> => {
+  const bucket: BlueskyThreadBucketItem[] = [];
 
   if (thread.parent) {
-    let parent: BlueskyThread | undefined = thread.parent;
-    while (parent?.post) {
-      bucket.unshift(parent.post);
-      parent = parent.parent;
+    let parentNode: BlueskyThreadParent | undefined = thread.parent;
+    while (parentNode) {
+      if ('post' in parentNode && (parentNode as BlueskyThread).post) {
+        const th = parentNode as BlueskyThread;
+        bucket.unshift(th.post);
+        parentNode = th.parent;
+      } else if ('uri' in parentNode && !('post' in parentNode)) {
+        const uri = (parentNode as BlueskyFeedNotFoundPost).uri;
+        const pt = (parentNode as { $type?: string }).$type?.toLowerCase() ?? '';
+        const reason = pt.includes('blocked') ? 'blocked' : 'deleted';
+        bucket.unshift(buildBlueskyTombstone(reason, uri));
+        break;
+      } else {
+        break;
+      }
     }
   }
   bucket.push(thread.post);
@@ -185,6 +201,7 @@ export const constructBlueskyThread = async (
   processThread = false,
   c: Context,
   language: string | undefined,
+  legacyAPI = false,
   extraFetchOpts?: BlueskyFetchOpts,
   out?: { pdsHostHint?: string }
 ): Promise<SocialThreadBluesky> => {
@@ -221,7 +238,7 @@ export const constructBlueskyThread = async (
   }
 
   const thread = _thread.thread;
-  const bucket: BlueskyPost[] = processThread
+  const bucket: BlueskyThreadBucketItem[] = processThread
     ? await collectProcessedThreadPosts(thread, author, fetchOpts)
     : [thread.post];
 
@@ -233,15 +250,25 @@ export const constructBlueskyThread = async (
     fetchOpts
   )) as APIBlueskyStatus;
   const consumedPosts = (await Promise.all(
-    bucket.map(post => buildAPIBlueskyPost(c, post, language, 0, fetchOpts))
-  )) as APIBlueskyStatus[];
+    bucket.map(item =>
+      isTombstone(item)
+        ? Promise.resolve(item)
+        : buildAPIBlueskyPost(c, item, language, 0, fetchOpts)
+    )
+  )) as (APIBlueskyStatus | APIStatusTombstone)[];
 
-  return {
+  const result: SocialThreadBluesky = {
     status: consumedPost,
     thread: consumedPosts,
     author: consumedPost.author,
     code: 200
   };
+
+  if (legacyAPI) {
+    stripTombstones(result as SocialThread);
+  }
+
+  return result;
 };
 
 export const constructBlueskyConversation = async (
@@ -342,7 +369,7 @@ export const constructBlueskyConversation = async (
   const focalNode = raw.thread;
   const lang = options.language;
 
-  const threadPosts: BlueskyPost[] = isContinuation
+  const threadPosts: BlueskyThreadBucketItem[] = isContinuation
     ? [focalNode.post]
     : await collectProcessedThreadPosts(focalNode, author, convoFetchOpts);
 
@@ -359,8 +386,12 @@ export const constructBlueskyConversation = async (
     convoFetchOpts
   )) as APIBlueskyStatus;
   const threadApi = (await Promise.all(
-    threadPosts.map(p => buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts))
-  )) as APIBlueskyStatus[];
+    threadPosts.map(p =>
+      isTombstone(p)
+        ? Promise.resolve(p)
+        : buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts)
+    )
+  )) as (APIBlueskyStatus | APIStatusTombstone)[];
   const repliesApi = (await Promise.all(
     pageSlice.map(p => buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts))
   )) as APIBlueskyStatus[];

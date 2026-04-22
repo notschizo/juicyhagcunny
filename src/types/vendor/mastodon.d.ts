@@ -116,6 +116,8 @@ interface MastodonStatus {
   filtered?: unknown[];
   /** Glitch / forks */
   quoted_status?: MastodonStatus | null;
+  /** Some instances omit `quoted_status` but expose the id when the quote is unavailable. */
+  quoted_status_id?: string | null;
 }
 
 interface MastodonContext {

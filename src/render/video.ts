@@ -2,6 +2,7 @@ import i18next from 'i18next';
 import { Constants } from '../constants';
 import { Experiment, experimentCheck } from '../experiments';
 import { handleQuote } from '../helpers/quote';
+import { isTombstone } from '../helpers/tombstone';
 import { DataProvider } from '../enum';
 import type { APITwitterStatus } from '../realms/api/schemas';
 import { getBranding } from '../helpers/branding';
@@ -55,7 +56,7 @@ export const renderVideo = (
     instructions.authorText = text || '';
   }
 
-  if ((instructions.authorText ?? '').length < 40 && status.quote) {
+  if ((instructions.authorText ?? '').length < 40 && status.quote && !isTombstone(status.quote)) {
     instructions.authorText += `\n${handleQuote(status.quote)}`;
   }
 

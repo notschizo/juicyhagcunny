@@ -6,8 +6,29 @@ import { handleMosaic } from '../../helpers/mosaic';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
 import { unescapeText } from '../../helpers/utils';
-import type { APIFacet, APIRepostedBy, APIUser, APIMastodonStatus } from '../../realms/api/schemas';
+import type {
+  APIFacet,
+  APIRepostedBy,
+  APIUser,
+  APIMastodonStatus,
+  APIStatusTombstone,
+  APITombstoneReason
+} from '../../realms/api/schemas';
+import { isTombstone, tombstoneMessageForReason } from '../../helpers/tombstone';
 import { assertSafeMastodonDomain } from './client';
+
+export const buildMastodonTombstone = (
+  reason: APITombstoneReason,
+  id: string,
+  domain: string
+): APIStatusTombstone => ({
+  type: 'tombstone',
+  provider: 'mastodon',
+  reason,
+  message: tombstoneMessageForReason(reason),
+  id,
+  url: `https://${assertSafeMastodonDomain(domain)}/`
+});
 
 const decodeBasicEntities = (s: string): string =>
   s
@@ -579,12 +600,19 @@ export const buildAPIMastodonPost = async (
   }
 
   const quoted = core.quoted_status;
+  const orphanQuoteId =
+    typeof core.quoted_status_id === 'string' && core.quoted_status_id.length > 0
+      ? core.quoted_status_id
+      : null;
+
   if (quoted && quoteDepth < 10) {
     const q = await buildAPIMastodonPost(c, quoted, domain, language, quoteDepth + 1);
     apiStatus.quote = q;
-    if (q.embed_card && q.embed_card !== 'tweet') {
+    if (!isTombstone(q) && q.embed_card && q.embed_card !== 'tweet') {
       apiStatus.embed_card = q.embed_card;
     }
+  } else if (orphanQuoteId) {
+    apiStatus.quote = buildMastodonTombstone('unavailable', orphanQuoteId, domain);
   }
 
   apiStatus.media.all = [...(apiStatus.media.photos ?? []), ...(apiStatus.media.videos ?? [])];

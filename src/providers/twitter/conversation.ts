@@ -1,11 +1,12 @@
 import { Constants } from '../../constants';
-import { buildAPITwitterStatus } from './processor';
 import { Experiment, experimentCheck } from '../../experiments';
 import { hasTwitterAccountProxy } from './accountProxy';
 import { buildLanguageHeaders } from '../../helpers/language';
 import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
-import type { APITwitterStatus } from '../../realms/api/schemas';
+import type { APIStatusTombstone, APITwitterStatus } from '../../realms/api/schemas';
+import { isTombstone, stripTombstones } from '../../helpers/tombstone';
+import { buildAPITwitterStatus, twitterTweetTombstoneFromGraphQL } from './processor';
 import { InputFlags } from '../../types/types';
 import {
   ConversationTimelineQuery,
@@ -18,6 +19,35 @@ import {
 import { graphqlRequest } from './graphql/request';
 import { graphQLOrchestrator } from './graphql/orchestrator';
 import { isTwitterNumericStatusId } from '../../helpers/utils';
+
+type TwitterTimelinePiece = GraphQLTwitterStatus | APIStatusTombstone;
+
+/** Keep tweet-detail timeline order, including `TweetTombstone` rows between chain tweets. */
+const mergeTimelineOrderPreservingTombstones = (
+  ordered: TwitterTimelinePiece[],
+  chainTweets: GraphQLTwitterStatus[]
+): TwitterTimelinePiece[] => {
+  const chainIds = new Set(
+    chainTweets.map(t => t.rest_id ?? t.legacy?.id_str ?? '').filter(Boolean)
+  );
+  const tweetIndices = ordered
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => {
+      if (isTombstone(e)) return false;
+      const id = (e as GraphQLTwitterStatus).rest_id ?? (e as GraphQLTwitterStatus).legacy?.id_str;
+      return !!id && chainIds.has(id);
+    })
+    .map(x => x.i);
+  if (tweetIndices.length === 0) return [...chainTweets];
+  const minI = Math.min(...tweetIndices);
+  const maxI = Math.max(...tweetIndices);
+  return ordered.filter((e, i) => {
+    if (i < minI || i > maxI) return false;
+    if (isTombstone(e)) return true;
+    const id = (e as GraphQLTwitterStatus).rest_id ?? (e as GraphQLTwitterStatus).legacy?.id_str;
+    return !!id && chainIds.has(id);
+  });
+};
 
 const writeDataPoint = (
   c: Context,
@@ -273,7 +303,7 @@ const enrichArticleWithFullContent = async (
     manualTranslationFallback
   );
 
-  if ((rebuilt as FetchResults)?.status || !rebuilt) {
+  if (isTombstone(rebuilt) || (rebuilt as FetchResults)?.status || !rebuilt) {
     return status;
   }
 
@@ -386,22 +416,39 @@ const normalizeCursor = (raw: any): GraphQLTimelineCursor => {
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+interface GraphQLProcessBucket {
+  ordered: TwitterTimelinePiece[];
+  statuses: GraphQLTwitterStatus[];
+  allStatuses: GraphQLTwitterStatus[];
+  cursors: GraphQLTimelineCursor[];
+}
+
 const pushTweetFromContent = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   itemContent: any,
-  target: GraphQLTwitterStatus[]
+  bucket: GraphQLProcessBucket,
+  entryId?: string
 ) => {
   if (itemContent?.__typename !== 'TimelineTweet') return;
-  const entryType = itemContent.tweet_results?.result?.__typename;
+  const result = itemContent.tweet_results?.result;
+  const entryType = result?.__typename;
   if (entryType === 'Tweet') {
-    target.push(itemContent.tweet_results.result as GraphQLTwitterStatus);
+    const tw = result as GraphQLTwitterStatus;
+    bucket.statuses.push(tw);
+    bucket.ordered.push(tw);
   } else if (entryType === 'TweetWithVisibilityResults') {
-    target.push(itemContent.tweet_results.result.tweet as GraphQLTwitterStatus);
+    const tw = (result as { tweet: GraphQLTwitterStatus }).tweet;
+    bucket.statuses.push(tw);
+    bucket.ordered.push(tw);
+  } else if (entryType === 'TweetTombstone') {
+    const idHint = entryId?.match(/^tweet-(\d+)$/)?.[1];
+    bucket.ordered.push(twitterTweetTombstoneFromGraphQL(result as TweetTombstone, idHint));
   }
 };
 
 const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBucket => {
   const bucket: GraphQLProcessBucket = {
+    ordered: [],
     statuses: [],
     allStatuses: [],
     cursors: []
@@ -425,13 +472,14 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
         }
 
         const typename = (content as { __typename: string }).__typename;
+        const entryId = getEntryId(entry);
 
         if (typename === 'TimelineTimelineCursor') {
           bucket.cursors.push(normalizeCursor(content));
         } else if (typename === 'TimelineTimelineItem') {
           const itemContent = getItemContent(content);
           if (itemContent?.__typename === 'TimelineTweet') {
-            pushTweetFromContent(itemContent, bucket.statuses);
+            pushTweetFromContent(itemContent, bucket, entryId);
           } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
             bucket.cursors.push(normalizeCursor(itemContent));
           }
@@ -440,7 +488,7 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
           (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
             const itemContent = getItemContent(item.item);
             if (itemContent?.__typename === 'TimelineTweet') {
-              pushTweetFromContent(itemContent, bucket.statuses);
+              pushTweetFromContent(itemContent, bucket, entryId);
             } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
               bucket.cursors.push(normalizeCursor(itemContent));
             }
@@ -454,12 +502,45 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
 };
 
 interface GraphQLConversationBucket {
-  /** Top-level tweet-* entries: ancestor chain + focal tweet */
-  chainStatuses: GraphQLTwitterStatus[];
+  /** Top-level tweet-* entries: ancestor chain + focal tweet (+ tombstones). */
+  chainOrdered: TwitterTimelinePiece[];
+  chainTweets: GraphQLTwitterStatus[];
   /** Tweets inside conversationthread-* modules: actual replies */
   replyStatuses: GraphQLTwitterStatus[];
   cursors: GraphQLTimelineCursor[];
 }
+
+const pushConversationTimelineTweet = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  itemContent: any,
+  bucket: GraphQLConversationBucket,
+  target: 'chain' | 'reply',
+  entryId?: string
+) => {
+  if (itemContent?.__typename !== 'TimelineTweet') return;
+  const result = itemContent.tweet_results?.result;
+  const entryType = result?.__typename;
+  if (entryType === 'Tweet') {
+    const tw = result as GraphQLTwitterStatus;
+    if (target === 'chain') {
+      bucket.chainTweets.push(tw);
+      bucket.chainOrdered.push(tw);
+    } else {
+      bucket.replyStatuses.push(tw);
+    }
+  } else if (entryType === 'TweetWithVisibilityResults') {
+    const tw = (result as { tweet: GraphQLTwitterStatus }).tweet;
+    if (target === 'chain') {
+      bucket.chainTweets.push(tw);
+      bucket.chainOrdered.push(tw);
+    } else {
+      bucket.replyStatuses.push(tw);
+    }
+  } else if (entryType === 'TweetTombstone' && target === 'chain') {
+    const idHint = entryId?.match(/^tweet-(\d+)$/)?.[1];
+    bucket.chainOrdered.push(twitterTweetTombstoneFromGraphQL(result as TweetTombstone, idHint));
+  }
+};
 
 /**
  * Processes TweetDetail / ConversationTimeline instructions while preserving
@@ -470,7 +551,8 @@ const processConversationResponse = (
   instructions: TimelineInstruction[]
 ): GraphQLConversationBucket => {
   const bucket: GraphQLConversationBucket = {
-    chainStatuses: [],
+    chainOrdered: [],
+    chainTweets: [],
     replyStatuses: [],
     cursors: []
   };
@@ -501,9 +583,11 @@ const processConversationResponse = (
         } else if (typename === 'TimelineTimelineItem') {
           const itemContent = getItemContent(content);
           if (itemContent?.__typename === 'TimelineTweet') {
-            pushTweetFromContent(
+            pushConversationTimelineTweet(
               itemContent,
-              isReplyEntry ? bucket.replyStatuses : bucket.chainStatuses
+              bucket,
+              isReplyEntry ? 'reply' : 'chain',
+              entryId
             );
           } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
             bucket.cursors.push(normalizeCursor(itemContent));
@@ -513,7 +597,7 @@ const processConversationResponse = (
           (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
             const itemContent = getItemContent(item.item);
             if (itemContent?.__typename === 'TimelineTweet') {
-              pushTweetFromContent(itemContent, bucket.replyStatuses);
+              pushConversationTimelineTweet(itemContent, bucket, 'reply', entryId);
             } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
               bucket.cursors.push(normalizeCursor(itemContent));
             }
@@ -765,6 +849,11 @@ export const constructTwitterThread = async (
 
     const buildStatus = await buildAPITwitterStatus(c, result, language, null, legacyAPI);
 
+    if (isTombstone(buildStatus)) {
+      writeDataPoint(c, language, null, '404');
+      return { status: null, thread: null, author: null, code: 404 };
+    }
+
     if ((buildStatus as FetchResults)?.status === 401) {
       writeDataPoint(c, language, null, '401');
       return { status: null, thread: null, author: null, code: 401 };
@@ -825,13 +914,14 @@ export const constructTwitterThread = async (
     return { status: null, thread: null, author: null, code: 404 };
   }
 
-  status = (await buildAPITwitterStatus(
-    c,
-    originalStatus,
-    language,
-    null,
-    legacyAPI
-  )) as APITwitterStatus;
+  const builtFocal = await buildAPITwitterStatus(c, originalStatus, language, null, legacyAPI);
+
+  if (isTombstone(builtFocal)) {
+    writeDataPoint(c, language, null, '404');
+    return { status: null, thread: null, author: null, code: 404 };
+  }
+
+  status = builtFocal as APITwitterStatus;
 
   if (status === null) {
     writeDataPoint(c, language, null, '404');
@@ -913,6 +1003,7 @@ export const constructTwitterThread = async (
       bucket.statuses = bucket.statuses.concat(
         filterBucketStatuses(cursorResponse.statuses, originalStatus)
       );
+      bucket.ordered = bucket.ordered.concat(cursorResponse.ordered);
       /* Remove old cursor and add new bottom cursor if necessary */
       consolidateCursors(bucket.cursors, cursorResponse.cursors);
       console.log('updated bucket of cursors', bucket.cursors);
@@ -977,6 +1068,7 @@ export const constructTwitterThread = async (
       bucket.statuses = cursorResponse.statuses.concat(
         filterBucketStatuses(bucket.statuses, originalStatus)
       );
+      bucket.ordered = cursorResponse.ordered.concat(bucket.ordered);
       /* Remove old cursor and add new top cursor if necessary */
       consolidateCursors(bucket.cursors, cursorResponse.cursors);
 
@@ -994,44 +1086,52 @@ export const constructTwitterThread = async (
     code: 200
   };
 
+  const mergedTimeline = mergeTimelineOrderPreservingTombstones(bucket.ordered, threadStatuses);
+
   await Promise.all(
-    threadStatuses.map(async graphqlStatus => {
+    mergedTimeline.map(async piece => {
+      if (isTombstone(piece)) {
+        socialThread.thread?.push(piece);
+        return;
+      }
+      const graphqlStatus = piece as GraphQLTwitterStatus;
       const tweetId = graphqlStatus.rest_id ?? graphqlStatus.legacy?.id_str ?? '';
       if (tweetId === id) {
         socialThread.thread?.push(status);
         return;
       }
-      let builtStatus = (await buildAPITwitterStatus(
+      const built = await buildAPITwitterStatus(
         c,
         graphqlStatus,
         language,
         author,
-        false
-      )) as APITwitterStatus;
+        legacyAPI,
+        true,
+        'thread'
+      );
+      if (isTombstone(built)) {
+        socialThread.thread?.push(built);
+        return;
+      }
+      if ((built as FetchResults)?.status || built === null) {
+        return;
+      }
+      let builtStatus = built as APITwitterStatus;
       builtStatus = await enrichArticleWithFullContent(
         c,
         builtStatus,
         tweetId,
         language,
-        false,
+        legacyAPI,
         true
       );
       socialThread.thread?.push(builtStatus);
     })
   );
 
-  // Sort socialThread.thread by id converted to bigint
-  socialThread.thread?.sort((a: APIStatus | APITwitterStatus, b: APIStatus | APITwitterStatus) => {
-    const aId = BigInt(a.id);
-    const bId = BigInt(b.id);
-    if (aId < bId) {
-      return -1;
-    }
-    if (aId > bId) {
-      return 1;
-    }
-    return 0;
-  });
+  if (legacyAPI) {
+    stripTombstones(socialThread);
+  }
 
   return socialThread;
 };
@@ -1059,7 +1159,7 @@ export const constructTwitterConversation = async (
   );
 
   const originalStatus =
-    bucket.chainStatuses.find(s => (s.rest_id ?? s.legacy?.id_str) === id) ?? null;
+    bucket.chainTweets.find(s => (s.rest_id ?? s.legacy?.id_str) === id) ?? null;
 
   if (originalStatus === null) {
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
@@ -1083,11 +1183,12 @@ export const constructTwitterConversation = async (
   const author = status.author;
 
   /*
-   * Thread = all chainStatuses (ancestor chain from TweetDetail top-level entries).
-   * These are already in conversation order from the API.
-   * On cursor pages (reply pagination), chainStatuses will just have the focal tweet.
+   * Thread = all chain tweets (ancestor chain from TweetDetail top-level entries),
+   * preserving `TweetTombstone` rows. On cursor pages, only the focal tweet.
    */
-  const threadStatuses = cursor ? [originalStatus] : [...bucket.chainStatuses];
+  const threadPieces: TwitterTimelinePiece[] = cursor
+    ? [originalStatus]
+    : mergeTimelineOrderPreservingTombstones(bucket.chainOrdered, bucket.chainTweets);
 
   /* Build the thread */
   const socialConversation: SocialConversation = {
@@ -1100,20 +1201,26 @@ export const constructTwitterConversation = async (
   };
 
   await Promise.all(
-    threadStatuses.map(async s => {
+    threadPieces.map(async piece => {
+      if (isTombstone(piece)) {
+        socialConversation.thread?.push(piece);
+        return;
+      }
+      const s = piece as GraphQLTwitterStatus;
       const tweetId = s.rest_id ?? s.legacy?.id_str ?? '';
       if (tweetId === id) {
         socialConversation.thread?.push(status);
         return;
       }
-      let builtStatus = (await buildAPITwitterStatus(
-        c,
-        s,
-        language,
-        author,
-        false,
-        false
-      )) as APITwitterStatus;
+      const built = await buildAPITwitterStatus(c, s, language, author, false, false, 'thread');
+      if (isTombstone(built)) {
+        socialConversation.thread?.push(built);
+        return;
+      }
+      if ((built as FetchResults)?.status || built === null) {
+        return;
+      }
+      let builtStatus = built as APITwitterStatus;
       builtStatus = await enrichArticleWithFullContent(
         c,
         builtStatus,
@@ -1125,14 +1232,6 @@ export const constructTwitterConversation = async (
       socialConversation.thread?.push(builtStatus);
     })
   );
-
-  socialConversation.thread?.sort((a, b) => {
-    const aId = BigInt(a.id);
-    const bId = BigInt(b.id);
-    if (aId < bId) return -1;
-    if (aId > bId) return 1;
-    return 0;
-  });
 
   /* Build the replies (from conversationthread-* modules) */
   await Promise.all(
