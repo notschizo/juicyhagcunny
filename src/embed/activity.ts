@@ -152,6 +152,7 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
   }
 
   const convertedStatusText = status.text.trim().replace(/\n/g, '<br>︀︀');
+
   if (status.translation) {
     console.log('translation', JSON.stringify(status.translation));
     const { translation } = status;
@@ -178,6 +179,9 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
       authorHandle: status.quote.author.screen_name,
       url: status.quote.url
     })}</b><br>︀<br>${formatStatus(quoteText, status.quote)}</blockquote>`;
+  }
+  if (status.replying_to) {
+    text = `<sub>↩ <a href="${status.replying_to.profile_url}" class="u-url mention">${status.replying_to.display_name} (@${status.replying_to.screen_name})</a></sub><br>${text}`;
   }
   if (status.poll) {
     text += `${generatePoll(status.poll)}`;
@@ -439,7 +443,7 @@ export const handleActivity = async (
     created_at: new Date(thread.status.created_at).toISOString(),
     edited_at: null,
     reblog: null,
-    in_reply_to_id: thread.status.replying_to?.status,
+    in_reply_to_id: null,
     in_reply_to_account_id: null,
     language: thread.status.lang,
     content: statusText,

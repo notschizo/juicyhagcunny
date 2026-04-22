@@ -55,12 +55,7 @@ describe('processGroupedTimelineInstructions', () => {
               entryType: 'TimelineTimelineModule',
               metadata: {
                 conversationMetadata: {
-                  allTweetIds: [
-                    '111',
-                    '222',
-                    '333',
-                    '999'
-                  ]
+                  allTweetIds: ['111', '222', '333', '999']
                 }
               },
               items: [
@@ -105,12 +100,7 @@ describe('processGroupedTimelineInstructions', () => {
       '222',
       '333'
     ]);
-    expect(entries[0].all_status_ids).toEqual([
-      '111',
-      '222',
-      '333',
-      '999'
-    ]);
+    expect(entries[0].all_status_ids).toEqual(['111', '222', '333', '999']);
   });
 
   it('reads allTweetIds from timeline entry when omitted on module content', () => {

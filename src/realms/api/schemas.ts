@@ -41,6 +41,29 @@ export const APIPollSchema = z.object({
   time_left_en: z.string()
 });
 
+/** Parent post / account context when this status is a reply (FxTwitter, FxBluesky, Mastodon APIs). */
+export const APIReplyingToSchema = z
+  .object({
+    screen_name: z
+      .string()
+      .openapi({ description: 'Handle or account id used in permalinks (@user on X).' }),
+    status: z
+      .string()
+      .openapi({ description: 'Parent post id (X: snowflake; Bluesky: record key).' }),
+    url: z.string().optional().openapi({ description: 'Permalink to the parent post when known.' }),
+    profile_url: z
+      .string()
+      .optional()
+      .openapi({ description: 'Permalink to the parent author profile when known.' }),
+    display_name: z
+      .string()
+      .optional()
+      .openapi({ description: 'Display name of the parent author when known.' })
+  })
+  .openapi('APIReplyingTo');
+
+export type APIReplyingTo = z.infer<typeof APIReplyingToSchema>;
+
 export const TweetMediaVariantSchema = z.object({
   bitrate: z.number(),
   content_type: z.string(),
@@ -470,10 +493,7 @@ export type APITwitterStatus = {
   lang: string | null;
   translation?: z.infer<typeof APITranslateSchema>;
   possibly_sensitive: boolean;
-  replying_to: {
-    screen_name: string;
-    status: string;
-  } | null;
+  replying_to: APIReplyingTo | null;
   source: string | null;
   embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
   provider: 'twitter';
@@ -519,12 +539,7 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       lang: z.string().nullable(),
       translation: APITranslateSchema.optional(),
       possibly_sensitive: z.boolean(),
-      replying_to: z
-        .object({
-          screen_name: z.string(),
-          status: z.string()
-        })
-        .nullable(),
+      replying_to: APIReplyingToSchema.nullable(),
       source: z.string().nullable(),
       embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
       provider: z.literal('twitter'),
@@ -573,10 +588,7 @@ export type APIBlueskyStatus = {
   lang: string | null;
   translation?: z.infer<typeof APITranslateSchema>;
   possibly_sensitive: boolean;
-  replying_to: {
-    screen_name: string;
-    status: string;
-  } | null;
+  replying_to: APIReplyingTo | null;
   source: string | null;
   embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
   provider: 'bluesky';
@@ -588,9 +600,7 @@ export type APIBlueskyStatus = {
 export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
   .lazy(() =>
     z.object({
-      type: z
-        .literal('status')
-        .openapi({ description: 'Discriminator: single post/status (API v2).' }),
+      type: z.literal('status').openapi({ description: 'Discriminator: single status' }),
       id: z.string(),
       cid: z.string().optional(),
       at_uri: z.string().optional(),
@@ -613,12 +623,7 @@ export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
       lang: z.string().nullable(),
       translation: APITranslateSchema.optional(),
       possibly_sensitive: z.boolean(),
-      replying_to: z
-        .object({
-          screen_name: z.string(),
-          status: z.string()
-        })
-        .nullable(),
+      replying_to: APIReplyingToSchema.nullable(),
       source: z.string().nullable(),
       embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
       provider: z.literal('bluesky'),
@@ -794,10 +799,7 @@ export type APIMastodonStatus = {
   lang: string | null;
   translation?: z.infer<typeof APITranslateSchema>;
   possibly_sensitive: boolean;
-  replying_to: {
-    screen_name: string;
-    status: string;
-  } | null;
+  replying_to: APIReplyingTo | null;
   source: string | null;
   embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
   provider: 'mastodon';
@@ -830,12 +832,7 @@ export const APIMastodonStatusSchema: z.ZodType<APIMastodonStatus> = z
       lang: z.string().nullable(),
       translation: APITranslateSchema.optional(),
       possibly_sensitive: z.boolean(),
-      replying_to: z
-        .object({
-          screen_name: z.string(),
-          status: z.string()
-        })
-        .nullable(),
+      replying_to: APIReplyingToSchema.nullable(),
       source: z.string().nullable(),
       embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
       provider: z.literal('mastodon'),

@@ -58,5 +58,6 @@
   "language_vi": "ベトナム語",
   "language_zh-CN": "中国語",
   "language_zh-TW": "中国語",
-  "threadIndicator": "🧵 スレッド • {brandingName}"
+  "threadIndicator": "🧵 スレッド • {brandingName}",
+  "articleIndicator": "📰 記事 • {brandingName}"
 }

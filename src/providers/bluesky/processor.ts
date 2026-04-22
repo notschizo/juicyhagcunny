@@ -131,15 +131,26 @@ const quoteCandidateFromEmbedRecord = (
 const resolveReplyingTo = async (
   status: BlueskyPost,
   opts?: BlueskyFetchOpts
-): Promise<{ screen_name: string; status: string } | null> => {
+): Promise<APIStatus['replying_to']> => {
   const parentUri = status.record?.reply?.parent?.uri;
   if (!parentUri) return null;
   const parentRkey = rkeyFromPostAtUri(parentUri);
   const parentDid = didFromAtUri(parentUri);
   if (!parentRkey || !parentDid) return null;
   const profiles = await fetchProfilesByActors([parentDid], opts);
-  const handle = profiles.get(parentDid)?.handle ?? parentDid;
-  return { screen_name: handle, status: parentRkey };
+  const profile = profiles.get(parentDid);
+  const handle = profile?.handle ?? parentDid;
+  const out: NonNullable<APIStatus['replying_to']> = {
+    screen_name: handle,
+    status: parentRkey,
+    url: blueskyWebPostUrl(handle, parentRkey),
+    profile_url: `${Constants.BLUESKY_ROOT}/profile/${handle}`
+  };
+  const displayName = profile?.displayName;
+  if (typeof displayName === 'string' && displayName.length > 0) {
+    out.display_name = displayName;
+  }
+  return out;
 };
 
 const applyEmbedsToStatus = async (apiStatus: APIStatus, status: BlueskyPost): Promise<void> => {

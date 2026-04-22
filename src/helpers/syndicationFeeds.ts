@@ -1,5 +1,8 @@
-import type { APITwitterStatus, APIVideo } from '../realms/api/schemas';
+import type { APIBlueskyStatus, APITwitterStatus, APIVideo } from '../realms/api/schemas';
 import { truncateWithEllipsis } from './utils';
+
+/** Twitter or Bluesky API v2–shaped status for RSS/Atom item mapping. */
+export type SyndicationStatus = APITwitterStatus | APIBlueskyStatus;
 
 export type SyndicationFeedMeta = {
   channelTitle: string;
@@ -53,7 +56,7 @@ const toRfc822 = (d: Date): string => d.toUTCString();
 const toIso8601 = (d: Date): string => d.toISOString();
 
 /** Unified media ordering (matches HTML body). */
-export function statusMediaList(status: APITwitterStatus) {
+export function statusMediaList(status: SyndicationStatus) {
   const m = status.media;
   if (m?.all?.length) return m.all;
   return [...(m?.photos ?? []), ...(m?.videos ?? [])];
@@ -108,7 +111,7 @@ function pickProgressiveVideoUrl(v: APIVideo): { url: string; mime: string } | n
  * else external embed thumbnail, else link-card image.
  */
 export function syndicationEnclosureFromStatus(
-  status: APITwitterStatus
+  status: SyndicationStatus
 ): SyndicationEnclosure | undefined {
   const first = statusMediaList(status)[0];
   if (first) {
@@ -150,20 +153,22 @@ export function syndicationEnclosureFromStatus(
     };
   }
 
-  const cardImg = status.card?.image?.url;
-  if (cardImg) {
-    return {
-      url: cardImg,
-      type: mimeForImageUrl(cardImg),
-      length: 0
-    };
+  if (status.provider === 'twitter') {
+    const cardImg = status.card?.image?.url;
+    if (cardImg) {
+      return {
+        url: cardImg,
+        type: mimeForImageUrl(cardImg),
+        length: 0
+      };
+    }
   }
 
   return undefined;
 }
 
 function buildItemHtml(
-  status: APITwitterStatus,
+  status: SyndicationStatus,
   options: { omitSensitive?: boolean } = {}
 ): string {
   const body = escapeXml(status.text).replace(/\n/g, '<br />\n');
@@ -194,7 +199,7 @@ function buildItemHtml(
 }
 
 export function statusesToFeedItems(
-  statuses: APITwitterStatus[],
+  statuses: SyndicationStatus[],
   options: { omitSensitive?: boolean }
 ): SyndicationFeedItem[] {
   const out: SyndicationFeedItem[] = [];

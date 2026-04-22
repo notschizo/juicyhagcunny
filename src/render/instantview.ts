@@ -190,27 +190,27 @@ const generateInlineAuthorHeader = (
   authorActionType: AuthorActionType | null
 ): string => {
   if (authorActionType === AuthorActionType.Original) {
-    return `<h4><i>${i18next.t('ivAuthorActionOriginal', {
+    return `<h5><i>${i18next.t('ivAuthorActionOriginal', {
       statusUrl: status.url,
       authorName: author.name,
       authorUrl: author.url,
       authorScreenName: author.screen_name
-    })}</i></h4>`;
+    })}</i></h5>`;
   } else if (authorActionType === AuthorActionType.FollowUp) {
-    return `<h4><i>${i18next.t('ivAuthorActionFollowUp', {
+    return `<h5><i>${i18next.t('ivAuthorActionFollowUp', {
       statusUrl: status.url,
       authorName: author.name,
       authorUrl: author.url,
       authorScreenName: author.screen_name
-    })}</i></h4>`;
+    })}</i></h5>`;
   }
   // Reply / unknown
-  return `<h4><i>${i18next.t('ivAuthorActionReply', {
+  return `<h5><i>${i18next.t('ivAuthorActionReply', {
     statusUrl: status.url,
     authorName: author.name,
     authorUrl: author.url,
     authorScreenName: author.screen_name
-  })}</i></h4>`;
+  })}</i></h5>`;
 };
 
 const wrapForeignLinks = (url: string) => {

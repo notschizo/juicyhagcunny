@@ -9,6 +9,7 @@ import type {
   APIFacet,
   APIPhoto,
   APIPoll,
+  APIReplyingTo,
   APIRepostedBy,
   APITranslate,
   APITwitterStatus,
@@ -52,10 +53,7 @@ export interface APIStatus {
 
   possibly_sensitive: boolean;
 
-  replying_to: {
-    screen_name: string;
-    status: string;
-  } | null;
+  replying_to: APIReplyingTo | null;
 
   source: string | null;
 
