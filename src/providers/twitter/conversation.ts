@@ -424,20 +424,23 @@ interface GraphQLProcessBucket {
 }
 
 const pushTweetFromContent = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  itemContent: any,
+  itemContent:
+    | GraphQLTimelineTweet
+    | TweetTombstone
+    | GraphQLTimelineCursor
+    | { tweet: GraphQLTwitterStatus }, // TweetWithVisibilityResults
   bucket: GraphQLProcessBucket,
   entryId?: string
 ) => {
-  if (itemContent?.__typename !== 'TimelineTweet') return;
-  const result = itemContent.tweet_results?.result;
+  if ((itemContent as GraphQLTimelineTweet)?.__typename !== 'TimelineTweet') return;
+  const result = (itemContent as GraphQLTimelineTweet).tweet_results?.result;
   const entryType = result?.__typename;
   if (entryType === 'Tweet') {
     const tw = result as GraphQLTwitterStatus;
     bucket.statuses.push(tw);
     bucket.ordered.push(tw);
   } else if (entryType === 'TweetWithVisibilityResults') {
-    const tw = (result as { tweet: GraphQLTwitterStatus }).tweet;
+    const tw = (result as unknown as { tweet: GraphQLTwitterStatus }).tweet;
     bucket.statuses.push(tw);
     bucket.ordered.push(tw);
   } else if (entryType === 'TweetTombstone') {
