@@ -186,7 +186,7 @@ const ERROR_RULES: ErrorRule[] = [
     match: ignoreOnlyWithPayload(({ json }) =>
       firstErrorMessageIncludes(json, 'Internal server error')
     ),
-    disposition: 'retry',
+    disposition: 'ignore',
     log: 'Downstream fetch problem (Internal server error); retrying with another account.'
   }
 ];
