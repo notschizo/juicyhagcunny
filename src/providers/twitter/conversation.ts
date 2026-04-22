@@ -441,7 +441,7 @@ const pushTweetFromContent = (
     bucket.statuses.push(tw);
     bucket.ordered.push(tw);
   } else if (entryType === 'TweetWithVisibilityResults') {
-    const tw = (itemContent as GraphQLTweetWithVisibilityResults).tweet;
+    const tw = (result as GraphQLTweetWithVisibilityResults).tweet;
     bucket.statuses.push(tw);
     bucket.ordered.push(tw);
   } else if (entryType === 'TweetTombstone') {
@@ -542,7 +542,7 @@ const pushConversationTimelineTweet = (
       bucket.replyStatuses.push(tw);
     }
   } else if (entryType === 'TweetWithVisibilityResults') {
-    const tw = (itemContent as GraphQLTweetWithVisibilityResults).tweet;
+    const tw = (result as GraphQLTweetWithVisibilityResults).tweet;
     if (target === 'chain') {
       bucket.chainTweets.push(tw);
       bucket.chainOrdered.push(tw);

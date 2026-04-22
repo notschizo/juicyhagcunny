@@ -717,7 +717,7 @@ type GraphQLTimelineTweet = {
   item: 'TimelineTweet';
   __typename: 'TimelineTweet';
   tweet_results: {
-    result: GraphQLTwitterStatus | TweetTombstone;
+    result: GraphQLTwitterStatus | TweetTombstone | GraphQLTweetWithVisibilityResults;
   };
 };
 
