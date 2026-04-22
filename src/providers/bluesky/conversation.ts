@@ -3,8 +3,7 @@ import type {
   APIBlueskyStatus,
   APIStatusTombstone,
   APITombstoneReason,
-  SocialConversationBluesky,
-  SocialThreadBluesky
+  SocialConversationBluesky
 } from '../../realms/api/schemas';
 import { isTombstone } from '../../helpers/tombstone';
 import { type BlueskyFetchOpts, fetchPostThread, fetchPostThreadResult } from './client';
@@ -225,7 +224,7 @@ export const constructBlueskyThread = async (
   language: string | undefined,
   extraFetchOpts?: BlueskyFetchOpts,
   out?: { pdsHostHint?: string }
-): Promise<SocialThreadBluesky> => {
+): Promise<SocialThread> => {
   const credentialKey = c.env?.CREDENTIAL_KEY;
   const fetchOpts: BlueskyFetchOpts = { credentialKey, ...extraFetchOpts };
 

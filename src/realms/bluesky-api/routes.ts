@@ -7,8 +7,8 @@ import {
   APIGroupedSearchResultsBlueskySchema,
   APITrendsResponseSchema,
   SocialConversationBlueskySchema,
-  SocialThreadBlueskySchema,
-  UserAPIResponseSchema
+  UserAPIResponseSchema,
+  SocialThreadSchema
 } from '../api/schemas';
 import {
   BLUESKY_TRENDS_FEED_KINDS,
@@ -56,7 +56,7 @@ export const blueskyStatusV2Route = createRoute({
   responses: {
     200: {
       description: 'Thread payload (check `code` for upstream errors mirrored as HTTP status)',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     },
     400: {
       description: 'Invalid path or query parameters',
@@ -64,15 +64,15 @@ export const blueskyStatusV2Route = createRoute({
     },
     404: {
       description: 'Not found',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     },
     503: {
       description: 'Bluesky upstream timeout or error (post may still exist)',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     },
     500: {
       description: 'Server or upstream failure',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     }
   }
 });
@@ -189,7 +189,7 @@ export const blueskyThreadV2Route = createRoute({
   responses: {
     200: {
       description: 'Thread payload',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     },
     400: {
       description: 'Invalid path or query parameters',
@@ -197,15 +197,15 @@ export const blueskyThreadV2Route = createRoute({
     },
     404: {
       description: 'Not found',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     },
     503: {
       description: 'Bluesky upstream timeout or error (post may still exist)',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     },
     500: {
       description: 'Server or upstream failure',
-      content: { 'application/json': { schema: SocialThreadBlueskySchema } }
+      content: { 'application/json': { schema: SocialThreadSchema } }
     }
   }
 });

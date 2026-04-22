@@ -661,17 +661,6 @@ export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
   )
   .openapi('APIBlueskyStatus');
 
-export const SocialThreadBlueskySchema = z
-  .object({
-    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
-    status: APIBlueskyStatusSchema.nullable(),
-    thread: z.array(z.union([APIBlueskyStatusSchema, APIStatusTombstoneSchema])).nullable(),
-    author: APIUserSchema.nullable()
-  })
-  .openapi('SocialThreadBluesky');
-
-export type SocialThreadBluesky = z.infer<typeof SocialThreadBlueskySchema>;
-
 export const SocialConversationBlueskySchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),

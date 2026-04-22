@@ -4,6 +4,7 @@
  */
 import { DataProvider } from '../enum';
 import type {
+  APIBlueskyStatus as SchemasAPIBlueskyStatus,
   APIBroadcast,
   APIExternalMedia,
   APIFacet,
@@ -91,7 +92,11 @@ export interface SocialPost {
   author: APIUser | null;
 }
 
-export type ThreadOrStatusItem = APIStatus | APITwitterStatus | APIStatusTombstone;
+export type ThreadOrStatusItem =
+  | APIStatus
+  | APITwitterStatus
+  | APIStatusTombstone
+  | SchemasAPIBlueskyStatus;
 
 /** Used by Twitter v2 API, embed pipeline, Bluesky/TikTok conversations (broader than OpenAPI `SocialThreadSchema`). */
 export interface SocialThread {
