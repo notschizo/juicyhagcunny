@@ -19,8 +19,7 @@ export const buildBlueskyTombstone = (
   cid?: string
 ): APIStatusTombstone => {
   const rkey = rkeyFromPostAtUri(atUri) ?? undefined;
-  const repo =
-    atUri.startsWith('at://') ? atUri.replace(/^at:\/\//, '').split('/')[0] : '';
+  const repo = atUri.startsWith('at://') ? atUri.replace(/^at:\/\//, '').split('/')[0] : '';
   const url =
     rkey && repo
       ? `${Constants.BLUESKY_ROOT}/profile/${encodeURIComponent(repo)}/post/${rkey}`

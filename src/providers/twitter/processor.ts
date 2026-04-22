@@ -226,7 +226,9 @@ export const twitterTweetTombstoneFromGraphQL = (
   });
 };
 
-const tweetUnavailableToTombstone = (status: TweetStub | GraphQLTwitterStatus): APIStatusTombstone => {
+const tweetUnavailableToTombstone = (
+  status: TweetStub | GraphQLTwitterStatus
+): APIStatusTombstone => {
   if ((status as TweetStub).__typename !== 'TweetUnavailable') {
     return twitterTombstone('unavailable');
   }
@@ -607,7 +609,10 @@ export const buildAPITwitterStatus = async (
         url: qPerm ?? (qid ? `${Constants.TWITTER_ROOT}/i/status/${qid}` : undefined)
       });
     } else if (unwrapped?.__typename === 'TweetTombstone' && !legacyAPI) {
-      apiStatus.quote = twitterTweetTombstoneFromGraphQL(unwrapped as unknown as TweetTombstone, qid);
+      apiStatus.quote = twitterTweetTombstoneFromGraphQL(
+        unwrapped as unknown as TweetTombstone,
+        qid
+      );
     } else if (!isEmptyUnwrapped) {
       const buildQuote = await buildAPITwitterStatus(
         c,
@@ -636,11 +641,7 @@ export const buildAPITwitterStatus = async (
     }
 
     /* Only override the embed_card if it's a basic status, since media always takes precedence  */
-    if (
-      apiStatus.embed_card === 'tweet' &&
-      apiStatus.quote &&
-      !isTombstone(apiStatus.quote)
-    ) {
+    if (apiStatus.embed_card === 'tweet' && apiStatus.quote && !isTombstone(apiStatus.quote)) {
       apiStatus.embed_card = apiStatus.quote.embed_card;
     }
   }

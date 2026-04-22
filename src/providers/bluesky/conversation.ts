@@ -387,9 +387,7 @@ export const constructBlueskyConversation = async (
   )) as APIBlueskyStatus;
   const threadApi = (await Promise.all(
     threadPosts.map(p =>
-      isTombstone(p)
-        ? Promise.resolve(p)
-        : buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts)
+      isTombstone(p) ? Promise.resolve(p) : buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts)
     )
   )) as (APIBlueskyStatus | APIStatusTombstone)[];
   const repliesApi = (await Promise.all(

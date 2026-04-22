@@ -8,9 +8,7 @@ import type {
 } from '../realms/api/schemas';
 import type { APIStatus, SocialConversation, SocialThread } from '../types/apiStatus';
 
-export function isTombstone(
-  x: unknown
-): x is APIStatusTombstone {
+export function isTombstone(x: unknown): x is APIStatusTombstone {
   return typeof x === 'object' && x !== null && (x as APIStatusTombstone).type === 'tombstone';
 }
 
@@ -73,7 +71,9 @@ export function stripTombstones<T extends SocialThread | SocialConversation>(obj
     for (const item of obj.replies) {
       if (!isTombstone(item)) stripQuotesDeep(item as Statusish);
     }
-    (obj as SocialConversation).replies = obj.replies.filter(s => !isTombstone(s)) as typeof obj.replies;
+    (obj as SocialConversation).replies = obj.replies.filter(
+      s => !isTombstone(s)
+    ) as typeof obj.replies;
   }
   return obj;
 }

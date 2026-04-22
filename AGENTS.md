@@ -12,6 +12,7 @@ Environment variables are generally set in .env, not in Wrangler, except for cer
 - `.github/workflows/deploy.yml` (So GitHub Actions variables/secrets are given to it during deployment)
 - `src/types/env.d.ts` (for type documentation)
 - `src/constants.ts` (We typically load all environment variables under the Constants object)
+
 ## Cursor Cloud specific instructions
 
 ### Prerequisites
