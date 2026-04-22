@@ -227,9 +227,7 @@ const BLUESKY_PROFILE_FEED_PER_PAGE = 100;
 
 const BLUESKY_PROFILE_FEED_TARGET_CAP = 100;
 
-function isBlueskyFlatStatus(
-  r: APIBlueskyStatus | TimelineThreadBluesky
-): r is APIBlueskyStatus {
+function isBlueskyFlatStatus(r: APIBlueskyStatus | TimelineThreadBluesky): r is APIBlueskyStatus {
   return r.type === 'status';
 }
 
