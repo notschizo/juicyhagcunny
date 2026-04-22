@@ -58,5 +58,6 @@
   "language_vi": "вʼєтнамської",
   "language_zh-CN": "спрощеної китайської",
   "language_zh-TW": "традиційної китайської",
-  "threadIndicator": "🧵 Гілка • {brandingName}"
+  "threadIndicator": "🧵 Гілка • {brandingName}",
+  "articleIndicator": "📰 Стаття • {brandingName}"
 }

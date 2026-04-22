@@ -58,5 +58,6 @@
   "language_vi": "vietnamita",
   "language_zh-CN": "chino",
   "language_zh-TW": "chino",
-  "threadIndicator": "🧵 Hilo • {brandingName}"
+  "threadIndicator": "🧵 Hilo • {brandingName}",
+  "articleIndicator": "📰 Articulo • {brandingName}"
 }

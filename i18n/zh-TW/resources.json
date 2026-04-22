@@ -58,5 +58,6 @@
   "language_vi": "越南文",
   "language_zh-CN": "中文",
   "language_zh-TW": "中文",
-  "threadIndicator": "🧵 討論串 • {brandingName}"
+  "threadIndicator": "🧵 討論串 • {brandingName}",
+  "articleIndicator": "📰 文章• {brandingName}"
 }

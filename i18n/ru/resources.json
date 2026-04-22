@@ -58,5 +58,6 @@
   "language_vi": "вьетнамского",
   "language_zh-CN": "упрощённого китайского",
   "language_zh-TW": "традиционного китайского",
-  "threadIndicator": "🧵 Ветка • {brandingName}"
+  "threadIndicator": "🧵 Ветка • {brandingName}",
+  "articleIndicator": "📰 Статья • {brandingName}"
 }
