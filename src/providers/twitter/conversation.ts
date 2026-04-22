@@ -993,6 +993,19 @@ export const constructTwitterThread = async (
   const originalStatus = originalPiece as GraphQLTwitterStatus;
   const builtFocal = await buildAPITwitterStatus(c, originalStatus, language, null, legacyAPI);
 
+  if ((builtFocal as FetchResults)?.status === 401) {
+    writeDataPoint(c, language, null, '401');
+    return { status: null, thread: null, author: null, code: 401 };
+  }
+  if (builtFocal === null || (builtFocal as FetchResults)?.status === 404) {
+    writeDataPoint(c, language, null, '404');
+    return { status: null, thread: null, author: null, code: 404 };
+  }
+  if (typeof builtFocal === 'object' && typeof (builtFocal as FetchResults).status === 'number') {
+    writeDataPoint(c, language, null, '404');
+    return { status: null, thread: null, author: null, code: 404 };
+  }
+
   if (isTombstone(builtFocal)) {
     writeDataPoint(c, language, null, '404');
     return {
@@ -1004,11 +1017,6 @@ export const constructTwitterThread = async (
   }
 
   status = builtFocal as APITwitterStatus;
-
-  if (status === null) {
-    writeDataPoint(c, language, null, '404');
-    return { status: null, thread: null, author: null, code: 404 };
-  }
 
   status = await enrichArticleWithFullContent(c, status, id, language, legacyAPI, true);
 
@@ -1176,17 +1184,15 @@ export const constructTwitterThread = async (
     bucket.allStatuses
   );
 
-  await Promise.all(
+  const mergedThreadResults = await Promise.all(
     mergedTimeline.map(async piece => {
       if (isTombstone(piece)) {
-        socialThread.thread?.push(piece);
-        return;
+        return piece;
       }
       const graphqlStatus = piece as GraphQLTwitterStatus;
       const tweetId = graphqlStatus.rest_id ?? graphqlStatus.legacy?.id_str ?? '';
       if (tweetId === id) {
-        socialThread.thread?.push(status);
-        return;
+        return status;
       }
       const built = await buildAPITwitterStatus(
         c,
@@ -1198,11 +1204,10 @@ export const constructTwitterThread = async (
         'thread'
       );
       if (isTombstone(built)) {
-        socialThread.thread?.push(built);
-        return;
+        return built;
       }
       if ((built as FetchResults)?.status || built === null) {
-        return;
+        return null;
       }
       let builtStatus = built as APITwitterStatus;
       builtStatus = await enrichArticleWithFullContent(
@@ -1213,9 +1218,15 @@ export const constructTwitterThread = async (
         legacyAPI,
         true
       );
-      socialThread.thread?.push(builtStatus);
+      return builtStatus;
     })
   );
+
+  for (const entry of mergedThreadResults) {
+    if (entry !== null) {
+      socialThread.thread?.push(entry);
+    }
+  }
 
   if (legacyAPI) {
     stripTombstones(socialThread);
@@ -1311,25 +1322,22 @@ export const constructTwitterConversation = async (
     code: 200
   };
 
-  await Promise.all(
+  const conversationThreadResults = await Promise.all(
     threadPieces.map(async piece => {
       if (isTombstone(piece)) {
-        socialConversation.thread?.push(piece);
-        return;
+        return piece;
       }
       const s = piece as GraphQLTwitterStatus;
       const tweetId = s.rest_id ?? s.legacy?.id_str ?? '';
       if (tweetId === id) {
-        socialConversation.thread?.push(status);
-        return;
+        return status;
       }
       const built = await buildAPITwitterStatus(c, s, language, author, false, false, 'thread');
       if (isTombstone(built)) {
-        socialConversation.thread?.push(built);
-        return;
+        return built;
       }
       if ((built as FetchResults)?.status || built === null) {
-        return;
+        return null;
       }
       let builtStatus = built as APITwitterStatus;
       builtStatus = await enrichArticleWithFullContent(
@@ -1340,9 +1348,15 @@ export const constructTwitterConversation = async (
         false,
         false
       );
-      socialConversation.thread?.push(builtStatus);
+      return builtStatus;
     })
   );
+
+  for (const entry of conversationThreadResults) {
+    if (entry !== null) {
+      socialConversation.thread?.push(entry);
+    }
+  }
 
   /* Build the replies (from conversationthread-* modules) */
   await Promise.all(
