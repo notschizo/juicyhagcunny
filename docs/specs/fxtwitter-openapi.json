@@ -2702,14 +2702,7 @@
           {
             "$ref": "#/components/schemas/TimelineThreadTwitter"
           }
-        ],
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "undefined": "#/components/schemas/APITwitterStatus",
-            "thread": "#/components/schemas/TimelineThreadTwitter"
-          }
-        }
+        ]
       },
       "TimelineThreadTwitter": {
         "type": "object",

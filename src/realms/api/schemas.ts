@@ -537,10 +537,12 @@ export type APITwitterStatus = {
   type: 'status';
 };
 
-/* Self-referential `z.lazy` needs `z.ZodType<APITwitterStatus>` so output is not widened to `unknown`. */
-export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
-  .lazy(() =>
-    z.object({
+/* Self-referential `z.lazy` needs `z.ZodType<APITwitterStatus>` so output is not widened to `unknown`.
+ * `.openapi` must live on the inner object so discriminated unions (e.g. TimelineEntryTwitter) emit a real
+ * `type` discriminator mapping; on the lazy wrapper, zod-openapi produced `"undefined"` and broke doc prerender. */
+export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z.lazy(() =>
+  z
+    .object({
       type: z
         .literal('status')
         .openapi({ description: 'Discriminator: single post/status (API v2).' }),
@@ -578,8 +580,8 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
       reposted_by: APIRepostedBySchema.nullable(),
       card: APICardSchema.optional()
     })
-  )
-  .openapi('APITwitterStatus');
+    .openapi('APITwitterStatus')
+);
 
 export const SocialThreadSchema = z
   .object({
@@ -626,9 +628,9 @@ export type APIBlueskyStatus = {
   type: 'status';
 };
 
-export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
-  .lazy(() =>
-    z.object({
+export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z.lazy(() =>
+  z
+    .object({
       type: z.literal('status').openapi({ description: 'Discriminator: single status' }),
       id: z.string(),
       cid: z.string().optional(),
@@ -658,8 +660,8 @@ export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
       provider: z.literal('bluesky'),
       reposted_by: APIRepostedBySchema.optional()
     })
-  )
-  .openapi('APIBlueskyStatus');
+    .openapi('APIBlueskyStatus')
+);
 
 export const SocialConversationSchema = z
   .object({
@@ -736,8 +738,7 @@ export const TimelineThreadTwitterSchema = z
         'True when the conversation has more posts than listed in `statuses` (Twitter: `allTweetIds` length vs visible). False when counts match or upstream did not provide `allTweetIds`.'
     })
   })
-  .openapi('TimelineThreadTwitter');
-
+  .openapi('TimelineThreadTwitter');  
 export const TimelineEntryTwitterSchema = z
   .discriminatedUnion('type', [APITwitterStatusSchema, TimelineThreadTwitterSchema])
   .openapi('TimelineEntryTwitter');
@@ -807,9 +808,9 @@ export type APIMastodonStatus = {
   reposted_by?: z.infer<typeof APIRepostedBySchema>;
 };
 
-export const APIMastodonStatusSchema: z.ZodType<APIMastodonStatus> = z
-  .lazy(() =>
-    z.object({
+export const APIMastodonStatusSchema: z.ZodType<APIMastodonStatus> = z.lazy(() =>
+  z
+    .object({
       type: z
         .literal('status')
         .openapi({ description: 'Discriminator: single post/status (API v2).' }),
@@ -839,8 +840,8 @@ export const APIMastodonStatusSchema: z.ZodType<APIMastodonStatus> = z
       provider: z.literal('mastodon'),
       reposted_by: APIRepostedBySchema.optional()
     })
-  )
-  .openapi('APIMastodonStatus');
+    .openapi('APIMastodonStatus')
+);
 
 /** Mastodon `GET /2/mastodon/{domain}/status/{id}` — matches FxTwitter `GET /2/status/{id}` (no `thread`). */
 export const SocialStatusMastodonSchema = z

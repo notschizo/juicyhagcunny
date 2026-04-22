@@ -48,6 +48,13 @@ test('FxTwitter OpenAPI includes grouped timeline and v2 type discriminators', a
   expect(schemas?.APIGroupedSearchResults).toBeDefined();
   expect(schemas?.APITwitterStatus?.properties?.type).toBeDefined();
   expect(schemas?.APIUser?.properties?.type).toBeDefined();
+  const timelineEntry = schemas?.TimelineEntryTwitter as {
+    discriminator?: { mapping?: Record<string, string> };
+  };
+  expect(timelineEntry?.discriminator?.mapping?.status).toBe(
+    '#/components/schemas/APITwitterStatus'
+  );
+  expect(timelineEntry?.discriminator?.mapping?.undefined).toBeUndefined();
 });
 
 test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
@@ -65,4 +72,9 @@ test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
   };
   expect(doc.components?.schemas?.TimelineEntryBluesky).toBeDefined();
   expect(doc.components?.schemas?.APIGroupedSearchResultsBluesky).toBeDefined();
+  const entry = doc.components?.schemas?.TimelineEntryBluesky as {
+    discriminator?: { mapping?: Record<string, string> };
+  };
+  expect(entry?.discriminator?.mapping?.status).toBe('#/components/schemas/APIBlueskyStatus');
+  expect(entry?.discriminator?.mapping?.undefined).toBeUndefined();
 });

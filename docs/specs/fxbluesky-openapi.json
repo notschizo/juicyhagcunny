@@ -2548,7 +2548,7 @@
           "cursor"
         ]
       },
-      "SocialConversationBluesky": {
+      "SocialConversation": {
         "type": "object",
         "properties": {
           "code": {
@@ -2556,7 +2556,17 @@
             "description": "HTTP-style status; mirrors response status code"
           },
           "status": {
-            "$ref": "#/components/schemas/APIBlueskyStatus"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/APITwitterStatus"
+              },
+              {
+                "$ref": "#/components/schemas/APIStatusTombstone"
+              },
+              {
+                "nullable": true
+              }
+            ]
           },
           "thread": {
             "type": "array",
@@ -2564,7 +2574,7 @@
             "items": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/APIBlueskyStatus"
+                  "$ref": "#/components/schemas/APITwitterStatus"
                 },
                 {
                   "$ref": "#/components/schemas/APIStatusTombstone"
@@ -2576,7 +2586,7 @@
             "type": "array",
             "nullable": true,
             "items": {
-              "$ref": "#/components/schemas/APIBlueskyStatus"
+              "$ref": "#/components/schemas/APITwitterStatus"
             }
           },
           "author": {
@@ -2609,6 +2619,42 @@
           "thread",
           "replies",
           "author",
+          "cursor"
+        ]
+      },
+      "APISearchResultsBluesky": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "number"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIBlueskyStatus"
+            }
+          },
+          "cursor": {
+            "type": "object",
+            "properties": {
+              "top": {
+                "type": "string",
+                "nullable": true
+              },
+              "bottom": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "top",
+              "bottom"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "results",
           "cursor"
         ]
       },
@@ -3446,43 +3492,6 @@
           "source",
           "embed_card",
           "provider"
-        ],
-        "nullable": true
-      },
-      "APISearchResultsBluesky": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "number"
-          },
-          "results": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/APIBlueskyStatus"
-            }
-          },
-          "cursor": {
-            "type": "object",
-            "properties": {
-              "top": {
-                "type": "string",
-                "nullable": true
-              },
-              "bottom": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "required": [
-              "top",
-              "bottom"
-            ]
-          }
-        },
-        "required": [
-          "code",
-          "results",
-          "cursor"
         ]
       },
       "APITrendsResponse": {
@@ -3669,14 +3678,7 @@
           {
             "$ref": "#/components/schemas/TimelineThreadBluesky"
           }
-        ],
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "undefined": "#/components/schemas/APIBlueskyStatus",
-            "thread": "#/components/schemas/TimelineThreadBluesky"
-          }
-        }
+        ]
       },
       "TimelineThreadBluesky": {
         "type": "object",
@@ -4158,7 +4160,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SocialConversationBluesky"
+                  "$ref": "#/components/schemas/SocialConversation"
                 }
               }
             }
@@ -4178,7 +4180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SocialConversationBluesky"
+                  "$ref": "#/components/schemas/SocialConversation"
                 }
               }
             }
@@ -4188,7 +4190,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SocialConversationBluesky"
+                  "$ref": "#/components/schemas/SocialConversation"
                 }
               }
             }
@@ -4198,7 +4200,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SocialConversationBluesky"
+                  "$ref": "#/components/schemas/SocialConversation"
                 }
               }
             }
