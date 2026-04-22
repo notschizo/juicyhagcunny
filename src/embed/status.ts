@@ -607,6 +607,10 @@ export const handleStatus = async (
     newText += `\n${quoteText}`;
   }
 
+  if (!isDiscord && status.replying_to) {
+    newText = `↩ ${status.replying_to.display_name} (@${status.replying_to.screen_name})<br>${newText}`;
+  }
+
   const avatar = status.author.avatar_url;
   const twitterStatus = status as APITwitterStatus;
 

@@ -110,6 +110,19 @@ function replyTargetScreenNameFromGraphQL(status: GraphQLTwitterStatus): string 
   return undefined;
 }
 
+/** Display name for the replied-to author when GraphQL includes `reply_to_user_results` (User). */
+function replyTargetDisplayNameFromGraphQL(status: GraphQLTwitterStatus): string | undefined {
+  const user = status.reply_to_user_results?.result;
+  if (user?.__typename !== 'User') {
+    return undefined;
+  }
+  const name = user.core?.name ?? user.legacy?.name;
+  if (typeof name === 'string' && name.length > 0) {
+    return name;
+  }
+  return undefined;
+}
+
 function repostedByFromGraphQLUser(user: GraphQLUser | undefined): APIRepostedBy | null {
   if (!user || typeof user.rest_id !== 'string' || user.rest_id.length === 0) {
     return null;
@@ -468,9 +481,13 @@ export const buildAPITwitterStatus = async (
     // @ts-expect-error Use replying_to_status string for legacy API
     apiStatus.replying_to_status = replyStatusId || null;
   } else if (replyScreenName && replyStatusId) {
+    const displayName = replyTargetDisplayNameFromGraphQL(status);
     apiStatus.replying_to = {
       screen_name: replyScreenName,
-      status: replyStatusId
+      status: replyStatusId,
+      url: `${Constants.TWITTER_ROOT}/${replyScreenName}/status/${replyStatusId}`,
+      profile_url: `${Constants.TWITTER_ROOT}/${replyScreenName}`,
+      ...(displayName ? { display_name: displayName } : {})
     };
   } else {
     apiStatus.replying_to = null;
