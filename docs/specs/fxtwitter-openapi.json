@@ -21,13 +21,31 @@
             "description": "HTTP-style status; mirrors response status code"
           },
           "status": {
-            "$ref": "#/components/schemas/APITwitterStatus"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/APITwitterStatus"
+              },
+              {
+                "$ref": "#/components/schemas/APIStatusTombstone"
+              },
+              {
+                "nullable": true
+              }
+            ],
+            "description": "Focal post, or a tombstone when the post is unavailable"
           },
           "thread": {
             "type": "array",
             "nullable": true,
             "items": {
-              "$ref": "#/components/schemas/APITwitterStatus"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/APITwitterStatus"
+                },
+                {
+                  "$ref": "#/components/schemas/APIStatusTombstone"
+                }
+              ]
             }
           },
           "author": {
@@ -41,11 +59,23 @@
             ]
           }
         },
-        "required": ["code", "status", "thread", "author"]
+        "required": [
+          "code",
+          "status",
+          "thread",
+          "author"
+        ]
       },
       "APITwitterStatus": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "status"
+            ],
+            "description": "Discriminator: single post/status (API v2)."
+          },
           "id": {
             "type": "string"
           },
@@ -74,7 +104,14 @@
             "type": "number"
           },
           "quote": {
-            "$ref": "#/components/schemas/APITwitterStatus"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/APITwitterStatus"
+              },
+              {
+                "$ref": "#/components/schemas/APIStatusTombstone"
+              }
+            ]
           },
           "poll": {
             "type": "object",
@@ -94,7 +131,11 @@
                       "type": "number"
                     }
                   },
-                  "required": ["label", "count", "percentage"]
+                  "required": [
+                    "label",
+                    "count",
+                    "percentage"
+                  ]
                 }
               },
               "total_votes": {
@@ -107,7 +148,12 @@
                 "type": "string"
               }
             },
-            "required": ["choices", "total_votes", "ends_at", "time_left_en"]
+            "required": [
+              "choices",
+              "total_votes",
+              "ends_at",
+              "time_left_en"
+            ]
           },
           "author": {
             "$ref": "#/components/schemas/APIUser"
@@ -120,7 +166,9 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["video"]
+                    "enum": [
+                      "video"
+                    ]
                   },
                   "url": {
                     "type": "string"
@@ -135,7 +183,10 @@
                     "type": "number"
                   }
                 },
-                "required": ["type", "url"]
+                "required": [
+                  "type",
+                  "url"
+                ]
               },
               "photos": {
                 "type": "array",
@@ -150,7 +201,10 @@
                     },
                     "type": {
                       "type": "string",
-                      "enum": ["photo", "gif"]
+                      "enum": [
+                        "photo",
+                        "gif"
+                      ]
                     },
                     "url": {
                       "type": "string"
@@ -169,7 +223,12 @@
                       "type": "string"
                     }
                   },
-                  "required": ["type", "url", "width", "height"]
+                  "required": [
+                    "type",
+                    "url",
+                    "width",
+                    "height"
+                  ]
                 }
               },
               "videos": {
@@ -185,7 +244,10 @@
                     },
                     "type": {
                       "type": "string",
-                      "enum": ["video", "gif"]
+                      "enum": [
+                        "video",
+                        "gif"
+                      ]
                     },
                     "url": {
                       "type": "string"
@@ -217,11 +279,20 @@
                         "properties": {
                           "container": {
                             "type": "string",
-                            "enum": ["mp4", "webm", "m3u8"]
+                            "enum": [
+                              "mp4",
+                              "webm",
+                              "m3u8"
+                            ]
                           },
                           "codec": {
                             "type": "string",
-                            "enum": ["h264", "hevc", "vp9", "av1"]
+                            "enum": [
+                              "h264",
+                              "hevc",
+                              "vp9",
+                              "av1"
+                            ]
                           },
                           "bitrate": {
                             "type": "number"
@@ -239,7 +310,9 @@
                             "type": "number"
                           }
                         },
-                        "required": ["url"]
+                        "required": [
+                          "url"
+                        ]
                       }
                     },
                     "publisher": {
@@ -253,7 +326,14 @@
                       ]
                     }
                   },
-                  "required": ["type", "url", "width", "height", "duration", "formats"]
+                  "required": [
+                    "type",
+                    "url",
+                    "width",
+                    "height",
+                    "duration",
+                    "formats"
+                  ]
                 }
               },
               "all": {
@@ -271,7 +351,10 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": ["photo", "gif"]
+                          "enum": [
+                            "photo",
+                            "gif"
+                          ]
                         },
                         "url": {
                           "type": "string"
@@ -290,7 +373,12 @@
                           "type": "string"
                         }
                       },
-                      "required": ["type", "url", "width", "height"]
+                      "required": [
+                        "type",
+                        "url",
+                        "width",
+                        "height"
+                      ]
                     },
                     {
                       "type": "object",
@@ -303,7 +391,10 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": ["video", "gif"]
+                          "enum": [
+                            "video",
+                            "gif"
+                          ]
                         },
                         "url": {
                           "type": "string"
@@ -335,11 +426,20 @@
                             "properties": {
                               "container": {
                                 "type": "string",
-                                "enum": ["mp4", "webm", "m3u8"]
+                                "enum": [
+                                  "mp4",
+                                  "webm",
+                                  "m3u8"
+                                ]
                               },
                               "codec": {
                                 "type": "string",
-                                "enum": ["h264", "hevc", "vp9", "av1"]
+                                "enum": [
+                                  "h264",
+                                  "hevc",
+                                  "vp9",
+                                  "av1"
+                                ]
                               },
                               "bitrate": {
                                 "type": "number"
@@ -357,7 +457,9 @@
                                 "type": "number"
                               }
                             },
-                            "required": ["url"]
+                            "required": [
+                              "url"
+                            ]
                           }
                         },
                         "publisher": {
@@ -371,7 +473,14 @@
                           ]
                         }
                       },
-                      "required": ["type", "url", "width", "height", "duration", "formats"]
+                      "required": [
+                        "type",
+                        "url",
+                        "width",
+                        "height",
+                        "duration",
+                        "formats"
+                      ]
                     },
                     {
                       "type": "object",
@@ -384,7 +493,9 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": ["mosaic_photo"]
+                          "enum": [
+                            "mosaic_photo"
+                          ]
                         },
                         "url": {
                           "type": "string"
@@ -405,10 +516,19 @@
                               "type": "string"
                             }
                           },
-                          "required": ["webp", "jpeg"]
+                          "required": [
+                            "webp",
+                            "jpeg"
+                          ]
                         }
                       },
-                      "required": ["type", "url", "width", "height", "formats"]
+                      "required": [
+                        "type",
+                        "url",
+                        "width",
+                        "height",
+                        "formats"
+                      ]
                     },
                     {
                       "type": "object",
@@ -432,7 +552,12 @@
                           "type": "number"
                         }
                       },
-                      "required": ["type", "url", "width", "height"]
+                      "required": [
+                        "type",
+                        "url",
+                        "width",
+                        "height"
+                      ]
                     }
                   ]
                 }
@@ -448,7 +573,9 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["mosaic_photo"]
+                    "enum": [
+                      "mosaic_photo"
+                    ]
                   },
                   "url": {
                     "type": "string"
@@ -469,10 +596,19 @@
                         "type": "string"
                       }
                     },
-                    "required": ["webp", "jpeg"]
+                    "required": [
+                      "webp",
+                      "jpeg"
+                    ]
                   }
                 },
-                "required": ["type", "url", "width", "height", "formats"]
+                "required": [
+                  "type",
+                  "url",
+                  "width",
+                  "height",
+                  "formats"
+                ]
               },
               "broadcast": {
                 "type": "object",
@@ -488,7 +624,10 @@
                   },
                   "state": {
                     "type": "string",
-                    "enum": ["LIVE", "ENDED"]
+                    "enum": [
+                      "LIVE",
+                      "ENDED"
+                    ]
                   },
                   "broadcaster": {
                     "type": "object",
@@ -503,7 +642,11 @@
                         "type": "string"
                       }
                     },
-                    "required": ["username", "display_name", "id"]
+                    "required": [
+                      "username",
+                      "display_name",
+                      "id"
+                    ]
                   },
                   "stream": {
                     "type": "object",
@@ -512,7 +655,9 @@
                         "type": "string"
                       }
                     },
-                    "required": ["url"]
+                    "required": [
+                      "url"
+                    ]
                   },
                   "title": {
                     "type": "string"
@@ -522,7 +667,10 @@
                   },
                   "orientation": {
                     "type": "string",
-                    "enum": ["landscape", "portrait"]
+                    "enum": [
+                      "landscape",
+                      "portrait"
+                    ]
                   },
                   "broadcast_id": {
                     "type": "string"
@@ -546,7 +694,9 @@
                             "type": "string"
                           }
                         },
-                        "required": ["url"]
+                        "required": [
+                          "url"
+                        ]
                       },
                       "small": {
                         "type": "object",
@@ -555,7 +705,9 @@
                             "type": "string"
                           }
                         },
-                        "required": ["url"]
+                        "required": [
+                          "url"
+                        ]
                       },
                       "medium": {
                         "type": "object",
@@ -564,7 +716,9 @@
                             "type": "string"
                           }
                         },
-                        "required": ["url"]
+                        "required": [
+                          "url"
+                        ]
                       },
                       "large": {
                         "type": "object",
@@ -573,7 +727,9 @@
                             "type": "string"
                           }
                         },
-                        "required": ["url"]
+                        "required": [
+                          "url"
+                        ]
                       },
                       "x_large": {
                         "type": "object",
@@ -582,10 +738,14 @@
                             "type": "string"
                           }
                         },
-                        "required": ["url"]
+                        "required": [
+                          "url"
+                        ]
                       }
                     },
-                    "required": ["original"]
+                    "required": [
+                      "original"
+                    ]
                   }
                 },
                 "required": [
@@ -651,11 +811,18 @@
                       "type": "string"
                     }
                   },
-                  "required": ["type", "indices"]
+                  "required": [
+                    "type",
+                    "indices"
+                  ]
                 }
               }
             },
-            "required": ["text", "display_text_range", "facets"]
+            "required": [
+              "text",
+              "display_text_range",
+              "facets"
+            ]
           },
           "lang": {
             "type": "string",
@@ -680,23 +847,19 @@
                 "type": "string"
               }
             },
-            "required": ["text", "source_lang", "source_lang_en", "target_lang", "provider"]
+            "required": [
+              "text",
+              "source_lang",
+              "source_lang_en",
+              "target_lang",
+              "provider"
+            ]
           },
           "possibly_sensitive": {
             "type": "boolean"
           },
           "replying_to": {
-            "type": "object",
-            "nullable": true,
-            "properties": {
-              "screen_name": {
-                "type": "string"
-              },
-              "status": {
-                "type": "string"
-              }
-            },
-            "required": ["screen_name", "status"]
+            "$ref": "#/components/schemas/APIReplyingTo"
           },
           "source": {
             "type": "string",
@@ -704,11 +867,18 @@
           },
           "embed_card": {
             "type": "string",
-            "enum": ["tweet", "summary", "summary_large_image", "player"]
+            "enum": [
+              "tweet",
+              "summary",
+              "summary_large_image",
+              "player"
+            ]
           },
           "provider": {
             "type": "string",
-            "enum": ["twitter"]
+            "enum": [
+              "twitter"
+            ]
           },
           "views": {
             "type": "number",
@@ -768,11 +938,17 @@
               },
               "join_policy": {
                 "type": "string",
-                "enum": ["Open", "Closed"]
+                "enum": [
+                  "Open",
+                  "Closed"
+                ]
               },
               "invites_policy": {
                 "type": "string",
-                "enum": ["MemberInvitesAllowed", "MemberInvitesDisabled"]
+                "enum": [
+                  "MemberInvitesAllowed",
+                  "MemberInvitesDisabled"
+                ]
               },
               "is_pinned": {
                 "type": "boolean"
@@ -828,7 +1004,9 @@
                         "properties": {
                           "__typename": {
                             "type": "string",
-                            "enum": ["ApiImage"]
+                            "enum": [
+                              "ApiImage"
+                            ]
                           },
                           "original_img_height": {
                             "type": "number"
@@ -863,14 +1041,23 @@
                                           "type": "number"
                                         }
                                       },
-                                      "required": ["red", "green", "blue"]
+                                      "required": [
+                                        "red",
+                                        "green",
+                                        "blue"
+                                      ]
                                     }
                                   },
-                                  "required": ["percentage", "rgb"]
+                                  "required": [
+                                    "percentage",
+                                    "rgb"
+                                  ]
                                 }
                               }
                             },
-                            "required": ["palette"]
+                            "required": [
+                              "palette"
+                            ]
                           }
                         },
                         "required": [
@@ -888,11 +1075,15 @@
                             "anyOf": [
                               {
                                 "type": "string",
-                                "enum": ["ApiVideo"]
+                                "enum": [
+                                  "ApiVideo"
+                                ]
                               },
                               {
                                 "type": "string",
-                                "enum": ["ApiGif"]
+                                "enum": [
+                                  "ApiGif"
+                                ]
                               }
                             ]
                           },
@@ -900,11 +1091,15 @@
                             "anyOf": [
                               {
                                 "type": "string",
-                                "enum": ["video"]
+                                "enum": [
+                                  "video"
+                                ]
                               },
                               {
                                 "type": "string",
-                                "enum": ["animated_gif"]
+                                "enum": [
+                                  "animated_gif"
+                                ]
                               }
                             ]
                           },
@@ -942,14 +1137,23 @@
                                           "type": "number"
                                         }
                                       },
-                                      "required": ["red", "green", "blue"]
+                                      "required": [
+                                        "red",
+                                        "green",
+                                        "blue"
+                                      ]
                                     }
                                   },
-                                  "required": ["percentage", "rgb"]
+                                  "required": [
+                                    "percentage",
+                                    "rgb"
+                                  ]
                                 }
                               }
                             },
-                            "required": ["palette"]
+                            "required": [
+                              "palette"
+                            ]
                           },
                           "media_url": {
                             "type": "string"
@@ -976,7 +1180,10 @@
                                 "type": "number"
                               }
                             },
-                            "required": ["height", "width"]
+                            "required": [
+                              "height",
+                              "width"
+                            ]
                           },
                           "sizes": {
                             "type": "object",
@@ -989,16 +1196,24 @@
                                   },
                                   "resize": {
                                     "type": "string",
-                                    "enum": ["fit"]
+                                    "enum": [
+                                      "fit"
+                                    ]
                                   },
                                   "w": {
                                     "type": "number"
                                   }
                                 },
-                                "required": ["h", "resize", "w"]
+                                "required": [
+                                  "h",
+                                  "resize",
+                                  "w"
+                                ]
                               }
                             },
-                            "required": ["original"]
+                            "required": [
+                              "original"
+                            ]
                           },
                           "video_info": {
                             "type": "object",
@@ -1029,11 +1244,19 @@
                                       "type": "string"
                                     }
                                   },
-                                  "required": ["bitrate", "content_type", "url"]
+                                  "required": [
+                                    "bitrate",
+                                    "content_type",
+                                    "url"
+                                  ]
                                 }
                               }
                             },
-                            "required": ["aspect_ratio", "duration_millis", "variants"]
+                            "required": [
+                              "aspect_ratio",
+                              "duration_millis",
+                              "variants"
+                            ]
                           }
                         },
                         "required": [
@@ -1056,7 +1279,12 @@
                     ]
                   }
                 },
-                "required": ["id", "media_key", "media_id", "media_info"]
+                "required": [
+                  "id",
+                  "media_key",
+                  "media_id",
+                  "media_info"
+                ]
               },
               "content": {
                 "type": "object",
@@ -1090,7 +1318,11 @@
                                 "type": "number"
                               }
                             },
-                            "required": ["key", "length", "offset"]
+                            "required": [
+                              "key",
+                              "length",
+                              "offset"
+                            ]
                           }
                         },
                         "inlineStyleRanges": {
@@ -1108,7 +1340,11 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["length", "offset", "style"]
+                            "required": [
+                              "length",
+                              "offset",
+                              "style"
+                            ]
                           }
                         },
                         "text": {
@@ -1144,11 +1380,15 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["MARKDOWN"]
+                                  "enum": [
+                                    "MARKDOWN"
+                                  ]
                                 },
                                 "mutability": {
                                   "type": "string",
-                                  "enum": ["Mutable"]
+                                  "enum": [
+                                    "Mutable"
+                                  ]
                                 },
                                 "data": {
                                   "type": "object",
@@ -1160,13 +1400,23 @@
                                       "type": "string"
                                     }
                                   },
-                                  "required": ["entityKey", "markdown"]
+                                  "required": [
+                                    "entityKey",
+                                    "markdown"
+                                  ]
                                 }
                               },
-                              "required": ["type", "mutability", "data"]
+                              "required": [
+                                "type",
+                                "mutability",
+                                "data"
+                              ]
                             }
                           },
-                          "required": ["key", "value"]
+                          "required": [
+                            "key",
+                            "value"
+                          ]
                         },
                         {
                           "type": "object",
@@ -1179,11 +1429,15 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["MEDIA"]
+                                  "enum": [
+                                    "MEDIA"
+                                  ]
                                 },
                                 "mutability": {
                                   "type": "string",
-                                  "enum": ["Immutable"]
+                                  "enum": [
+                                    "Immutable"
+                                  ]
                                 },
                                 "data": {
                                   "type": "object",
@@ -1206,17 +1460,31 @@
                                             "type": "string"
                                           }
                                         },
-                                        "required": ["localMediaId", "mediaCategory", "mediaId"]
+                                        "required": [
+                                          "localMediaId",
+                                          "mediaCategory",
+                                          "mediaId"
+                                        ]
                                       }
                                     }
                                   },
-                                  "required": ["entityKey", "mediaItems"]
+                                  "required": [
+                                    "entityKey",
+                                    "mediaItems"
+                                  ]
                                 }
                               },
-                              "required": ["type", "mutability", "data"]
+                              "required": [
+                                "type",
+                                "mutability",
+                                "data"
+                              ]
                             }
                           },
-                          "required": ["key", "value"]
+                          "required": [
+                            "key",
+                            "value"
+                          ]
                         },
                         {
                           "type": "object",
@@ -1229,11 +1497,15 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["TWEET"]
+                                  "enum": [
+                                    "TWEET"
+                                  ]
                                 },
                                 "mutability": {
                                   "type": "string",
-                                  "enum": ["Immutable"]
+                                  "enum": [
+                                    "Immutable"
+                                  ]
                                 },
                                 "data": {
                                   "type": "object",
@@ -1242,13 +1514,22 @@
                                       "type": "string"
                                     }
                                   },
-                                  "required": ["tweetId"]
+                                  "required": [
+                                    "tweetId"
+                                  ]
                                 }
                               },
-                              "required": ["type", "mutability", "data"]
+                              "required": [
+                                "type",
+                                "mutability",
+                                "data"
+                              ]
                             }
                           },
-                          "required": ["key", "value"]
+                          "required": [
+                            "key",
+                            "value"
+                          ]
                         }
                       ]
                     },
@@ -1277,7 +1558,9 @@
                           "properties": {
                             "__typename": {
                               "type": "string",
-                              "enum": ["ApiImage"]
+                              "enum": [
+                                "ApiImage"
+                              ]
                             },
                             "original_img_height": {
                               "type": "number"
@@ -1312,14 +1595,23 @@
                                             "type": "number"
                                           }
                                         },
-                                        "required": ["red", "green", "blue"]
+                                        "required": [
+                                          "red",
+                                          "green",
+                                          "blue"
+                                        ]
                                       }
                                     },
-                                    "required": ["percentage", "rgb"]
+                                    "required": [
+                                      "percentage",
+                                      "rgb"
+                                    ]
                                   }
                                 }
                               },
-                              "required": ["palette"]
+                              "required": [
+                                "palette"
+                              ]
                             }
                           },
                           "required": [
@@ -1337,11 +1629,15 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": ["ApiVideo"]
+                                  "enum": [
+                                    "ApiVideo"
+                                  ]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": ["ApiGif"]
+                                  "enum": [
+                                    "ApiGif"
+                                  ]
                                 }
                               ]
                             },
@@ -1349,11 +1645,15 @@
                               "anyOf": [
                                 {
                                   "type": "string",
-                                  "enum": ["video"]
+                                  "enum": [
+                                    "video"
+                                  ]
                                 },
                                 {
                                   "type": "string",
-                                  "enum": ["animated_gif"]
+                                  "enum": [
+                                    "animated_gif"
+                                  ]
                                 }
                               ]
                             },
@@ -1391,14 +1691,23 @@
                                             "type": "number"
                                           }
                                         },
-                                        "required": ["red", "green", "blue"]
+                                        "required": [
+                                          "red",
+                                          "green",
+                                          "blue"
+                                        ]
                                       }
                                     },
-                                    "required": ["percentage", "rgb"]
+                                    "required": [
+                                      "percentage",
+                                      "rgb"
+                                    ]
                                   }
                                 }
                               },
-                              "required": ["palette"]
+                              "required": [
+                                "palette"
+                              ]
                             },
                             "media_url": {
                               "type": "string"
@@ -1425,7 +1734,10 @@
                                   "type": "number"
                                 }
                               },
-                              "required": ["height", "width"]
+                              "required": [
+                                "height",
+                                "width"
+                              ]
                             },
                             "sizes": {
                               "type": "object",
@@ -1438,16 +1750,24 @@
                                     },
                                     "resize": {
                                       "type": "string",
-                                      "enum": ["fit"]
+                                      "enum": [
+                                        "fit"
+                                      ]
                                     },
                                     "w": {
                                       "type": "number"
                                     }
                                   },
-                                  "required": ["h", "resize", "w"]
+                                  "required": [
+                                    "h",
+                                    "resize",
+                                    "w"
+                                  ]
                                 }
                               },
-                              "required": ["original"]
+                              "required": [
+                                "original"
+                              ]
                             },
                             "video_info": {
                               "type": "object",
@@ -1478,11 +1798,19 @@
                                         "type": "string"
                                       }
                                     },
-                                    "required": ["bitrate", "content_type", "url"]
+                                    "required": [
+                                      "bitrate",
+                                      "content_type",
+                                      "url"
+                                    ]
                                   }
                                 }
                               },
-                              "required": ["aspect_ratio", "duration_millis", "variants"]
+                              "required": [
+                                "aspect_ratio",
+                                "duration_millis",
+                                "variants"
+                              ]
                             }
                           },
                           "required": [
@@ -1505,7 +1833,12 @@
                       ]
                     }
                   },
-                  "required": ["id", "media_key", "media_id", "media_info"]
+                  "required": [
+                    "id",
+                    "media_key",
+                    "media_id",
+                    "media_info"
+                  ]
                 }
               }
             },
@@ -1560,11 +1893,17 @@
                       "type": "string"
                     }
                   },
-                  "required": ["type", "indices"]
+                  "required": [
+                    "type",
+                    "indices"
+                  ]
                 }
               }
             },
-            "required": ["text", "facets"]
+            "required": [
+              "text",
+              "facets"
+            ]
           },
           "reposted_by": {
             "$ref": "#/components/schemas/APIRepostedBy"
@@ -1605,10 +1944,13 @@
                 }
               }
             },
-            "required": ["url"]
+            "required": [
+              "url"
+            ]
           }
         },
         "required": [
+          "type",
           "id",
           "url",
           "text",
@@ -1630,12 +1972,284 @@
           "is_note_tweet",
           "community_note",
           "reposted_by"
-        ],
-        "nullable": true
+        ]
+      },
+      "APIStatusTombstone": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "tombstone"
+            ],
+            "description": "Placeholder for an unavailable post (quote/thread)."
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "twitter",
+              "bluesky",
+              "mastodon",
+              "tiktok"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "deleted",
+              "suspended",
+              "private",
+              "blocked",
+              "unavailable"
+            ],
+            "description": "Why the post is unavailable"
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "profile"
+                ],
+                "description": "Discriminator: full user profile (API v2)."
+              },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "screen_name": {
+                "type": "string"
+              },
+              "avatar_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "banner_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "description": {
+                "type": "string"
+              },
+              "raw_description": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "facets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "description": "Facet kind: e.g. url, mention, hashtag, bold, media, custom_emoji (Mastodon custom emoji image)"
+                        },
+                        "indices": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "description": "Start and end UTF-16 indices"
+                        },
+                        "original": {
+                          "type": "string"
+                        },
+                        "replacement": {
+                          "type": "string"
+                        },
+                        "display": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "indices"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "text",
+                  "facets"
+                ]
+              },
+              "location": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "protected": {
+                "type": "boolean"
+              },
+              "followers": {
+                "type": "number"
+              },
+              "following": {
+                "type": "number"
+              },
+              "statuses": {
+                "type": "number"
+              },
+              "media_count": {
+                "type": "number"
+              },
+              "likes": {
+                "type": "number"
+              },
+              "joined": {
+                "type": "string"
+              },
+              "website": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "display_url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url",
+                  "display_url"
+                ]
+              },
+              "birthday": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "day": {
+                    "type": "number"
+                  },
+                  "month": {
+                    "type": "number"
+                  },
+                  "year": {
+                    "type": "number"
+                  }
+                }
+              },
+              "verification": {
+                "type": "object",
+                "properties": {
+                  "verified": {
+                    "type": "boolean"
+                  },
+                  "type": {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      "organization",
+                      "government",
+                      "individual",
+                      null
+                    ]
+                  },
+                  "verified_at": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "identity_verified": {
+                    "type": "boolean"
+                  },
+                  "verified_by": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "verified",
+                  "type"
+                ]
+              },
+              "about_account": {
+                "$ref": "#/components/schemas/APIAboutAccount"
+              },
+              "profile_embed": {
+                "type": "boolean"
+              }
+            }
+          },
+          "at_uri": {
+            "type": "string"
+          },
+          "cid": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "provider",
+          "reason",
+          "message"
+        ]
+      },
+      "APIAboutAccount": {
+        "type": "object",
+        "properties": {
+          "based_in": {
+            "type": "string",
+            "nullable": true
+          },
+          "location_accurate": {
+            "type": "boolean"
+          },
+          "created_country_accurate": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "username_changes": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "number"
+              },
+              "last_changed_at": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "count",
+              "last_changed_at"
+            ]
+          }
+        }
       },
       "APIUser": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "profile"
+            ],
+            "description": "Discriminator: full user profile (API v2)."
+          },
           "id": {
             "type": "string"
           },
@@ -1693,11 +2307,17 @@
                       "type": "string"
                     }
                   },
-                  "required": ["type", "indices"]
+                  "required": [
+                    "type",
+                    "indices"
+                  ]
                 }
               }
             },
-            "required": ["text", "facets"]
+            "required": [
+              "text",
+              "facets"
+            ]
           },
           "location": {
             "type": "string"
@@ -1737,7 +2357,10 @@
                 "type": "string"
               }
             },
-            "required": ["url", "display_url"]
+            "required": [
+              "url",
+              "display_url"
+            ]
           },
           "birthday": {
             "type": "object",
@@ -1763,7 +2386,12 @@
               "type": {
                 "type": "string",
                 "nullable": true,
-                "enum": ["organization", "government", "individual", null]
+                "enum": [
+                  "organization",
+                  "government",
+                  "individual",
+                  null
+                ]
               },
               "verified_at": {
                 "type": "string",
@@ -1771,9 +2399,15 @@
               },
               "identity_verified": {
                 "type": "boolean"
+              },
+              "verified_by": {
+                "type": "string"
               }
             },
-            "required": ["verified", "type"]
+            "required": [
+              "verified",
+              "type"
+            ]
           },
           "about_account": {
             "$ref": "#/components/schemas/APIAboutAccount"
@@ -1783,6 +2417,7 @@
           }
         },
         "required": [
+          "type",
           "id",
           "name",
           "screen_name",
@@ -1802,38 +2437,35 @@
           "website"
         ]
       },
-      "APIAboutAccount": {
+      "APIReplyingTo": {
         "type": "object",
+        "nullable": true,
         "properties": {
-          "based_in": {
+          "screen_name": {
             "type": "string",
-            "nullable": true
+            "description": "Handle or account id used in permalinks (@user on X)."
           },
-          "location_accurate": {
-            "type": "boolean"
-          },
-          "created_country_accurate": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "source": {
+          "status": {
             "type": "string",
-            "nullable": true
+            "description": "Parent post id (X: snowflake; Bluesky: record key)."
           },
-          "username_changes": {
-            "type": "object",
-            "properties": {
-              "count": {
-                "type": "number"
-              },
-              "last_changed_at": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "required": ["count", "last_changed_at"]
+          "url": {
+            "type": "string",
+            "description": "Permalink to the parent post when known."
+          },
+          "profile_url": {
+            "type": "string",
+            "description": "Permalink to the parent author profile when known."
+          },
+          "display_name": {
+            "type": "string",
+            "description": "Display name of the parent author when known."
           }
-        }
+        },
+        "required": [
+          "screen_name",
+          "status"
+        ]
       },
       "APIRepostedBy": {
         "type": "object",
@@ -1856,20 +2488,29 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "screen_name"]
+        "required": [
+          "id",
+          "name",
+          "screen_name"
+        ]
       },
       "ApiQueryError": {
         "type": "object",
         "properties": {
           "code": {
             "type": "number",
-            "enum": [400]
+            "enum": [
+              400
+            ]
           },
           "message": {
             "type": "string"
           }
         },
-        "required": ["code", "message"]
+        "required": [
+          "code",
+          "message"
+        ]
       },
       "APIUserListResults": {
         "type": "object",
@@ -1895,10 +2536,17 @@
                 "nullable": true
               }
             },
-            "required": ["top", "bottom"]
+            "required": [
+              "top",
+              "bottom"
+            ]
           }
         },
-        "required": ["code", "results", "cursor"]
+        "required": [
+          "code",
+          "results",
+          "cursor"
+        ]
       },
       "APISearchResults": {
         "type": "object",
@@ -1924,10 +2572,17 @@
                 "nullable": true
               }
             },
-            "required": ["top", "bottom"]
+            "required": [
+              "top",
+              "bottom"
+            ]
           }
         },
-        "required": ["code", "results", "cursor"]
+        "required": [
+          "code",
+          "results",
+          "cursor"
+        ]
       },
       "SocialConversation": {
         "type": "object",
@@ -1937,13 +2592,30 @@
             "description": "HTTP-style status; mirrors response status code"
           },
           "status": {
-            "$ref": "#/components/schemas/APITwitterStatus"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/APITwitterStatus"
+              },
+              {
+                "$ref": "#/components/schemas/APIStatusTombstone"
+              },
+              {
+                "nullable": true
+              }
+            ]
           },
           "thread": {
             "type": "array",
             "nullable": true,
             "items": {
-              "$ref": "#/components/schemas/APITwitterStatus"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/APITwitterStatus"
+                },
+                {
+                  "$ref": "#/components/schemas/APIStatusTombstone"
+                }
+              ]
             }
           },
           "replies": {
@@ -1972,10 +2644,109 @@
                 "nullable": true
               }
             },
-            "required": ["bottom"]
+            "required": [
+              "bottom"
+            ]
           }
         },
-        "required": ["code", "status", "thread", "replies", "author", "cursor"]
+        "required": [
+          "code",
+          "status",
+          "thread",
+          "replies",
+          "author",
+          "cursor"
+        ]
+      },
+      "APIGroupedSearchResults": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "number"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineEntryTwitter"
+            }
+          },
+          "cursor": {
+            "type": "object",
+            "properties": {
+              "top": {
+                "type": "string",
+                "nullable": true
+              },
+              "bottom": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "top",
+              "bottom"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "results",
+          "cursor"
+        ]
+      },
+      "TimelineEntryTwitter": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/APITwitterStatus"
+          },
+          {
+            "$ref": "#/components/schemas/TimelineThreadTwitter"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "undefined": "#/components/schemas/APITwitterStatus",
+            "thread": "#/components/schemas/TimelineThreadTwitter"
+          }
+        }
+      },
+      "TimelineThreadTwitter": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "thread"
+            ],
+            "description": "Discriminator: grouped conversation snippet in a timeline (API v2)."
+          },
+          "conversation_id": {
+            "type": "string"
+          },
+          "statuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APITwitterStatus"
+            }
+          },
+          "all_status_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "True when the conversation has more posts than listed in `statuses` (Twitter: `allTweetIds` length vs visible). False when counts match or upstream did not provide `allTweetIds`."
+          }
+        },
+        "required": [
+          "type",
+          "conversation_id",
+          "statuses",
+          "truncated"
+        ]
       },
       "ProfileAboutAPIResponse": {
         "type": "object",
@@ -1990,7 +2761,10 @@
             "$ref": "#/components/schemas/APIAboutAccount"
           }
         },
-        "required": ["code", "message"]
+        "required": [
+          "code",
+          "message"
+        ]
       },
       "APIProfileRelationshipList": {
         "type": "object",
@@ -2016,10 +2790,17 @@
                 "nullable": true
               }
             },
-            "required": ["top", "bottom"]
+            "required": [
+              "top",
+              "bottom"
+            ]
           }
         },
-        "required": ["code", "results", "cursor"]
+        "required": [
+          "code",
+          "results",
+          "cursor"
+        ]
       },
       "UserAPIResponse": {
         "type": "object",
@@ -2032,9 +2813,23 @@
           },
           "user": {
             "$ref": "#/components/schemas/APIUser"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "suspended"
+            ],
+            "description": "Set to `suspended` when the user is suspended; omitted for plain not found."
+          },
+          "id": {
+            "type": "string",
+            "description": "Numeric user id when the upstream payload includes it."
           }
         },
-        "required": ["code", "message"]
+        "required": [
+          "code",
+          "message"
+        ]
       },
       "APITypeaheadResponse": {
         "type": "object",
@@ -2067,7 +2862,14 @@
             }
           }
         },
-        "required": ["code", "query", "num_results", "users", "topics", "events"]
+        "required": [
+          "code",
+          "query",
+          "num_results",
+          "users",
+          "topics",
+          "events"
+        ]
       },
       "APITypeaheadTopic": {
         "type": "object",
@@ -2093,13 +2895,17 @@
                       "type": "string"
                     }
                   },
-                  "required": ["type"]
+                  "required": [
+                    "type"
+                  ]
                 }
               }
             }
           }
         },
-        "required": ["topic"]
+        "required": [
+          "topic"
+        ]
       },
       "APITypeaheadEvent": {
         "type": "object",
@@ -2126,10 +2932,14 @@
                 "type": "number"
               }
             },
-            "required": ["url"]
+            "required": [
+              "url"
+            ]
           }
         },
-        "required": ["topic"]
+        "required": [
+          "topic"
+        ]
       },
       "APITrendsResponse": {
         "type": "object",
@@ -2168,11 +2978,17 @@
                         "type": "string"
                       }
                     },
-                    "required": ["name"]
+                    "required": [
+                      "name"
+                    ]
                   }
                 }
               },
-              "required": ["name", "rank", "context"]
+              "required": [
+                "name",
+                "rank",
+                "context"
+              ]
             }
           },
           "cursor": {
@@ -2187,10 +3003,18 @@
                 "nullable": true
               }
             },
-            "required": ["top", "bottom"]
+            "required": [
+              "top",
+              "bottom"
+            ]
           }
         },
-        "required": ["code", "timeline_type", "trends", "cursor"]
+        "required": [
+          "code",
+          "timeline_type",
+          "trends",
+          "cursor"
+        ]
       }
     },
     "parameters": {}
@@ -2204,10 +3028,11 @@
           {
             "schema": {
               "type": "string",
+              "pattern": "^\\d{2,20}$",
               "example": "20"
             },
             "required": true,
-            "description": "Tweet/post snowflake ID",
+            "description": "Tweet/post snowflake ID (numeric string)",
             "name": "id",
             "in": "path"
           },
@@ -2297,16 +3122,17 @@
     },
     "/2/status/{id}/reposts": {
       "get": {
-        "summary": "List reposters of a status",
+        "summary": "List reposters of a post",
         "description": "Returns users who reposted the given status. Use `cursor.bottom` from the prior response to fetch the next page.",
         "parameters": [
           {
             "schema": {
               "type": "string",
+              "pattern": "^\\d{2,20}$",
               "example": "20"
             },
             "required": true,
-            "description": "Status snowflake ID",
+            "description": "Tweet/post snowflake ID (numeric string)",
             "name": "id",
             "in": "path"
           },
@@ -2384,10 +3210,11 @@
           {
             "schema": {
               "type": "string",
+              "pattern": "^\\d{2,20}$",
               "example": "20"
             },
             "required": true,
-            "description": "Tweet/post snowflake ID",
+            "description": "Tweet/post snowflake ID (numeric string)",
             "name": "id",
             "in": "path"
           },
@@ -2474,10 +3301,12 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d{2,20}$",
+              "example": "20"
             },
             "required": true,
-            "description": "Root tweet/post snowflake ID",
+            "description": "Tweet/post snowflake ID (numeric string)",
             "name": "id",
             "in": "path"
           },
@@ -2572,17 +3401,22 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d{2,20}$",
+              "example": "20"
             },
             "required": true,
-            "description": "Focal tweet/post snowflake ID",
+            "description": "Tweet/post snowflake ID (numeric string)",
             "name": "id",
             "in": "path"
           },
           {
             "schema": {
               "type": "string",
-              "enum": ["likes", "recency"],
+              "enum": [
+                "likes",
+                "recency"
+              ],
               "default": "likes"
             },
             "required": false,
@@ -2740,6 +3574,15 @@
           },
           {
             "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "If truthy (`1`, `true`, etc.), return `results` as a mix of `type: \"status\"` and `type: \"thread\"` entries (grouped conversation rows).",
+            "name": "groupthreads",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string",
               "example": "es"
             },
@@ -2751,11 +3594,18 @@
         ],
         "responses": {
           "200": {
-            "description": "Timeline page",
+            "description": "Timeline page (flat or grouped when `groupthreads` is set)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/APISearchResults"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/APISearchResults"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIGroupedSearchResults"
+                    }
+                  ]
                 }
               }
             }
@@ -3239,7 +4089,7 @@
             }
           },
           "404": {
-            "description": "User not found",
+            "description": "User not found, suspended (`reason`: `suspended`, `message`: User is suspended), or unavailable",
             "content": {
               "application/json": {
                 "schema": {
@@ -3268,7 +4118,11 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["latest", "top", "media"],
+              "enum": [
+                "latest",
+                "top",
+                "media"
+              ],
               "default": "latest"
             },
             "required": false,
@@ -3354,7 +4208,7 @@
     "/2/typeahead": {
       "get": {
         "summary": "Search typeahead suggestions",
-        "description": "Autocomplete-style suggestions from X REST `1.1/search/typeahead.json`: users (as `APIUser` with counts and bio omitted when unknown), topics (including hashtag-style trends), and events.",
+        "description": "Autocomplete suggestions from X/Twitter search",
         "parameters": [
           {
             "schema": {
@@ -3438,7 +4292,9 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["trending"],
+              "enum": [
+                "trending"
+              ],
               "default": "trending",
               "example": "trending"
             },

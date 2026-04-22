@@ -6,9 +6,9 @@
   "scripts": {
     "build": "node esbuild.config.mjs",
     "build-local": "node esbuild.config.mjs --no-sentry-upload",
-    "publish": "wrangler deploy --no-bundle",
     "deploy": "wrangler deploy --no-bundle",
     "log": "wrangler tail",
+    "tail": "wrangler tail",
     "reload": "wrangler deploy --no-bundle && wrangler tail",
     "prettier": "prettier --write .",
     "lint:eslint": "eslint --max-warnings=0 src",

@@ -72,7 +72,7 @@ registerOpenApiJsonRoute(blueskyApi, '/2/openapi.json', {
     title: 'FxBluesky API',
     version: '2.0.0',
     description:
-      'FxBluesky API v2 (Bluesky / ATProto; response shape aligned with FxTwitter API v2 where applicable)'
+      'FxBluesky API v2'
   },
   servers: Constants.BLUESKY_API_HOST_ROOT
     ? [
