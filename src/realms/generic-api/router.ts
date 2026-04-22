@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { trimTrailingSlash } from 'hono/trailing-slash';
 import { Constants } from '../../constants';
 import { Strings } from '../../strings';
+import { registerOpenApiJsonRoute } from '../api/openapi-json-route';
 import { apiOpenapiValidationHook } from '../api/openapi-validation-hook';
 import {
   mastodonConversationAPIRequest,
@@ -59,7 +60,7 @@ genericApi.openapi(mastodonProfileFollowingV2Route, mastodonProfileFollowingAPIR
 genericApi.openapi(mastodonProfileMediaV2Route, mastodonProfileMediaAPIRequest);
 genericApi.openapi(mastodonProfileStatusesV2Route, mastodonProfileStatusesAPIRequest);
 
-genericApi.doc('/2/openapi.json', {
+registerOpenApiJsonRoute(genericApi, '/2/openapi.json', {
   openapi: '3.0.0',
   info: {
     title: 'FxEmbed generic API',

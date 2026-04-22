@@ -31,6 +31,13 @@ Environment variables are generally set in .env, not in Wrangler, except for cer
 | Test          | `npm run test`                                                 |
 | Dev server    | `npx wrangler dev --local` (serves on `http://localhost:8787`) |
 
+### Docs site (`docs/`)
+
+- Guide screenshots are static assets under `docs/public/guide/readme/` (served as `/guide/readme/*` in the docs site).
+- Refresh API reference specs from **production**: `cd docs && npm run extract-openapi`
+- Refresh from your **local worker** (after `wrangler dev --local`): `cd docs && npm run extract-openapi:local` (default port `8787`; custom: `npm run extract-openapi:local -- 9000`). The script sets `Host` to `api.fxtwitter.com` / `api.fxbsky.app` so routing matches production.
+- Then `npm run dev` in `docs/` to preview.
+
 ### Dev server testing notes
 
 - The worker routes by `Host` header. Use `-H "Host: fxtwitter.com"` (or `fxbsky.app`, `api.fxtwitter.com`, etc.) with curl to hit different realms.

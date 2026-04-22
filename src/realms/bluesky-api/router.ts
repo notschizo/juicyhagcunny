@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { trimTrailingSlash } from 'hono/trailing-slash';
+import { registerOpenApiJsonRoute } from '../api/openapi-json-route';
 import { apiOpenapiValidationHook } from '../api/openapi-validation-hook';
 import { Constants } from '../../constants';
 import { Strings } from '../../strings';
@@ -65,7 +66,7 @@ blueskyApi.openapi(blueskyProfileMediaV2Route, blueskyProfileMediaAPIRequest);
 blueskyApi.openapi(blueskyProfileLikesV2Route, blueskyProfileLikesAPIRequest);
 blueskyApi.openapi(blueskyProfileStatusesV2Route, blueskyProfileStatusesAPIRequest);
 
-blueskyApi.doc('/2/openapi.json', {
+registerOpenApiJsonRoute(blueskyApi, '/2/openapi.json', {
   openapi: '3.0.0',
   info: {
     title: 'FxBluesky API',
