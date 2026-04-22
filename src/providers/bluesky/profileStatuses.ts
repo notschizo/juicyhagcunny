@@ -5,7 +5,8 @@ import type {
   APIRepostedBy,
   APIGroupedSearchResultsBluesky,
   APISearchResultsBluesky,
-  TimelineEntryBluesky
+  TimelineEntryBluesky,
+  TimelineThreadBluesky
 } from '../../realms/api/schemas';
 import { buildAPIBlueskyPost } from './processor';
 import { fetchActorLikes, fetchAuthorFeed } from './client';
@@ -218,6 +219,178 @@ export const blueskyProfileMediaAPI = async (
     },
     c
   );
+
+/** Max author-feed pages to merge for RSS (aligns with Twitter profile feed pagination). */
+const BLUESKY_PROFILE_FEED_MAX_PAGES = 10;
+
+const BLUESKY_PROFILE_FEED_PER_PAGE = 100;
+
+const BLUESKY_PROFILE_FEED_TARGET_CAP = 100;
+
+function isBlueskyFlatStatus(
+  r: APIBlueskyStatus | TimelineThreadBluesky
+): r is APIBlueskyStatus {
+  return r.type === 'status';
+}
+
+/**
+ * Fetches up to `maxTotal` posts (cap 100) by walking `cursor.bottom` across
+ * multiple `blueskyProfileStatusesAPI` calls. Dedupes by post `id`. Uses a flat
+ * timeline (`groupThreads: false`).
+ */
+export const blueskyProfileStatusesAPIPaginated = async (
+  actor: string,
+  maxTotal: number,
+  c: Context,
+  withReplies = false,
+  language?: string
+): Promise<APISearchResultsBluesky> => {
+  const target = Math.min(BLUESKY_PROFILE_FEED_TARGET_CAP, Math.max(1, maxTotal));
+  const merged: APIBlueskyStatus[] = [];
+  const seenIds = new Set<string>();
+  let cursor: string | null = null;
+  let lastCursors: APISearchResultsBluesky['cursor'] = { top: null, bottom: null };
+  let pages = 0;
+  let anySuccessfulPage = false;
+
+  while (merged.length < target && pages < BLUESKY_PROFILE_FEED_MAX_PAGES) {
+    pages += 1;
+    const page = await blueskyProfileStatusesAPI(
+      actor,
+      {
+        count: BLUESKY_PROFILE_FEED_PER_PAGE,
+        cursor,
+        withReplies,
+        language,
+        groupThreads: false
+      },
+      c
+    );
+
+    if (page.code === 404) {
+      if (merged.length === 0) {
+        return { code: 404, results: [], cursor: { top: null, bottom: null } };
+      }
+      break;
+    }
+
+    if (page.code !== 200) {
+      if (merged.length === 0) {
+        return { code: page.code, results: [], cursor: { top: null, bottom: null } };
+      }
+      break;
+    }
+
+    anySuccessfulPage = true;
+    lastCursors = page.cursor;
+
+    if (page.results.length === 0) {
+      break;
+    }
+
+    for (const r of page.results as TimelineEntryBluesky[]) {
+      if (!isBlueskyFlatStatus(r)) continue;
+      if (seenIds.has(r.id)) continue;
+      seenIds.add(r.id);
+      merged.push(r);
+      if (merged.length >= target) break;
+    }
+
+    if (merged.length >= target) break;
+
+    const bottom = page.cursor.bottom;
+    if (!bottom || bottom === cursor) break;
+    cursor = bottom;
+  }
+
+  if (merged.length === 0) {
+    if (anySuccessfulPage) {
+      return { code: 200, results: [], cursor: { top: null, bottom: null } };
+    }
+    return { code: 404, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  return {
+    code: 200,
+    results: merged.slice(0, target),
+    cursor: lastCursors
+  };
+};
+
+/**
+ * Same pagination strategy as `blueskyProfileStatusesAPIPaginated`, for the
+ * profile media filter (`posts_with_media`).
+ */
+export const blueskyProfileMediaAPIPaginated = async (
+  actor: string,
+  maxTotal: number,
+  c: Context,
+  language?: string
+): Promise<APISearchResultsBluesky> => {
+  const target = Math.min(BLUESKY_PROFILE_FEED_TARGET_CAP, Math.max(1, maxTotal));
+  const merged: APIBlueskyStatus[] = [];
+  const seenIds = new Set<string>();
+  let cursor: string | null = null;
+  let lastCursors: APISearchResultsBluesky['cursor'] = { top: null, bottom: null };
+  let pages = 0;
+  let anySuccessfulPage = false;
+
+  while (merged.length < target && pages < BLUESKY_PROFILE_FEED_MAX_PAGES) {
+    pages += 1;
+    const page = await blueskyProfileMediaAPI(
+      actor,
+      { count: BLUESKY_PROFILE_FEED_PER_PAGE, cursor, language },
+      c
+    );
+
+    if (page.code === 404) {
+      if (merged.length === 0) {
+        return { code: 404, results: [], cursor: { top: null, bottom: null } };
+      }
+      break;
+    }
+
+    if (page.code !== 200) {
+      if (merged.length === 0) {
+        return { code: page.code, results: [], cursor: { top: null, bottom: null } };
+      }
+      break;
+    }
+
+    anySuccessfulPage = true;
+    lastCursors = page.cursor;
+
+    if (page.results.length === 0) {
+      break;
+    }
+
+    for (const r of page.results) {
+      if (seenIds.has(r.id)) continue;
+      seenIds.add(r.id);
+      merged.push(r);
+      if (merged.length >= target) break;
+    }
+
+    if (merged.length >= target) break;
+
+    const bottom = page.cursor.bottom;
+    if (!bottom || bottom === cursor) break;
+    cursor = bottom;
+  }
+
+  if (merged.length === 0) {
+    if (anySuccessfulPage) {
+      return { code: 200, results: [], cursor: { top: null, bottom: null } };
+    }
+    return { code: 404, results: [], cursor: { top: null, bottom: null } };
+  }
+
+  return {
+    code: 200,
+    results: merged.slice(0, target),
+    cursor: lastCursors
+  };
+};
 
 export const blueskyProfileLikesAPI = async (
   actor: string,

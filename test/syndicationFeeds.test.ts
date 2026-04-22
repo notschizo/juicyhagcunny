@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import type { APITwitterStatus } from '../src/realms/api/schemas';
+import type { APIBlueskyStatus, APITwitterStatus } from '../src/realms/api/schemas';
 import {
   escapeXml,
   statusesToFeedItems,
@@ -254,4 +254,47 @@ test('tweet text with angle brackets is escaped inside CDATA-wrapped HTML', () =
   expect(xml).toContain('<![CDATA[');
   expect(xml).toContain(']]&gt;');
   expect(xml).not.toMatch(/\]\]>\s*b/);
+});
+
+const baseBlueskyStatus = (over: Partial<APIBlueskyStatus> = {}): APIBlueskyStatus =>
+  ({
+    id: 'rkeybsky',
+    cid: 'bafycidbsky',
+    url: 'https://bsky.app/profile/handle.test/post/rkeybsky',
+    text: 'Hello from ATProto',
+    created_at: '2024-01-01T00:00:00.000Z',
+    created_timestamp: 1704067200,
+    likes: 0,
+    reposts: 0,
+    replies: 0,
+    author: {
+      ...baseStatus().author,
+      type: 'profile',
+      id: 'handle.test',
+      name: 'Handle',
+      screen_name: 'handle.test',
+      url: 'https://bsky.app/profile/handle.test',
+      profile_embed: true
+    },
+    media: { photos: [], videos: [] },
+    raw_text: { text: 'Hello from ATProto', facets: [] },
+    lang: 'en',
+    possibly_sensitive: false,
+    replying_to: null,
+    source: 'Bluesky Social',
+    embed_card: 'tweet',
+    provider: 'bluesky',
+    type: 'status',
+    ...over
+  }) as APIBlueskyStatus;
+
+test('statusesToFeedItems accepts APIBlueskyStatus and emits RSS item link', () => {
+  const s = baseBlueskyStatus();
+  const items = statusesToFeedItems([s], {});
+  expect(items).toHaveLength(1);
+  expect(items[0].url).toBe('https://bsky.app/profile/handle.test/post/rkeybsky');
+  const xml = toRss20Xml(mockMeta, items);
+  expect(xml).toContain(
+    '<guid isPermaLink="true">https://bsky.app/profile/handle.test/post/rkeybsky</guid>'
+  );
 });
