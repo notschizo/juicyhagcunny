@@ -106,7 +106,9 @@
           "quote": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/APITwitterStatus"
+                "type": "object",
+                "title": "APITwitterStatus (recursive)",
+                "description": "Recursive reference — same shape as `APITwitterStatus`."
               },
               {
                 "$ref": "#/components/schemas/APIStatusTombstone"

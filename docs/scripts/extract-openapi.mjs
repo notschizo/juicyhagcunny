@@ -15,12 +15,59 @@
  */
 
 import http from 'node:http';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, readFileSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const specsDir = join(__dirname, '..', 'specs');
+
+const SCHEMA_REF_PREFIX = '#/components/schemas/';
+
+/**
+ * starlight-openapi detects recursive schemas via object-reference equality on the
+ * schema object itself (see `SchemaObjectObjectProperties.astro`). Self-references
+ * wrapped inside `anyOf`/`oneOf`/`allOf` are NOT detected and cause the prerender to
+ * blow the stack with "Maximum call stack size exceeded".
+ *
+ * To keep rich unions (e.g. `quote: APITwitterStatus | APIStatusTombstone`) visible
+ * in the docs, we walk each named schema and replace only the self-referencing arm
+ * of a union with a safe inline placeholder that still communicates the shape.
+ */
+function sanitizeSelfReferentialUnions(spec) {
+  const schemas = spec?.components?.schemas;
+  if (!schemas || typeof schemas !== 'object') return spec;
+
+  for (const [schemaName, schema] of Object.entries(schemas)) {
+    const selfRef = SCHEMA_REF_PREFIX + schemaName;
+    walk(schema, selfRef, schemaName);
+  }
+
+  return spec;
+
+  function walk(node, selfRef, schemaName) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      for (const child of node) walk(child, selfRef, schemaName);
+      return;
+    }
+    for (const key of ['anyOf', 'oneOf', 'allOf']) {
+      const arr = node[key];
+      if (!Array.isArray(arr)) continue;
+      for (let i = 0; i < arr.length; i++) {
+        const item = arr[i];
+        if (item && typeof item === 'object' && item.$ref === selfRef) {
+          arr[i] = {
+            type: 'object',
+            title: `${schemaName} (recursive)`,
+            description: `Recursive reference — same shape as \`${schemaName}\`.`
+          };
+        }
+      }
+    }
+    for (const value of Object.values(node)) walk(value, selfRef, schemaName);
+  }
+}
 
 const PRODUCTION_ENDPOINTS = [
   {
@@ -101,13 +148,34 @@ async function fetchSpec(endpoint, localPort) {
   return res.json();
 }
 
+function writeSpec(path, spec) {
+  sanitizeSelfReferentialUnions(spec);
+  writeFileSync(path, JSON.stringify(spec, null, 2));
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const usePlaceholder = args.includes('--placeholder');
+  const sanitizeOnly = args.includes('--sanitize');
   const localIdx = args.indexOf('--local');
   const localPort = localIdx !== -1 ? args[localIdx + 1] || '8787' : null;
 
   mkdirSync(specsDir, { recursive: true });
+
+  if (sanitizeOnly) {
+    console.log('Sanitizing existing specs in place...');
+    for (const endpoint of PRODUCTION_ENDPOINTS) {
+      const path = join(specsDir, endpoint.name);
+      try {
+        const spec = JSON.parse(readFileSync(path, 'utf8'));
+        writeSpec(path, spec);
+        console.log(`  ✓ ${endpoint.name}`);
+      } catch (err) {
+        console.log(`  ✗ ${endpoint.name}: ${err.message}`);
+      }
+    }
+    return;
+  }
 
   if (usePlaceholder) {
     console.log('Writing placeholder specs...');
@@ -117,7 +185,7 @@ async function main() {
     ];
     for (const p of placeholders) {
       const path = join(specsDir, p.name);
-      writeFileSync(path, JSON.stringify(makePlaceholder(p.title, p.desc), null, 2));
+      writeSpec(path, makePlaceholder(p.title, p.desc));
       console.log(`  → ${path}`);
     }
     return;
@@ -131,16 +199,13 @@ async function main() {
     try {
       const spec = await fetchSpec(endpoint, localPort);
       const path = join(specsDir, endpoint.name);
-      writeFileSync(path, JSON.stringify(spec, null, 2));
+      writeSpec(path, spec);
       console.log(` ✓`);
     } catch (err) {
       console.log(` ✗ ${err.message}`);
       console.log(`  → Writing placeholder for ${endpoint.name}`);
       const path = join(specsDir, endpoint.name);
-      writeFileSync(
-        path,
-        JSON.stringify(makePlaceholder(endpoint.name.replace(/-openapi\.json$/, ''), ''), null, 2)
-      );
+      writeSpec(path, makePlaceholder(endpoint.name.replace(/-openapi\.json$/, ''), ''));
     }
   }
 }
