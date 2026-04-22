@@ -138,6 +138,33 @@ test('API v2 /2/thread includes tombstone between chain tweets', async () => {
   expect(threadTombs?.[0]?.reason).toBe('deleted');
 });
 
+/** Focal tweet still references deleted parent id in `in_reply_to` (not bridged to root). */
+test('API v2 /2/thread keeps tombstone when reply chain walk cannot reach root', async () => {
+  const res = await app.request(
+    new Request('https://api.fxtwitter.com/2/thread/991203', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as {
+    thread: unknown[] | null;
+  };
+  expect(body.thread?.length).toBeGreaterThanOrEqual(3);
+  const threadTombs = body.thread?.filter(
+    (x): x is APIStatusTombstone =>
+      typeof x === 'object' && x !== null && (x as APIStatusTombstone).type === 'tombstone'
+  );
+  expect(threadTombs?.length).toBe(1);
+  const root = body.thread?.find(
+    (x): x is APITwitterStatus =>
+      typeof x === 'object' && x !== null && (x as APITwitterStatus).id === '991200'
+  );
+  expect(root?.text).toBe('root');
+});
+
 test('syndication feed HTML includes tombstone quote message', () => {
   const status = minimalTwitterStatus({
     quote: tombstone('blocked')

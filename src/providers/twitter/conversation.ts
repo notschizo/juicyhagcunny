@@ -22,14 +22,33 @@ import { isTwitterNumericStatusId } from '../../helpers/utils';
 
 type TwitterTimelinePiece = GraphQLTwitterStatus | APIStatusTombstone;
 
-/** Keep tweet-detail timeline order, including `TweetTombstone` rows between chain tweets. */
+/** Some clients send `itemType: TimelineTweet` without `__typename`. */
+const isTimelineTweetItem = (itemContent: unknown): boolean => {
+  if (!itemContent || typeof itemContent !== 'object') return false;
+  const o = itemContent as { __typename?: string; itemType?: string };
+  return o.__typename === 'TimelineTweet' || o.itemType === 'TimelineTweet';
+};
+
+/**
+ * Keep tweet-detail timeline order, including `TweetTombstone` rows between chain tweets.
+ * @param chainTweets - Tweet IDs from the reply-chain walk (can omit parents when `in_reply_to`
+ *   still points at a deleted id). Pass `timelineTweetSources` with every GraphQL tweet from the
+ *   same timeline so tombstones between those tweets are not dropped.
+ */
 const mergeTimelineOrderPreservingTombstones = (
   ordered: TwitterTimelinePiece[],
-  chainTweets: GraphQLTwitterStatus[]
+  chainTweets: GraphQLTwitterStatus[],
+  timelineTweetSources?: GraphQLTwitterStatus[]
 ): TwitterTimelinePiece[] => {
   const chainIds = new Set(
     chainTweets.map(t => t.rest_id ?? t.legacy?.id_str ?? '').filter(Boolean)
   );
+  if (timelineTweetSources?.length) {
+    for (const t of timelineTweetSources) {
+      const id = t.rest_id ?? t.legacy?.id_str;
+      if (id) chainIds.add(id);
+    }
+  }
   const tweetIndices = ordered
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => {
@@ -433,7 +452,7 @@ const pushTweetFromContent = (
   entryId?: string,
   language?: string
 ) => {
-  if ((itemContent as GraphQLTimelineTweet)?.__typename !== 'TimelineTweet') return;
+  if (!isTimelineTweetItem(itemContent)) return;
   const result = (itemContent as GraphQLTimelineTweet).tweet_results?.result;
   const entryType = result?.__typename;
   if (entryType === 'Tweet') {
@@ -487,7 +506,7 @@ const processResponse = (
           bucket.cursors.push(normalizeCursor(content));
         } else if (typename === 'TimelineTimelineItem') {
           const itemContent = getItemContent(content);
-          if (itemContent?.__typename === 'TimelineTweet') {
+          if (isTimelineTweetItem(itemContent)) {
             pushTweetFromContent(itemContent, bucket, entryId, language);
           } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
             bucket.cursors.push(normalizeCursor(itemContent));
@@ -496,7 +515,7 @@ const processResponse = (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
             const itemContent = getItemContent(item.item);
-            if (itemContent?.__typename === 'TimelineTweet') {
+            if (isTimelineTweetItem(itemContent)) {
               pushTweetFromContent(itemContent, bucket, entryId, language);
             } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
               bucket.cursors.push(normalizeCursor(itemContent));
@@ -530,7 +549,7 @@ const pushConversationTimelineTweet = (
   entryId?: string,
   language?: string
 ) => {
-  if ((itemContent as GraphQLTimelineTweet)?.__typename !== 'TimelineTweet') return;
+  if (!isTimelineTweetItem(itemContent)) return;
   const result = (itemContent as GraphQLTimelineTweet).tweet_results?.result;
   const entryType = result?.__typename;
   if (entryType === 'Tweet') {
@@ -598,7 +617,7 @@ const processConversationResponse = (
           bucket.cursors.push(normalizeCursor(content));
         } else if (typename === 'TimelineTimelineItem') {
           const itemContent = getItemContent(content);
-          if (itemContent?.__typename === 'TimelineTweet') {
+          if (isTimelineTweetItem(itemContent)) {
             pushConversationTimelineTweet(
               itemContent,
               bucket,
@@ -613,7 +632,7 @@ const processConversationResponse = (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
             const itemContent = getItemContent(item.item);
-            if (itemContent?.__typename === 'TimelineTweet') {
+            if (isTimelineTweetItem(itemContent)) {
               pushConversationTimelineTweet(itemContent, bucket, 'reply', entryId, language);
             } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
               bucket.cursors.push(normalizeCursor(itemContent));
@@ -1106,7 +1125,11 @@ export const constructTwitterThread = async (
     code: 200
   };
 
-  const mergedTimeline = mergeTimelineOrderPreservingTombstones(bucket.ordered, threadStatuses);
+  const mergedTimeline = mergeTimelineOrderPreservingTombstones(
+    bucket.ordered,
+    threadStatuses,
+    bucket.allStatuses
+  );
 
   await Promise.all(
     mergedTimeline.map(async piece => {
