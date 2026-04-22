@@ -33,7 +33,9 @@
 ### `bsky.app`: Add `fx` before your `bsky.app` link
 
 ## [Documentation](https://docs.fxembed.com)
+
 ## [API Reference](https://docs.fxembed.com/api/introduction)
+
 ## [Self-Hosting Guide](https://docs.fxembed.com/deployment)
 
 **Licensed under the permissive MIT license. Feel free to send a pull request!**

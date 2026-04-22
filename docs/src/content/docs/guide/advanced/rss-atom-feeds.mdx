@@ -27,15 +27,15 @@ Replace the host with your deployment’s X realm (for example `fixupx.com` for 
 
 Paths use `/profile/` before the handle, matching other FxBluesky profile URLs.
 
-| Format   | All Recent Posts                                                   |
-| -------- | ------------------------------------------------------------------ |
-| **RSS**  | `https://fxbsky.app/profile/{handle}/feed.xml`                     |
-| **Atom** | `https://fxbsky.app/profile/{handle}/feed.atom.xml`                |
+| Format   | All Recent Posts                                    |
+| -------- | --------------------------------------------------- |
+| **RSS**  | `https://fxbsky.app/profile/{handle}/feed.xml`      |
+| **Atom** | `https://fxbsky.app/profile/{handle}/feed.atom.xml` |
 
-| Format   | Media-only Posts                                                  |
-| -------- | ----------------------------------------------------------------- |
-| **RSS**  | `https://fxbsky.app/profile/{handle}/media.xml`                   |
-| **Atom** | `https://fxbsky.app/profile/{handle}/media.atom.xml`              |
+| Format   | Media-only Posts                                     |
+| -------- | ---------------------------------------------------- |
+| **RSS**  | `https://fxbsky.app/profile/{handle}/media.xml`      |
+| **Atom** | `https://fxbsky.app/profile/{handle}/media.atom.xml` |
 
 `{handle}` is the Bluesky handle (for example `user.bsky.social`), with or without a leading `@` in the path segment.
 
@@ -46,11 +46,11 @@ Paths use `/profile/` before the handle, matching other FxBluesky profile URLs.
 
 All parameters are optional.
 
-| Parameter                       | Applies to         | Description                                                                               |
-| ------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `count`                         | Timeline and media | Number of items to fetch, **1–100** (default **90**).                                     |
-| `with_replies` or `withReplies` | Timeline only      | Include reply posts.                                                                    |
-| `safe`                          | Timeline and media | Hides posts (and quoted bodies) marked sensitive.                                         |
+| Parameter                       | Applies to         | Description                                                                                                                                                                  |
+| ------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `count`                         | Timeline and media | Number of items to fetch, **1–100** (default **90**).                                                                                                                        |
+| `with_replies` or `withReplies` | Timeline only      | Include reply posts.                                                                                                                                                         |
+| `safe`                          | Timeline and media | Hides posts (and quoted bodies) marked sensitive.                                                                                                                            |
 | `lang` or `language`            | Timeline and media | Requests for automatic translation of content when available. Currently it's a bit iffy whether it works or not, so don't be surprised if things aren't translated just yet. |
 
 Example (X):

@@ -286,7 +286,7 @@ export const handleStatus = async (
   if (flags?.direct && !flags?.textOnly && status.media) {
     let redirectUrl: string | null = null;
     const all = status.media.all || [];
-      // if (status.media.videos) {
+    // if (status.media.videos) {
     //   const { videos } = status.media;
     //   redirectUrl = (videos[(mediaNumber || 1) - 1] || videos[0]).url;
     // } else if (status.media.photos) {
@@ -444,7 +444,7 @@ export const handleStatus = async (
   // Skip for activity to make embed generate faster for mosaic and such
   if (!useActivity && !flags?.textOnly) {
     const media =
-          status.media?.all && status.media?.all.length > 0
+      status.media?.all && status.media?.all.length > 0
         ? status.media
         : !isTombstone(status.quote)
           ? status.quote?.media || {}
@@ -635,13 +635,18 @@ export const handleStatus = async (
   const articleOnly = twitterStatus.article && isArticleOnlyTweet(twitterStatus);
 
   const quoteHasDisplayableMedia =
-      !!status.quote &&
+    !!status.quote &&
     !isTombstone(status.quote) &&
     (!!status.quote.media?.photos?.length || !!status.quote.media?.videos?.length);
 
   /* If we have no media to display, instead we'll display the user profile picture in the embed,
      OR if this is an article-only tweet, use the article cover image */
-  if (!status.media?.videos && !status.media?.photos && !quoteHasDisplayableMedia && !flags?.textOnly) {
+  if (
+    !status.media?.videos &&
+    !status.media?.photos &&
+    !quoteHasDisplayableMedia &&
+    !flags?.textOnly
+  ) {
     // Check if we have an article with cover media to use instead
     if (articleOnly && twitterStatus.article?.cover_media?.media_info?.__typename === 'ApiImage') {
       const coverImage = twitterStatus.article.cover_media.media_info as TwitterApiImage;
@@ -688,7 +693,7 @@ export const handleStatus = async (
   }
 
   const useCard =
-          status.embed_card === 'tweet'
+    status.embed_card === 'tweet'
       ? status.quote && !isTombstone(status.quote)
         ? (status.quote as APITwitterStatus).embed_card
         : 'summary'
@@ -737,7 +742,7 @@ export const handleStatus = async (
     providerEngagementText = providerEngagementText.replace(/ {4}/g, '  ');
 
     /* Workaround to prevent us from accidentally doubling up the engagement text in both provider and author fields */
-      if (status.text.trim().length === 0) {
+    if (status.text.trim().length === 0) {
       providerEngagementText = Strings.DEFAULT_AUTHOR_TEXT;
     }
 
@@ -777,10 +782,10 @@ export const handleStatus = async (
         {
           base: `https://${getBranding(c).domains[0]}`,
           text: flags.gallery
-                ? status.author.name
+            ? status.author.name
             : encodeURIComponent(truncateWithEllipsis(authorText, 255)),
           status: encodeURIComponent(statusId),
-            author: encodeURIComponent(status.author.screen_name || ''),
+          author: encodeURIComponent(status.author.screen_name || ''),
           name: status.author.name || '',
           provider: provider ? `&provider=${encodeURIComponent(provider)}` : ''
         }
