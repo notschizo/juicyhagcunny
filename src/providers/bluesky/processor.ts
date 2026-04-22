@@ -164,7 +164,7 @@ const quoteCandidateFromEmbedRecord = (
     if (isDetachedRecordView(vr)) {
       return {
         post: null,
-        tombstone: buildBlueskyTombstone('unavailable', u(embedRecord.uri ?? vr.uri))
+        tombstone: buildBlueskyTombstone('blocked', u(embedRecord.uri ?? vr.uri))
       };
     }
     const asNested = nestedLegacyPost(embedRecord.record);
