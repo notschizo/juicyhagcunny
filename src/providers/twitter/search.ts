@@ -3,6 +3,7 @@ import { buildLanguageHeaders } from '../../helpers/language';
 import { buildAPITwitterStatus } from './processor';
 import { SearchTimelineQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
+import { isTombstone } from '../../helpers/tombstone';
 import type { APITwitterStatus } from '../../realms/api/schemas';
 
 type SearchFeed = 'latest' | 'top' | 'media';
@@ -475,7 +476,9 @@ export const searchAPI = async (
         })
       )
     )
-  ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+  ).filter(
+    (s): s is APITwitterStatus => s !== null && !isTombstone(s) && !(s as FetchResults)?.status
+  );
 
   return {
     code: 200,

@@ -908,7 +908,16 @@ export const constructTwitterThread = async (
       return { status: null, thread: null, author: null, code: 404 };
     }
 
-    const buildStatus = await buildAPITwitterStatus(c, result, language, null, legacyAPI);
+    const buildStatus = await buildAPITwitterStatus(
+      c,
+      result,
+      language,
+      null,
+      legacyAPI,
+      true,
+      'root',
+      id
+    );
 
     if (isTombstone(buildStatus)) {
       writeDataPoint(c, language, null, '404');
