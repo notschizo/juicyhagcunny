@@ -37,7 +37,8 @@ const isTimelineTweetItem = (itemContent: unknown): boolean => {
  * Keep tweet-detail timeline order, including `TweetTombstone` rows between chain tweets.
  * @param chainTweets - Tweet IDs from the reply-chain walk (can omit parents when `in_reply_to`
  *   still points at a deleted id). Pass `timelineTweetSources` with every GraphQL tweet from the
- *   same timeline so tombstones between those tweets are not dropped.
+ *   same timeline so tombstones between those tweets are not dropped; those IDs only widen the
+ *   bracketing range, they are not emitted as thread output unless they appear in `chainTweets`.
  */
 const mergeTimelineOrderPreservingTombstones = (
   ordered: TwitterTimelinePiece[],
@@ -47,26 +48,30 @@ const mergeTimelineOrderPreservingTombstones = (
   const chainIds = new Set(
     chainTweets.map(t => t.rest_id ?? t.legacy?.id_str ?? '').filter(Boolean)
   );
+  const boundaryIds = new Set<string>();
   if (timelineTweetSources?.length) {
     for (const t of timelineTweetSources) {
       const id = t.rest_id ?? t.legacy?.id_str;
-      if (id) chainIds.add(id);
+      if (id) boundaryIds.add(id);
     }
   }
+  const isBracketAnchorId = (id: string | undefined) =>
+    !!id && (chainIds.has(id) || boundaryIds.has(id));
   const tweetIndices = ordered
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => {
       if (isTombstone(e)) return false;
       const id = (e as GraphQLTwitterStatus).rest_id ?? (e as GraphQLTwitterStatus).legacy?.id_str;
-      return !!id && chainIds.has(id);
+      return isBracketAnchorId(id);
     })
     .map(x => x.i);
   if (tweetIndices.length === 0) return [...chainTweets];
   let minI = Math.min(...tweetIndices);
   let maxI = Math.max(...tweetIndices);
-  /* Tombstones have no GraphQL Tweet row, so their ids are not in chainIds. A suspended/deleted
-     ancestor often appears immediately before the first reachable chain tweet in timeline order
-     (constructTwitterThread's reply walk stops at the missing parent). Pull those rows in. */
+  /* Tombstones have no GraphQL Tweet row, so their ids are not in chainIds/boundaryIds. A
+     suspended/deleted ancestor often appears immediately before the first reachable chain tweet
+     in timeline order (constructTwitterThread's reply walk stops at the missing parent). Pull
+     those rows in. */
   while (minI > 0 && isTombstone(ordered[minI - 1])) {
     minI--;
   }
@@ -79,6 +84,42 @@ const mergeTimelineOrderPreservingTombstones = (
     const id = (e as GraphQLTwitterStatus).rest_id ?? (e as GraphQLTwitterStatus).legacy?.id_str;
     return !!id && chainIds.has(id);
   });
+};
+
+/**
+ * GraphQL tweets in timeline order to merge as the "emit" set for {@link mergeTimelineOrderPreservingTombstones}:
+ * the reply-walk `threadChain`, plus other tweets from the same conversation that appear in `ordered` with the
+ * same author (e.g. the root when `in_reply_to` still points at a missing/deleted id so the walk cannot reach it).
+ * This keeps `timelineTweetSources` as bracket-only without stuffing those IDs into the chain set.
+ */
+const graphQLThreadChainTweetsForMerge = (
+  ordered: TwitterTimelinePiece[],
+  threadChain: GraphQLTwitterStatus[],
+  focal: GraphQLTwitterStatus
+): GraphQLTwitterStatus[] => {
+  const authorId = focal.core?.user_results?.result?.rest_id;
+  const conv = focal.legacy?.conversation_id_str;
+  if (!authorId || !conv) {
+    return [...threadChain];
+  }
+  const out = new Map<string, GraphQLTwitterStatus>();
+  for (const t of threadChain) {
+    const tid = t.rest_id ?? t.legacy?.id_str;
+    if (tid) {
+      out.set(tid, t);
+    }
+  }
+  for (const piece of ordered) {
+    if (isTombstone(piece)) continue;
+    const t = piece as GraphQLTwitterStatus;
+    const tid = t.rest_id ?? t.legacy?.id_str;
+    if (!tid || out.has(tid)) continue;
+    if (t.core?.user_results?.result?.rest_id !== authorId) continue;
+    if (t.legacy?.conversation_id_str === conv) {
+      out.set(tid, t);
+    }
+  }
+  return Array.from(out.values());
 };
 
 const writeDataPoint = (
@@ -1187,9 +1228,14 @@ export const constructTwitterThread = async (
     code: 200
   };
 
-  const mergedTimeline = mergeTimelineOrderPreservingTombstones(
+  const mergeChainTweets = graphQLThreadChainTweetsForMerge(
     bucket.ordered,
     threadStatuses,
+    originalStatus
+  );
+  const mergedTimeline = mergeTimelineOrderPreservingTombstones(
+    bucket.ordered,
+    mergeChainTweets,
     bucket.allStatuses
   );
 
