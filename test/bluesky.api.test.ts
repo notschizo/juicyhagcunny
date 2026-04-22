@@ -43,12 +43,20 @@ test('GET /2/status uses rkey as id and returns cid', async () => {
   expect(res.status).toBe(200);
   const body = (await res.json()) as {
     code: number;
-    status: { id: string; cid?: string; url: string; quote?: { text: string } };
+    status: {
+      id: string;
+      cid?: string;
+      url: string;
+      quote?: { text: string };
+      author?: { verification?: { verified?: boolean; verified_by?: string } };
+    };
   };
   expect(body.code).toBe(200);
   expect(body.status.id).toBe('rkeymain');
   expect(body.status.cid).toBe('bafycidmain');
   expect(body.status.url).toContain('/author.test/post/rkeymain');
+  expect(body.status.author?.verification?.verified).toBe(true);
+  expect(body.status.author?.verification?.verified_by).toBe('bsky.app');
 });
 
 // test('GET /2/status quote notFound yields tombstone quote', async () => {
@@ -285,6 +293,7 @@ test('GET /2/profile returns user envelope and counts', async () => {
       following: number;
       statuses: number;
       id: string;
+      verification?: { verified?: boolean; verified_by?: string };
     };
   };
   expect(body.code).toBe(200);
@@ -295,6 +304,8 @@ test('GET /2/profile returns user envelope and counts', async () => {
   expect(body.user?.following).toBe(50);
   expect(body.user?.statuses).toBe(42);
   expect(body.user?.description).toContain('https://example.com/page');
+  expect(body.user?.verification?.verified).toBe(true);
+  expect(body.user?.verification?.verified_by).toBe('bsky.app');
 });
 
 test('GET /2/profile/{handle}/statuses returns feed, cursor.bottom, and reposted_by', async () => {

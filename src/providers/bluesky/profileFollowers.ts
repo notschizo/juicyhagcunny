@@ -4,6 +4,7 @@ import { linkFixerBluesky } from '../../helpers/linkFixer';
 import type { APIProfileRelationshipList, APIUser } from '../../realms/api/schemas';
 import { fetchFollowers, fetchFollows, fetchProfilesDetailedBatched } from './client';
 import { blueskyProfileToApiUser } from './profile';
+import { blueskyVerificationToApiUserVerification } from './verification';
 
 const relationshipListNotFound = (): APIProfileRelationshipList => ({
   code: 404,
@@ -49,13 +50,8 @@ export const blueskyProfileViewToApiUser = (view: BlueskyProfileView): APIUser =
     type: 'profile'
   };
 
-  if (view.verification?.verifiedStatus === 'valid') {
-    apiUser.verification = {
-      verified: true,
-      type: null,
-      verified_at: null
-    };
-  }
+  const v = blueskyVerificationToApiUserVerification(view.verification);
+  if (v) apiUser.verification = v;
 
   return apiUser;
 };

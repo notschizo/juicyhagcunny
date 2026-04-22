@@ -11,7 +11,19 @@
         "avatar": "https://cdn.bsky.app/img/avatar.png",
         "createdAt": "2023-01-01T00:00:00.000Z",
         "associated": { "chat": { "allowIncoming": "all" } },
-        "labels": []
+        "labels": [],
+        "verification": {
+          "verifiedStatus": "valid",
+          "trustedVerifierStatus": "none",
+          "verifications": [
+            {
+              "issuer": "did:plc:z72i7hdynmk6r22z27h6tvur",
+              "uri": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.graph.verification/vfixture",
+              "isValid": true,
+              "createdAt": "2024-06-01T00:00:00.000Z"
+            }
+          ]
+        }
       },
       "record": {
         "$type": "app.bsky.feed.post",
