@@ -56,7 +56,8 @@ export const renderVideo = (
   }
 
   if ((instructions.authorText ?? '').length < 40 && status.quote) {
-    instructions.authorText += `\n${handleQuote(status.quote)}`;
+    const q = handleQuote(status.quote);
+    if (q) instructions.authorText += `\n${q}`;
   }
 
   let url = video.url;

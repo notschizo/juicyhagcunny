@@ -1,11 +1,14 @@
 import { Context } from 'hono';
 import type {
   APIBlueskyStatus,
+  APIStatusTombstone,
+  APITombstoneReason,
   SocialConversationBluesky,
   SocialThreadBluesky
 } from '../../realms/api/schemas';
+import { isTombstone } from '../../helpers/tombstone';
 import { type BlueskyFetchOpts, fetchPostThread, fetchPostThreadResult } from './client';
-import { buildAPIBlueskyPost } from './processor';
+import { buildAPIBlueskyPost, buildBlueskyTombstone } from './processor';
 import { atUriForFeedPost } from './uris';
 
 const THREAD_FETCH_DEPTH = 10;
@@ -40,11 +43,33 @@ export const fetchBlueskyThread = async (
   return fetchPostThread(uri, depth, undefined, opts);
 };
 
+type BlueskyThreadBucketItem = BlueskyPost | APIStatusTombstone;
+
+/** Match `quoteCandidateFromEmbedRecord` / `isDetachedOuterEmbed` for thread parent stubs. */
+const blueskyThreadStubTombstoneReason = (
+  node: BlueskyFeedNotFoundPost | BlueskyFeedBlockedPost
+): APITombstoneReason => {
+  if ((node as BlueskyFeedNotFoundPost).notFound === true) return 'deleted';
+  if ((node as BlueskyFeedBlockedPost).blocked === true) return 'blocked';
+  const rawType = (node as { $type?: string }).$type ?? '';
+  if (
+    (node as { detached?: boolean }).detached === true ||
+    rawType.includes('viewDetached') ||
+    rawType.includes('Detached')
+  ) {
+    return 'blocked';
+  }
+  const pt = rawType.toLowerCase();
+  if (pt.includes('blocked')) return 'blocked';
+  return 'deleted';
+};
+
 const followReplyChain = (thread: BlueskyThread): BlueskyPost[] => {
   if (!thread.replies?.length) return [];
   const parentCid = thread.post.cid;
 
   for (const child of thread.replies) {
+    if (!('post' in child)) continue;
     const post = child.post;
     if (!post?.author || post.author.did !== thread.post.author?.did) {
       continue;
@@ -64,14 +89,26 @@ const collectProcessedThreadPosts = async (
   thread: BlueskyThread,
   author: string,
   fetchOpts?: BlueskyFetchOpts
-): Promise<BlueskyPost[]> => {
-  const bucket: BlueskyPost[] = [];
+): Promise<BlueskyThreadBucketItem[]> => {
+  const bucket: BlueskyThreadBucketItem[] = [];
 
   if (thread.parent) {
-    let parent: BlueskyThread | undefined = thread.parent;
-    while (parent?.post) {
-      bucket.unshift(parent.post);
-      parent = parent.parent;
+    let parentNode: BlueskyThreadParent | undefined = thread.parent;
+    while (parentNode) {
+      if ('post' in parentNode && (parentNode as BlueskyThread).post) {
+        const th = parentNode as BlueskyThread;
+        bucket.unshift(th.post);
+        parentNode = th.parent;
+      } else if ('uri' in parentNode && !('post' in parentNode)) {
+        const uri = (parentNode as BlueskyFeedNotFoundPost).uri;
+        const reason = blueskyThreadStubTombstoneReason(
+          parentNode as BlueskyFeedNotFoundPost | BlueskyFeedBlockedPost
+        );
+        bucket.unshift(buildBlueskyTombstone(reason, uri));
+        break;
+      } else {
+        break;
+      }
     }
   }
   bucket.push(thread.post);
@@ -109,6 +146,7 @@ const findSelfBranchFirstReplyChild = (focal: BlueskyThread): BlueskyThread | un
   const focalAuthorDid = focal.post.author?.did;
   if (!parentCid || !focalAuthorDid) return undefined;
   for (const child of focal.replies ?? []) {
+    if (!('post' in child)) continue;
     const post = child.post;
     if (!post?.author || post.author.did !== focalAuthorDid) continue;
     if (post.record?.reply?.parent?.cid === parentCid) return child;
@@ -122,7 +160,7 @@ const collectDirectReplyPosts = (focal: BlueskyThread): BlueskyPost[] => {
   const selfUri = selfChild?.post?.uri;
   const out: BlueskyPost[] = [];
   for (const child of focal.replies ?? []) {
-    if (!child?.post?.uri) continue;
+    if (!('post' in child) || !child.post?.uri) continue;
     if (selfUri && child.post.uri === selfUri) continue;
     out.push(child.post);
   }
@@ -221,7 +259,7 @@ export const constructBlueskyThread = async (
   }
 
   const thread = _thread.thread;
-  const bucket: BlueskyPost[] = processThread
+  const bucket: BlueskyThreadBucketItem[] = processThread
     ? await collectProcessedThreadPosts(thread, author, fetchOpts)
     : [thread.post];
 
@@ -233,8 +271,12 @@ export const constructBlueskyThread = async (
     fetchOpts
   )) as APIBlueskyStatus;
   const consumedPosts = (await Promise.all(
-    bucket.map(post => buildAPIBlueskyPost(c, post, language, 0, fetchOpts))
-  )) as APIBlueskyStatus[];
+    bucket.map(item =>
+      isTombstone(item)
+        ? Promise.resolve(item)
+        : buildAPIBlueskyPost(c, item, language, 0, fetchOpts)
+    )
+  )) as (APIBlueskyStatus | APIStatusTombstone)[];
 
   return {
     status: consumedPost,
@@ -342,7 +384,7 @@ export const constructBlueskyConversation = async (
   const focalNode = raw.thread;
   const lang = options.language;
 
-  const threadPosts: BlueskyPost[] = isContinuation
+  const threadPosts: BlueskyThreadBucketItem[] = isContinuation
     ? [focalNode.post]
     : await collectProcessedThreadPosts(focalNode, author, convoFetchOpts);
 
@@ -359,8 +401,10 @@ export const constructBlueskyConversation = async (
     convoFetchOpts
   )) as APIBlueskyStatus;
   const threadApi = (await Promise.all(
-    threadPosts.map(p => buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts))
-  )) as APIBlueskyStatus[];
+    threadPosts.map(p =>
+      isTombstone(p) ? Promise.resolve(p) : buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts)
+    )
+  )) as (APIBlueskyStatus | APIStatusTombstone)[];
   const repliesApi = (await Promise.all(
     pageSlice.map(p => buildAPIBlueskyPost(c, p, lang, 0, convoFetchOpts))
   )) as APIBlueskyStatus[];

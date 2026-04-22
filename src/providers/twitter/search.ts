@@ -3,6 +3,7 @@ import { buildLanguageHeaders } from '../../helpers/language';
 import { buildAPITwitterStatus } from './processor';
 import { SearchTimelineQuery } from './graphql/queries';
 import { graphqlRequest } from './graphql/request';
+import { isTombstone } from '../../helpers/tombstone';
 import type { APITwitterStatus } from '../../realms/api/schemas';
 
 type SearchFeed = 'latest' | 'top' | 'media';
@@ -53,8 +54,9 @@ export const processTimelineInstructions = (
     const entryType = result?.__typename;
     if (entryType === 'Tweet') {
       statuses.push(result as GraphQLTwitterStatus);
-    } else if (entryType === 'TweetWithVisibilityResults') {
-      statuses.push((result as { tweet: GraphQLTwitterStatus }).tweet);
+    } else if (entryType === 'TweetWithVisibilityResults' && result) {
+      const tw = (result as GraphQLTweetWithVisibilityResults).tweet;
+      if (tw) statuses.push(tw);
     }
   };
 
@@ -209,7 +211,8 @@ export const processGroupedTimelineInstructions = (
       return result as GraphQLTwitterStatus;
     }
     if (entryType === 'TweetWithVisibilityResults') {
-      return (result as { tweet: GraphQLTwitterStatus }).tweet;
+      if (!result) return null;
+      return (result as GraphQLTweetWithVisibilityResults).tweet;
     }
     return null;
   };
@@ -473,7 +476,9 @@ export const searchAPI = async (
         })
       )
     )
-  ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+  ).filter(
+    (s): s is APITwitterStatus => s !== null && !isTombstone(s) && !(s as FetchResults)?.status
+  );
 
   return {
     code: 200,

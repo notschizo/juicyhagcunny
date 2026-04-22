@@ -7,7 +7,14 @@ import { processMedia, convertFormatToVariant } from '../../helpers/media';
 import { convertToApiUser } from './profile';
 import { Context } from 'hono';
 import { DataProvider } from '../../enum';
-import type { APIFacet, APIRepostedBy, APITwitterStatus } from '../../realms/api/schemas';
+import type {
+  APIFacet,
+  APIRepostedBy,
+  APIStatusTombstone,
+  APITombstoneReason,
+  APITwitterStatus
+} from '../../realms/api/schemas';
+import { isTombstone, tombstoneMessageForReason } from '../../helpers/tombstone';
 import { shouldTranscodeGif } from '../../helpers/giftranscode';
 import { translateStatusAI } from '../../helpers/translateAI';
 import { translateStatus } from '../../helpers/translate';
@@ -183,6 +190,173 @@ function isRetweetWithoutNestedOriginal(
   return /^\s*RT @\S+/u.test(text);
 }
 
+/** Where `buildAPITwitterStatus` is used: root post vs nested quote/thread (affects unavailable handling). */
+export type TwitterStatusBuildContext = 'root' | 'quote' | 'thread';
+
+const twitterTombstone = (
+  reason: APITombstoneReason,
+  partial: { id?: string; url?: string; author?: Partial<APIUser> } = {}
+): APIStatusTombstone => ({
+  type: 'tombstone',
+  provider: 'twitter',
+  reason,
+  message: tombstoneMessageForReason(reason),
+  ...partial
+});
+
+const reasonFromTombstoneEntityScan = (entities: unknown): APITombstoneReason | null => {
+  if (!Array.isArray(entities)) return null;
+  for (const raw of entities) {
+    if (!raw || typeof raw !== 'object') continue;
+    const o = raw as Record<string, unknown>;
+    const fromObj = (v: unknown): string | null =>
+      typeof v === 'string' && v.length > 0 ? v.toLowerCase() : null;
+    const hint =
+      fromObj(o.reason) ??
+      fromObj(o.tombstoneReason) ??
+      fromObj(o.tweetUnavailableReason) ??
+      fromObj(o.visibilityReason);
+    if (!hint) continue;
+    if (/suspend|withheld/i.test(hint)) return 'suspended';
+    if (/delete|remove/i.test(hint)) return 'deleted';
+    if (/protect|private|nsfw|limit|age|login|restricted/i.test(hint)) return 'private';
+    if (/block|author/i.test(hint)) return 'blocked';
+  }
+  return null;
+};
+
+const reasonFromTweetTombstoneText = (text: string, language?: string): APITombstoneReason => {
+  const t = text.toLowerCase();
+  const rawPrimary = (language ?? 'en').split(/[,\s;]+/)[0]?.trim() ?? 'en';
+  const lang = normalizeLanguage(rawPrimary.toLowerCase()).split('-')[0] ?? 'en';
+
+  // This is an extremely horrible, terrible, no-good hack, but Twitter genuinely does not provide
+  // any other way to determine the state of an unavailable post.
+
+  // It is not going to be perfect. But there isn't a better way to do it right now.
+  const suspendedRe =
+    lang === 'es'
+      ? /cuenta suspendida|suspendid[oa]/i
+      : lang === 'ja'
+        ? /アカウントが停止|アカウントは停止|アカウントを停止/i
+        : lang === 'de'
+          ? /gesperrt|suspendiert/i
+          : lang === 'fr'
+            ? /compte suspendu|suspendu/i
+            : lang === 'pt'
+              ? /conta suspensa|suspens[oa]/i
+              : lang === 'ko'
+                ? /계정.*정지|일시적으로.*이용/i
+                : lang === 'zh'
+                  ? /账号.*停用|账号.*冻结|暂停/i
+                  : /suspended account|account suspended|account has been suspended/i;
+
+  const deletedRe =
+    lang === 'ja'
+      ? /削除/
+      : lang === 'es'
+        ? /eliminad[oa]|borrad[oa]/
+        : lang === 'fr'
+          ? /supprim/
+          : lang === 'de'
+            ? /gelöscht/
+            : lang === 'pt'
+              ? /excluíd[oa]|apagad[oa]/
+              : /\bdeleted\b|no longer available/i;
+
+  const privateRe =
+    lang === 'ja'
+      ? /非公開|表示できません|鍵/
+      : lang === 'es'
+        ? /privad[oa]|quién puede ver|protegid[oa]/i
+        : lang === 'fr'
+          ? /privé|limite qui peut voir/i
+          : lang === 'de'
+            ? /privat|geschützt|eingeschränkt/i
+            : lang === 'pt'
+              ? /privad[oa]|protegid[oa]/i
+              : lang === 'ko'
+                ? /비공개|볼 수 없습니다/i
+                : lang === 'zh'
+                  ? /私密|无法查看|限制/
+                  : /private account|limits who can view|limit who can view|their tweets|protected/i;
+
+  if (suspendedRe.test(t)) return 'suspended';
+  if (deletedRe.test(t)) return 'deleted';
+  if (privateRe.test(t) || (t.includes('limit') && t.includes('view'))) return 'private';
+  return 'unavailable';
+};
+
+const reasonFromTweetTombstone = (tomb: TweetTombstone, language?: string): APITombstoneReason => {
+  const structured =
+    reasonFromTombstoneEntityScan(tomb.tombstone?.text?.entities) ??
+    reasonFromTombstoneEntityScan(tomb.tombstone?.richText?.entities);
+  if (structured) return structured;
+
+  const text = [tomb.tombstone?.richText?.text, tomb.tombstone?.text?.text]
+    .filter((s): s is string => typeof s === 'string' && s.length > 0)
+    .join('\n');
+  if (!text) return 'unavailable';
+  return reasonFromTweetTombstoneText(text, language);
+};
+
+/** TweetDetail / timeline `TweetTombstone` → API v2 tombstone (also used from `conversation.ts`). */
+export const twitterTweetTombstoneFromGraphQL = (
+  tomb: TweetTombstone,
+  idHint?: string,
+  language?: string
+): APIStatusTombstone => {
+  const reason = reasonFromTweetTombstone(tomb, language);
+  const id = idHint;
+  return twitterTombstone(reason, {
+    id,
+    url: id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+  });
+};
+
+const tweetUnavailableToTombstone = (
+  status: TweetStub | GraphQLTwitterStatus,
+  idHint?: string,
+  urlHint?: string
+): APIStatusTombstone => {
+  const id =
+    idHint ??
+    (typeof (status as GraphQLTwitterStatus).rest_id === 'string'
+      ? (status as GraphQLTwitterStatus).rest_id
+      : undefined) ??
+    (status as GraphQLTwitterStatus).legacy?.id_str;
+  const url = urlHint ?? (id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined);
+  const meta = { id, url };
+
+  if ((status as TweetStub).__typename !== 'TweetUnavailable') {
+    return twitterTombstone('unavailable', meta);
+  }
+  const stub = status as TweetStub;
+  switch (stub.reason) {
+    case 'Protected':
+      return twitterTombstone('private', meta);
+    case 'NsfwLoggedOut':
+      return twitterTombstone('unavailable', meta);
+    case 'Suspended':
+      return twitterTombstone('suspended', meta);
+    case 'Deleted':
+      return twitterTombstone('deleted', meta);
+    default:
+      return twitterTombstone('unavailable', meta);
+  }
+};
+
+/** Unwrap `quoted_*` GraphQL wrappers to an inner tweet node (or empty object). */
+const unwrapQuoteGraphql = (quote: unknown): unknown => {
+  if (!quote || typeof quote !== 'object') return quote;
+  let q: Record<string, unknown> = quote as Record<string, unknown>;
+  if ('result' in q && q.result !== undefined) q = q.result as Record<string, unknown>;
+  if (q.__typename === 'TweetWithVisibilityResults' && q.tweet) {
+    q = q.tweet as Record<string, unknown>;
+  }
+  return q;
+};
+
 export const buildAPITwitterStatus = async (
   c: Context,
   status: GraphQLTwitterStatus,
@@ -190,8 +364,10 @@ export const buildAPITwitterStatus = async (
   threadAuthor: null | APIUser,
   legacyAPI = false,
   /** When false (timelines, search, conversation), only use GraphQL inline translation — no Grok/Polyglot/AI calls. */
-  manualTranslationFallback = true
-): Promise<APITwitterStatus | FetchResults | null> => {
+  manualTranslationFallback = true,
+  buildContext: TwitterStatusBuildContext = 'root',
+  tombstoneIdHint?: string
+): Promise<APITwitterStatus | APIStatusTombstone | FetchResults | null> => {
   const apiStatus = {} as APITwitterStatus;
   let repostedBy: APIRepostedBy | null = null;
 
@@ -214,13 +390,46 @@ export const buildAPITwitterStatus = async (
     repostedBy = repostedByFromGraphQLUser(retweeterUserFromStatus(status));
   }
 
+  if ((status as unknown as { __typename?: string }).__typename === 'TweetTombstone') {
+    if (legacyAPI) return null;
+    return twitterTweetTombstoneFromGraphQL(
+      status as unknown as TweetTombstone,
+      tombstoneIdHint ?? status.rest_id,
+      language
+    );
+  }
+
   if (typeof status.core === 'undefined') {
     console.log('Status still not valid', status);
+    if (buildContext !== 'root' && !legacyAPI) {
+      if ((status as unknown as TweetStub).__typename === 'TweetUnavailable') {
+        const g = status as GraphQLTwitterStatus;
+        const id = tombstoneIdHint ?? g.rest_id ?? g.legacy?.id_str;
+        return tweetUnavailableToTombstone(
+          status as TweetStub,
+          id,
+          id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+        );
+      }
+      const id = tombstoneIdHint ?? status.rest_id;
+      return twitterTombstone('unavailable', {
+        id,
+        url: id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+      });
+    }
     if (status.__typename === 'TweetUnavailable' && status.reason === 'Protected') {
       return { status: 401 };
-    } else {
-      return { status: 404 };
     }
+    if (!legacyAPI && (status as unknown as TweetStub).__typename === 'TweetUnavailable') {
+      const g = status as GraphQLTwitterStatus;
+      const id = tombstoneIdHint ?? g.rest_id ?? g.legacy?.id_str;
+      return tweetUnavailableToTombstone(
+        status as TweetStub,
+        id,
+        id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+      );
+    }
+    return { status: 404 };
   }
 
   // console.log('status', JSON.stringify(status));
@@ -502,22 +711,61 @@ export const buildAPITwitterStatus = async (
     status.quoted_tweet_results ??
     status.tweet?.quoted_tweet_results;
   if (quote) {
-    const buildQuote = await buildAPITwitterStatus(
-      c,
-      quote,
-      language,
-      threadAuthor,
-      legacyAPI,
-      manualTranslationFallback
-    );
-    if ((buildQuote as FetchResults).status) {
-      apiStatus.quote = undefined;
-    } else {
-      apiStatus.quote = buildQuote as APITwitterStatus;
+    const unwrapped = unwrapQuoteGraphql(quote) as Record<string, unknown>;
+    const isEmptyUnwrapped =
+      unwrapped && typeof unwrapped === 'object' && Object.keys(unwrapped).length === 0;
+    const qid = status.legacy?.quoted_status_id_str;
+    const qPerm = status.legacy?.quoted_status_permalink?.expanded;
+
+    if (isEmptyUnwrapped && !legacyAPI) {
+      apiStatus.quote = twitterTombstone('unavailable', {
+        id: qid,
+        url: qPerm ?? (qid ? `${Constants.TWITTER_ROOT}/i/status/${qid}` : undefined)
+      });
+    } else if (unwrapped?.__typename === 'TweetTombstone' && !legacyAPI) {
+      apiStatus.quote = twitterTweetTombstoneFromGraphQL(
+        unwrapped as unknown as TweetTombstone,
+        qid,
+        language
+      );
+    } else if (!isEmptyUnwrapped) {
+      const buildQuote = await buildAPITwitterStatus(
+        c,
+        quote as GraphQLTwitterStatus,
+        language,
+        threadAuthor,
+        legacyAPI,
+        manualTranslationFallback,
+        'quote',
+        qid
+      );
+      if (buildQuote == null) {
+        if (!legacyAPI && qid) {
+          apiStatus.quote = twitterTombstone('unavailable', {
+            id: qid,
+            url: qPerm ?? `${Constants.TWITTER_ROOT}/i/status/${qid}`
+          });
+        } else {
+          apiStatus.quote = undefined;
+        }
+      } else if (isTombstone(buildQuote)) {
+        apiStatus.quote = buildQuote;
+      } else if ((buildQuote as FetchResults).status) {
+        if (!legacyAPI && qid) {
+          apiStatus.quote = twitterTombstone('unavailable', {
+            id: qid,
+            url: qPerm ?? `${Constants.TWITTER_ROOT}/i/status/${qid}`
+          });
+        } else {
+          apiStatus.quote = undefined;
+        }
+      } else {
+        apiStatus.quote = buildQuote as APITwitterStatus;
+      }
     }
 
     /* Only override the embed_card if it's a basic status, since media always takes precedence  */
-    if (apiStatus.embed_card === 'tweet' && typeof apiStatus.quote !== 'undefined') {
+    if (apiStatus.embed_card === 'tweet' && apiStatus.quote && !isTombstone(apiStatus.quote)) {
       apiStatus.embed_card = apiStatus.quote.embed_card;
     }
   }
@@ -852,7 +1100,7 @@ export const buildAPITwitterStatus = async (
         }
       });
     }
-    if (apiStatus.quote?.media?.videos) {
+    if (apiStatus.quote && !isTombstone(apiStatus.quote) && apiStatus.quote.media?.videos) {
       apiStatus.quote.media.videos.forEach(video => {
         if (video.formats && video.formats.length > 0) {
           // @ts-expect-error Part of legacy API that is deprecated
@@ -860,7 +1108,7 @@ export const buildAPITwitterStatus = async (
         }
       });
     }
-    if (apiStatus.quote?.media?.all) {
+    if (apiStatus.quote && !isTombstone(apiStatus.quote) && apiStatus.quote.media?.all) {
       apiStatus.quote.media.all.forEach(media => {
         if (media.type === 'video' || media.type === 'gif') {
           const video = media as APIVideo;

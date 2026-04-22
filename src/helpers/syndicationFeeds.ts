@@ -1,5 +1,6 @@
 import type { APIBlueskyStatus, APITwitterStatus, APIVideo } from '../realms/api/schemas';
 import { truncateWithEllipsis } from './utils';
+import { isTombstone } from './tombstone';
 
 /** Twitter or Bluesky API v2–shaped status for RSS/Atom item mapping. */
 export type SyndicationStatus = APITwitterStatus | APIBlueskyStatus;
@@ -190,9 +191,13 @@ function buildItemHtml(
   }
 
   const q = status.quote;
-  if (q && !(options.omitSensitive && q.possibly_sensitive)) {
-    const qtext = escapeXml(truncateWithEllipsis(q.text.replace(/\s+/g, ' ').trim(), 280));
-    parts.push(`<blockquote><a href="${escapeXml(q.url)}">${qtext}</a></blockquote>`);
+  if (q) {
+    if (isTombstone(q)) {
+      parts.push(`<blockquote><i>${escapeXml(q.message)}</i></blockquote>`);
+    } else if (!(options.omitSensitive && q.possibly_sensitive)) {
+      const qtext = escapeXml(truncateWithEllipsis(q.text.replace(/\s+/g, ' ').trim(), 280));
+      parts.push(`<blockquote><a href="${escapeXml(q.url)}">${qtext}</a></blockquote>`);
+    }
   }
 
   return parts.join('\n');

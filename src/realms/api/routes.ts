@@ -94,7 +94,7 @@ export const statusRepostsV2Route = createRoute({
   path: '/2/status/{id}/reposts',
   summary: 'List reposters of a post',
   description:
-    'Returns users who reposted the given post. Use `cursor.bottom` from the prior response to fetch the next page.',
+    'Returns users who reposted the given status. Use `cursor.bottom` from the prior response to fetch the next page.',
   request: {
     params: z.object({
       id: twitterStatusIdParam

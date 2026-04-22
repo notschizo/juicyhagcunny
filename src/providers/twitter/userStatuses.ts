@@ -28,6 +28,7 @@ import {
   validateUserTweetsTimeline
 } from './graphql/validators';
 import { buildLanguageHeaders } from '../../helpers/language';
+import { isTombstone } from '../../helpers/tombstone';
 import {
   convertToApiUser,
   getTwitterUserRestIdByScreenName,
@@ -131,7 +132,7 @@ export const profileStatusesAPI = async (
                 return null;
               }
             );
-            return s !== null && !(s as FetchResults)?.status ? s : null;
+            return s !== null && !isTombstone(s) && !(s as FetchResults)?.status ? s : null;
           }
           const built = (
             await Promise.all(
@@ -142,7 +143,10 @@ export const profileStatusesAPI = async (
                 })
               )
             )
-          ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+          ).filter(
+            (s): s is APITwitterStatus =>
+              s !== null && !isTombstone(s) && !(s as FetchResults)?.status
+          );
 
           if (built.length === 0) return null;
 
@@ -187,7 +191,9 @@ export const profileStatusesAPI = async (
         })
       )
     )
-  ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+  ).filter(
+    (s): s is APITwitterStatus => s !== null && !isTombstone(s) && !(s as FetchResults)?.status
+  );
 
   return {
     code: 200,
@@ -363,7 +369,9 @@ export const profileArticlesAPI = async (
         })
       )
     )
-  ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+  ).filter(
+    (s): s is APITwitterStatus => s !== null && !isTombstone(s) && !(s as FetchResults)?.status
+  );
 
   return {
     code: 200,
@@ -428,7 +436,9 @@ export const profileMediaAPI = async (
         })
       )
     )
-  ).filter((s): s is APITwitterStatus => s !== null && !(s as FetchResults)?.status);
+  ).filter(
+    (s): s is APITwitterStatus => s !== null && !isTombstone(s) && !(s as FetchResults)?.status
+  );
 
   return {
     code: 200,

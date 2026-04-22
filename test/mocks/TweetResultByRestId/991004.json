@@ -1,0 +1,93 @@
+{
+  "data": {
+    "tweetResult": {
+      "result": {
+        "__typename": "Tweet",
+        "rest_id": "991004",
+        "core": {
+          "user_results": {
+            "result": {
+              "__typename": "User",
+              "id": "VXNlcjo5OTEwMDQ=",
+              "rest_id": "991010",
+              "affiliates_highlighted_label": {},
+              "parody_commentary_fan_label": "None",
+              "is_blue_verified": false,
+              "profile_image_shape": "Circle",
+              "legacy": {
+                "created_at": "Mon Jan 01 00:00:00 +0000 2024",
+                "default_profile": true,
+                "default_profile_image": true,
+                "description": "",
+                "entities": { "description": { "urls": [] } },
+                "fast_followers_count": 0,
+                "favourites_count": 0,
+                "followers_count": 0,
+                "friends_count": 0,
+                "has_custom_timelines": false,
+                "is_translator": false,
+                "listed_count": 0,
+                "location": "",
+                "media_count": 0,
+                "name": "Quote Host",
+                "normal_followers_count": 0,
+                "pinned_tweet_ids_str": [],
+                "possibly_sensitive": false,
+                "profile_image_url_https": "https://pbs.twimg.com/profile_images/1/normal.jpg",
+                "profile_interstitial_type": "",
+                "screen_name": "quotehost991",
+                "statuses_count": 1,
+                "translator_type": "none",
+                "verified": false,
+                "withheld_in_countries": []
+              },
+              "tipjar_settings": { "is_enabled": false }
+            }
+          }
+        },
+        "unmention_data": {},
+        "edit_control": {
+          "edit_tweet_ids": ["991004"],
+          "editable_until_msecs": "2000000000000",
+          "is_edit_eligible": true,
+          "edits_remaining": "5"
+        },
+        "is_translatable": false,
+        "views": { "state": "Enabled" },
+        "source": "",
+        "quoted_status_result": {
+          "result": {
+            "__typename": "TweetUnavailable",
+            "reason": "Suspended"
+          }
+        },
+        "legacy": {
+          "bookmark_count": 0,
+          "bookmarked": false,
+          "created_at": "Mon Jan 01 12:00:00 +0000 2024",
+          "conversation_id_str": "991004",
+          "display_text_range": [0, 4],
+          "entities": {
+            "hashtags": [],
+            "symbols": [],
+            "timestamps": [],
+            "urls": [],
+            "user_mentions": []
+          },
+          "favorite_count": 0,
+          "favorited": false,
+          "full_text": "sus",
+          "is_quote_status": true,
+          "lang": "en",
+          "quote_count": 0,
+          "reply_count": 0,
+          "retweet_count": 0,
+          "retweeted": false,
+          "user_id_str": "991010",
+          "id_str": "991004",
+          "quoted_status_id_str": "991999"
+        }
+      }
+    }
+  }
+}

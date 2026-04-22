@@ -45,7 +45,8 @@ export default {
             return new Response(JSON.stringify({ data: {} }));
           }
         case 'TweetDetail':
-          const focalTweetId = variables.focalTweetId;
+        case 'ConversationTimeline': {
+          const focalTweetId = variables.focalTweetId ?? variables.focal_tweet_id;
           // load mock based on tweet id
           try {
             const mock = await import(`../mocks/TweetDetail/${focalTweetId}.json`);
@@ -55,6 +56,7 @@ export default {
             console.error('Error loading mock:', error);
           }
           return new Response(JSON.stringify({ data: {} }));
+        }
         case 'TweetResultByRestId':
           const tweetId = variables.tweetId;
           // load mock based on tweet id
