@@ -55,7 +55,7 @@ function fetchLocalOpenApi(port, hostHeader) {
         method: 'GET',
         timeout: 30_000,
         headers: {
-          Host: hostHeader,
+          'Host': hostHeader,
           'User-Agent': 'FxEmbed-Docs-Builder/1.0'
         }
       },

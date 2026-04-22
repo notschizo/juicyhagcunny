@@ -642,6 +642,11 @@ type GraphQLTwitterStatus = {
   };
 };
 
+type GraphQLTweetWithVisibilityResults = {
+  __typename: 'TweetWithVisibilityResults';
+  tweet: GraphQLTwitterStatus;
+};
+
 type GraphQLTwitterCard = {
   rest_id?: string; // "card://1674824189176590336",
   /** Present on TweetDetail / TweetResultByRestId for link preview cards (e.g. `summary_large_image`). */
@@ -700,6 +705,11 @@ type TweetTombstone = {
       text: string; // "You’re unable to view this Tweet because this account owner limits who can view their Tweets. Learn more"
       entities: unknown[];
     };
+    /** Present on some GraphQL clients alongside or instead of structured hints in `text`. */
+    richText?: {
+      text?: string;
+      entities?: unknown[];
+    };
   };
 };
 
@@ -707,7 +717,7 @@ type GraphQLTimelineTweet = {
   item: 'TimelineTweet';
   __typename: 'TimelineTweet';
   tweet_results: {
-    result: GraphQLTwitterStatus | TweetTombstone;
+    result: GraphQLTwitterStatus | TweetTombstone | GraphQLTweetWithVisibilityResults;
   };
 };
 
@@ -865,7 +875,7 @@ type TweetResultByIdResponse = {
 
 type TweetStub = {
   __typename: 'TweetUnavailable';
-  reason: 'NsfwLoggedOut' | 'Protected';
+  reason: 'NsfwLoggedOut' | 'Protected' | 'Suspended' | 'Deleted';
 };
 
 interface GraphQLProcessBucket {

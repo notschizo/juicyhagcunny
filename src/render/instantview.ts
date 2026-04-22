@@ -6,7 +6,8 @@ import { sanitizeText, wrapForeignLinks as wrapForeignLinksUtil } from '../helpe
 import { DataProvider } from '../enum';
 import { getBranding } from '../helpers/branding';
 import { renderArticleToHtml } from '../helpers/article';
-import type { APITwitterStatus } from '../realms/api/schemas';
+import type { APIStatusTombstone, APITwitterStatus } from '../realms/api/schemas';
+import { isTombstone } from '../helpers/tombstone';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
 import { experimentCheck, Experiment } from '../experiments';
 
@@ -322,12 +323,17 @@ const generateCommunityNote = (status: APITwitterStatus): string => {
 };
 
 const generateStatus = (
-  status: APIStatus,
+  status: APIStatus | APIStatusTombstone,
   author: APIUser,
   language: string,
   isQuote = false,
   authorActionType: AuthorActionType | null
 ): string => {
+  if (isTombstone(status)) {
+    const inner = `<i>${sanitizeText(status.message)}</i>`;
+    return isQuote ? `<blockquote>${inner}</blockquote>` : `<p>${inner}</p>`;
+  }
+
   const twitterStatus = status as APITwitterStatus;
 
   // Check if this is a Twitter article
@@ -382,20 +388,24 @@ const generateStatus = (
   <!-- Embed poll -->
   ${status.poll ? generatePoll(status.poll, status.lang ?? 'en') : notApplicableComment}
   <!-- Embedded quote status -->
-  ${!isQuote && status.quote ? generateStatus(status.quote, author, language, true, null) : notApplicableComment}`.format(
-    {
-      quoteHeader: isQuote
-        ? '<h4>' +
-          i18next.t('ivQuoteHeader').format({
-            url: status.url,
-            authorName: status.author.name,
-            authorHandle: status.author.screen_name,
-            authorURL: status.author.url
-          }) +
-          '</h4>'
-        : ''
-    }
-  );
+  ${
+    !isQuote && status.quote
+      ? isTombstone(status.quote)
+        ? `<blockquote><i>${sanitizeText(status.quote.message)}</i></blockquote>`
+        : generateStatus(status.quote, author, language, true, null)
+      : notApplicableComment
+  }`.format({
+    quoteHeader: isQuote
+      ? '<h4>' +
+        i18next.t('ivQuoteHeader').format({
+          url: status.url,
+          authorName: status.author.name,
+          authorHandle: status.author.screen_name,
+          authorURL: status.author.url
+        }) +
+        '</h4>'
+      : ''
+  });
 };
 
 export const renderInstantView = (properties: RenderProperties): ResponseInstructions => {
@@ -459,11 +469,15 @@ export const renderInstantView = (properties: RenderProperties): ResponseInstruc
         ${articleOnly ? `<h2>${status.author.name} (@${status.author.screen_name})</h2>` : ''}
 
     ${useThread
-      .map(status => {
+      .map(item => {
         console.log('previousThreadPieceAuthor', previousThreadPieceAuthor);
-        if (!status) {
+        if (!item) {
           return '';
         }
+        if (isTombstone(item)) {
+          return `<p><i>${sanitizeText(item.message)}</i></p>`;
+        }
+        const status = item as APIStatus;
         if (originalAuthor === null) {
           originalAuthor = status.author?.id;
         }
@@ -496,7 +510,7 @@ export const renderInstantView = (properties: RenderProperties): ResponseInstruc
         previousThreadPieceAuthor = status.author?.id;
 
         return generateStatus(
-          status as APIStatus,
+          status,
           status.author ?? thread?.author,
           properties?.targetLanguage ?? 'en',
           false,

@@ -15,8 +15,11 @@ import type {
   APITwitterStatus,
   APIUser,
   APIVideo,
-  APIMosaicPhoto
+  APIMosaicPhoto,
+  APIStatusTombstone
 } from '../realms/api/schemas';
+
+export type { APIStatusTombstone };
 
 export interface APIStatus {
   id: string;
@@ -30,7 +33,7 @@ export interface APIStatus {
   quotes?: number;
   replies: number;
 
-  quote?: APIStatus;
+  quote?: APIStatus | APIStatusTombstone;
   poll?: APIPoll;
   author: APIUser;
 
@@ -88,10 +91,12 @@ export interface SocialPost {
   author: APIUser | null;
 }
 
+export type ThreadOrStatusItem = APIStatus | APITwitterStatus | APIStatusTombstone;
+
 /** Used by Twitter v2 API, embed pipeline, Bluesky/TikTok conversations (broader than OpenAPI `SocialThreadSchema`). */
 export interface SocialThread {
-  status: APIStatus | APITwitterStatus | null;
-  thread: (APIStatus | APITwitterStatus)[] | null;
+  status: ThreadOrStatusItem | null;
+  thread: ThreadOrStatusItem[] | null;
   author: APIUser | null;
   code: number;
 }

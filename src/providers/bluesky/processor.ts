@@ -10,6 +10,42 @@ import { unescapeText } from '../../helpers/utils';
 import { blueskyFacetsToApiFacets } from './facets';
 import { type BlueskyFetchOpts, fetchPostsByUris, fetchProfilesByActors } from './client';
 import { blueskyWebPostUrl, didFromAtUri, rkeyFromPostAtUri } from './uris';
+import type { APIStatusTombstone, APITombstoneReason } from '../../realms/api/schemas';
+import { isTombstone, tombstoneMessageForReason } from '../../helpers/tombstone';
+
+export const buildBlueskyTombstone = (
+  reason: APITombstoneReason,
+  atUri: string,
+  cid?: string
+): APIStatusTombstone => {
+  const rkey = rkeyFromPostAtUri(atUri) ?? undefined;
+  const repo = didFromAtUri(atUri) ?? '';
+  const url =
+    rkey && repo
+      ? `${Constants.BLUESKY_ROOT}/profile/${encodeURIComponent(repo)}/post/${rkey}`
+      : atUri || `${Constants.BLUESKY_ROOT}`;
+
+  return {
+    type: 'tombstone',
+    provider: 'bluesky',
+    reason,
+    message: tombstoneMessageForReason(reason),
+    id: rkey,
+    url,
+    at_uri: atUri || undefined,
+    cid
+  };
+};
+
+const isDetachedRecordView = (vr: BlueskyEmbedViewRecord): boolean => {
+  const t = vr.$type ?? '';
+  return t.includes('viewDetached') || t.includes('Detached') || vr.detached === true;
+};
+
+const isDetachedOuterEmbed = (embedRecord: NonNullable<BlueskyEmbed['record']>): boolean => {
+  const t = embedRecord.$type ?? '';
+  return t.includes('viewDetached') || t.includes('Detached') || embedRecord.detached === true;
+};
 import { blueskyVerificationToApiUserVerification } from './verification';
 
 const isPossiblySensitive = (labels: ATProtoLabel[] | undefined | null): boolean =>
@@ -94,44 +130,58 @@ const nestedLegacyPost = (o: unknown): BlueskyPost | null => {
   return null;
 };
 
-/** Unwrap `app.bsky.embed.record` shapes to something we can pass to `buildAPIBskyPost`. */
+/** Unwrap `app.bsky.embed.record` shapes to something we can pass to `buildAPIBlueskyPost`. */
 const quoteCandidateFromEmbedRecord = (
   embedRecord: NonNullable<BlueskyEmbed['record']>
-): {
-  post: BlueskyPost | null;
-  stubUri: string | null;
-  stubReason: 'not_found' | 'blocked' | null;
-} => {
+): { post: BlueskyPost | null; tombstone: APIStatusTombstone | null } => {
+  const u = (x?: string) => x ?? '';
+
   if (embedRecord.notFound) {
-    return { post: null, stubUri: embedRecord.uri ?? null, stubReason: 'not_found' };
+    return { post: null, tombstone: buildBlueskyTombstone('deleted', u(embedRecord.uri)) };
   }
   if (embedRecord.blocked) {
-    return { post: null, stubUri: embedRecord.uri ?? null, stubReason: 'blocked' };
+    return { post: null, tombstone: buildBlueskyTombstone('blocked', u(embedRecord.uri)) };
   }
+  if (isDetachedOuterEmbed(embedRecord)) {
+    return { post: null, tombstone: buildBlueskyTombstone('blocked', u(embedRecord.uri)) };
+  }
+
   const inner = embedRecord.record ?? embedRecord.value ?? embedRecord;
   if (inner && typeof inner === 'object') {
     const vr = inner as BlueskyEmbedViewRecord;
     if (vr.notFound) {
-      return { post: null, stubUri: embedRecord.uri ?? vr.uri ?? null, stubReason: 'not_found' };
+      return {
+        post: null,
+        tombstone: buildBlueskyTombstone('deleted', u(embedRecord.uri ?? vr.uri))
+      };
     }
     if (vr.blocked) {
-      return { post: null, stubUri: embedRecord.uri ?? vr.uri ?? null, stubReason: 'blocked' };
+      return {
+        post: null,
+        tombstone: buildBlueskyTombstone('blocked', u(embedRecord.uri ?? vr.uri))
+      };
+    }
+    if (isDetachedRecordView(vr)) {
+      return {
+        post: null,
+        tombstone: buildBlueskyTombstone('blocked', u(embedRecord.uri ?? vr.uri))
+      };
     }
     const asNested = nestedLegacyPost(embedRecord.record);
-    if (asNested) return { post: asNested, stubUri: null, stubReason: null };
+    if (asNested) return { post: asNested, tombstone: null };
     const asNestedVal = nestedLegacyPost(embedRecord.value);
-    if (asNestedVal) return { post: asNestedVal, stubUri: null, stubReason: null };
+    if (asNestedVal) return { post: asNestedVal, tombstone: null };
     const fromView = viewRecordToPost(vr);
-    if (fromView) return { post: fromView, stubUri: null, stubReason: null };
+    if (fromView) return { post: fromView, tombstone: null };
     if (vr.uri && vr.cid && vr.author) {
       const hybrid = viewRecordToPost(vr);
-      if (hybrid) return { post: hybrid, stubUri: null, stubReason: null };
+      if (hybrid) return { post: hybrid, tombstone: null };
     }
   }
   if (embedRecord.uri && !embedRecord.notFound && !embedRecord.blocked) {
-    return { post: null, stubUri: embedRecord.uri, stubReason: null };
+    return { post: null, tombstone: null };
   }
-  return { post: null, stubUri: embedRecord.uri ?? null, stubReason: null };
+  return { post: null, tombstone: null };
 };
 
 const resolveReplyingTo = async (
@@ -287,31 +337,27 @@ const resolveQuote = async (
   language: string | undefined,
   quoteDepth: number,
   fetchOpts?: BlueskyFetchOpts
-): Promise<APIStatus | undefined> => {
+): Promise<APIStatus | APIStatusTombstone | undefined> => {
   if (quoteDepth > 10) return undefined;
   const embedRecord = status.embed?.record ?? status.embeds?.find(e => e.record)?.record;
   if (!embedRecord) return undefined;
 
   const cand = quoteCandidateFromEmbedRecord(embedRecord);
-  let { post } = cand;
-  const { stubUri, stubReason } = cand;
-
-  if (!post && stubUri && stubReason) {
-    return undefined; // buildUnavailableQuote(stubUri, stubReason);
+  if (cand.tombstone) {
+    return cand.tombstone;
   }
 
-  if (!post && stubUri) {
-    const fetched = await fetchPostsByUris([stubUri], fetchOpts);
+  let { post } = cand;
+  if (!post && embedRecord.uri) {
+    const fetched = await fetchPostsByUris([embedRecord.uri], fetchOpts);
     post = fetched[0] ?? null;
   }
 
   if (!post) {
-    // if (stubUri) return buildUnavailableQuote(stubUri, 'not_found');
-    return undefined;
+    return embedRecord.uri ? buildBlueskyTombstone('deleted', embedRecord.uri) : undefined;
   }
 
-  const q = await buildAPIBlueskyPost(c, post, language, quoteDepth + 1, fetchOpts);
-  return q;
+  return buildAPIBlueskyPost(c, post, language, quoteDepth + 1, fetchOpts);
 };
 
 export const buildAPIBlueskyPost = async (
@@ -369,7 +415,7 @@ export const buildAPIBlueskyPost = async (
   const quote = await resolveQuote(c, status, language, quoteDepth, bskyFetchOpts);
   if (quote) {
     apiStatus.quote = quote;
-    if (quote.embed_card && quote.embed_card !== 'tweet') {
+    if (!isTombstone(quote) && quote.embed_card && quote.embed_card !== 'tweet') {
       apiStatus.embed_card = quote.embed_card;
     }
   }
