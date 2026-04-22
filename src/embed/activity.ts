@@ -185,7 +185,7 @@ const getStatusText = (status: APIStatus): StatusTextResult => {
     }
   }
   if (status.replying_to) {
-    text = `<sub>↩ <a href="${status.replying_to.profile_url}" class="u-url mention">${status.replying_to.display_name} (@${status.replying_to.screen_name})</a></sub><br>${text}`;
+    text = `<sub>↩ <a href="${status.replying_to.profile_url}" class="u-url mention">${status.replying_to.display_name ?? ''} (@${status.replying_to.screen_name})</a></sub><br>${text}`;
   }
   if (status.poll) {
     text += `${generatePoll(status.poll)}`;

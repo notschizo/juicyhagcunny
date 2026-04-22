@@ -46,32 +46,38 @@ const isDetachedOuterEmbed = (embedRecord: NonNullable<BlueskyEmbed['record']>):
   const t = embedRecord.$type ?? '';
   return t.includes('viewDetached') || t.includes('Detached') || embedRecord.detached === true;
 };
+import { blueskyVerificationToApiUserVerification } from './verification';
 
 const isPossiblySensitive = (labels: ATProtoLabel[] | undefined | null): boolean =>
   !!labels?.some(l => /nsfw|porn|sexual|nudity|graphic|!warn/i.test(l.val ?? ''));
 
-const apiUserFromAuthor = (author: BlueskyAuthor): APIUser => ({
-  id: author.handle,
-  name: author.displayName || author.handle,
-  screen_name: author.handle,
-  avatar_url: author.avatar ?? null,
-  banner_url: null,
-  description: '',
-  raw_description: { text: '', facets: [] },
-  location: '',
-  followers: 0,
-  following: 0,
-  media_count: 0,
-  likes: 0,
-  url: `${Constants.BLUESKY_ROOT}/profile/${author.handle}`,
-  protected: false,
-  statuses: 0,
-  joined: author.createdAt,
-  birthday: { day: 0, month: 0, year: 0 },
-  website: null,
-  profile_embed: true,
-  type: 'profile'
-});
+const apiUserFromAuthor = (author: BlueskyAuthor): APIUser => {
+  const base: APIUser = {
+    id: author.handle,
+    name: author.displayName || author.handle,
+    screen_name: author.handle,
+    avatar_url: author.avatar ?? null,
+    banner_url: null,
+    description: '',
+    raw_description: { text: '', facets: [] },
+    location: '',
+    followers: 0,
+    following: 0,
+    media_count: 0,
+    likes: 0,
+    url: `${Constants.BLUESKY_ROOT}/profile/${author.handle}`,
+    protected: false,
+    statuses: 0,
+    joined: author.createdAt,
+    birthday: { day: 0, month: 0, year: 0 },
+    website: null,
+    profile_embed: true,
+    type: 'profile'
+  };
+  const v = blueskyVerificationToApiUserVerification(author.verification);
+  if (v) base.verification = v;
+  return base;
+};
 
 const tombstoneAuthor = (handleOrDid: string): APIUser => ({
   id: handleOrDid,

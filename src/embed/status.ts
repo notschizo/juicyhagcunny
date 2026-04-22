@@ -623,8 +623,8 @@ export const handleStatus = async (
     newText += `\n${quoteText}`;
   }
 
-  if (!isDiscord && post.replying_to) {
-    newText = `↩ ${post.replying_to.display_name} (@${post.replying_to.screen_name})<br>${newText}`;
+  if (!isDiscord && status.replying_to) {
+    newText = `↩ ${status.replying_to.display_name ?? ''} (@${status.replying_to.screen_name})<br>${newText}`;
   }
 
   const avatar = post.author.avatar_url;

@@ -108,6 +108,11 @@ declare type BlueskyAuthor = {
   displayName: string;
   handle: string;
   labels: ATProtoLabel[];
+  verification?: {
+    verifiedStatus?: string;
+    trustedVerifierStatus?: string;
+    verifications?: { issuer?: string; isValid?: boolean }[];
+  };
 };
 
 declare type BlueskyReply = {
@@ -215,6 +220,7 @@ declare type BlueskyProfileViewDetailed = {
   verification?: {
     verifiedStatus?: string;
     trustedVerifierStatus?: string;
+    verifications?: { issuer?: string; isValid?: boolean; uri?: string; createdAt?: string }[];
   };
 };
 
@@ -231,6 +237,7 @@ declare type BlueskyProfileView = {
   verification?: {
     verifiedStatus?: string;
     trustedVerifierStatus?: string;
+    verifications?: { issuer?: string; isValid?: boolean; uri?: string; createdAt?: string }[];
   };
 };
 
