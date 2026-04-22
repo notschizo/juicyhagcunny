@@ -544,7 +544,7 @@ export const fetchTrendingTopics = async (
   const result = await executeBlueskyXrpc<BlueskyGetTrendingTopicsResponse>(
     'app.bsky.unspecced.getTrendingTopics',
     { limit: params.limit },
-    opts?.credentialKey
+    opts
   );
   if (!result.ok) {
     console.log('Bluesky getTrendingTopics failed', result.status, result.body?.slice?.(0, 200));
