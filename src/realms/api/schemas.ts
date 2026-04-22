@@ -583,9 +583,7 @@ export const SocialThreadSchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
     status: APITwitterStatusSchema.nullable(),
-    thread: z
-      .array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema]))
-      .nullable(),
+    thread: z.array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema])).nullable(),
     author: APIUserSchema.nullable()
   })
   .openapi('SocialThread');
@@ -662,9 +660,7 @@ export const SocialThreadBlueskySchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
     status: APIBlueskyStatusSchema.nullable(),
-    thread: z
-      .array(z.union([APIBlueskyStatusSchema, APIStatusTombstoneSchema]))
-      .nullable(),
+    thread: z.array(z.union([APIBlueskyStatusSchema, APIStatusTombstoneSchema])).nullable(),
     author: APIUserSchema.nullable()
   })
   .openapi('SocialThreadBluesky');
@@ -675,9 +671,7 @@ export const SocialConversationBlueskySchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
     status: APIBlueskyStatusSchema.nullable(),
-    thread: z
-      .array(z.union([APIBlueskyStatusSchema, APIStatusTombstoneSchema]))
-      .nullable(),
+    thread: z.array(z.union([APIBlueskyStatusSchema, APIStatusTombstoneSchema])).nullable(),
     replies: z.array(APIBlueskyStatusSchema).nullable(),
     author: APIUserSchema.nullable(),
     cursor: z
@@ -694,9 +688,7 @@ export const SocialConversationSchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
     status: APITwitterStatusSchema.nullable(),
-    thread: z
-      .array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema]))
-      .nullable(),
+    thread: z.array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema])).nullable(),
     replies: z.array(APITwitterStatusSchema).nullable(),
     author: APIUserSchema.nullable(),
     cursor: z
@@ -888,9 +880,7 @@ export const SocialThreadMastodonSchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
     status: APIMastodonStatusSchema.nullable(),
-    thread: z
-      .array(z.union([APIMastodonStatusSchema, APIStatusTombstoneSchema]))
-      .nullable(),
+    thread: z.array(z.union([APIMastodonStatusSchema, APIStatusTombstoneSchema])).nullable(),
     author: APIUserSchema.nullable()
   })
   .openapi('SocialThreadMastodon');
@@ -901,9 +891,7 @@ export const SocialConversationMastodonSchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
     status: APIMastodonStatusSchema.nullable(),
-    thread: z
-      .array(z.union([APIMastodonStatusSchema, APIStatusTombstoneSchema]))
-      .nullable(),
+    thread: z.array(z.union([APIMastodonStatusSchema, APIStatusTombstoneSchema])).nullable(),
     replies: z.array(APIMastodonStatusSchema).nullable(),
     author: APIUserSchema.nullable(),
     cursor: z
