@@ -6,7 +6,7 @@ import {
   APISearchResultsBlueskySchema,
   APIGroupedSearchResultsBlueskySchema,
   APITrendsResponseSchema,
-  SocialConversationBlueskySchema,
+  SocialConversationSchema,
   UserAPIResponseSchema,
   SocialThreadSchema
 } from '../api/schemas';
@@ -245,7 +245,7 @@ export const blueskyConversationV2Route = createRoute({
   responses: {
     200: {
       description: 'Conversation payload with thread, replies, and pagination cursor',
-      content: { 'application/json': { schema: SocialConversationBlueskySchema } }
+      content: { 'application/json': { schema: SocialConversationSchema } }
     },
     400: {
       description: 'Invalid path, query parameters, or cursor',
@@ -253,15 +253,15 @@ export const blueskyConversationV2Route = createRoute({
     },
     404: {
       description: 'Not found',
-      content: { 'application/json': { schema: SocialConversationBlueskySchema } }
+      content: { 'application/json': { schema: SocialConversationSchema } }
     },
     503: {
       description: 'Bluesky upstream timeout or error (post may still exist)',
-      content: { 'application/json': { schema: SocialConversationBlueskySchema } }
+      content: { 'application/json': { schema: SocialConversationSchema } }
     },
     500: {
       description: 'Server or upstream failure',
-      content: { 'application/json': { schema: SocialConversationBlueskySchema } }
+      content: { 'application/json': { schema: SocialConversationSchema } }
     }
   }
 });
