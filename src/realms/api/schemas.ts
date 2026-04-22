@@ -692,7 +692,7 @@ export type SocialConversationBluesky = z.infer<typeof SocialConversationBluesky
 export const SocialConversationSchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
-    status: APITwitterStatusSchema.nullable(),
+    status: z.union([APITwitterStatusSchema, APIStatusTombstoneSchema]).nullable(),
     thread: z.array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema])).nullable(),
     replies: z.array(APITwitterStatusSchema).nullable(),
     author: APIUserSchema.nullable(),

@@ -20,7 +20,7 @@ import {
   facetUtf16RangeOnPlainText,
   normalizeUtf16EntityRange
 } from '../helpers/twitterTextIndices';
-import { isTombstone, tombstoneMessageForReason } from '../helpers/tombstone';
+import { getLocalizedTombstoneLine, isTombstone } from '../helpers/tombstone';
 
 const convertArticleMediaToAttachment = (
   media: TwitterApiMedia
@@ -418,12 +418,6 @@ export const handleActivity = async (
     return returnError(c, Strings.ERROR_API_FAIL);
   }
 
-  await i18next.use(icu).init({
-    lng: normalizeLanguage(language ?? thread.status?.lang ?? 'en'),
-    resources: translationResources,
-    fallbackLng: 'en'
-  });
-
   if (!thread.status) {
     if (provider === DataProvider.Bluesky) {
       return returnError(
@@ -435,8 +429,15 @@ export const handleActivity = async (
   }
 
   if (isTombstone(thread.status)) {
-    return returnError(c, tombstoneMessageForReason(thread.status.reason));
+    const message = await getLocalizedTombstoneLine(thread.status.reason, language ?? undefined);
+    return returnError(c, message);
   }
+
+  await i18next.use(icu).init({
+    lng: normalizeLanguage(language ?? thread.status.lang ?? 'en'),
+    resources: translationResources,
+    fallbackLng: 'en'
+  });
 
   // Get status text and article media
   const statusResult = getStatusText(thread.status as APIStatus);

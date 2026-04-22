@@ -516,7 +516,7 @@ export const handleStatus = async (
       }
     } else if (media?.mosaic) {
       if (userAgent.match(Constants.NATIVE_MULTI_IMAGE_UA_REGEX) && !flags.forceMosaic) {
-        const photos = post.media?.photos || [];
+        const photos = media?.photos || [];
 
         photos.forEach(photo => {
           /* Override the card type */
