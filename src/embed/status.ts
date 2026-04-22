@@ -229,20 +229,19 @@ export const handleStatus = async (
       console.log(api);
       return returnError(c, Strings.ERROR_API_FAIL);
   }
-  const post: APIStatus | APITwitterStatus = status;
   /* Should sensitive statuses be allowed Instant View? */
   let useIV = false;
 
   if (
-    (post.media?.all?.length ?? 0) <= 0 &&
-    (post.media?.external?.url || post.media?.broadcast?.stream?.url)
+    (status.media?.all?.length ?? 0) <= 0 &&
+    (status.media?.external?.url || status.media?.broadcast?.stream?.url)
   ) {
     useActivity = false;
   }
 
   if (isTelegram && !flags?.direct && !flags?.gallery && !flags?.api) {
-    if (post.provider === 'twitter') {
-      const twitterStatus = post as APITwitterStatus;
+    if (status.provider === 'twitter') {
+      const twitterStatus = status as APITwitterStatus;
       useIV =
         useIV ||
         !!(
@@ -254,11 +253,11 @@ export const handleStatus = async (
     useIV =
       useIV ||
       !!(
-        post.media?.photos?.[0] || // Force instant view for photos for now https://bugs.telegram.org/c/33679
-        post.media?.mosaic ||
-        (post.quote && !isTombstone(post.quote)) ||
+        status.media?.photos?.[0] || // Force instant view for photos for now https://bugs.telegram.org/c/33679
+        status.media?.mosaic ||
+        (status.quote && !isTombstone(status.quote)) ||
         flags?.forceInstantView ||
-        (post as APITwitterStatus)?.article ||
+        (status as APITwitterStatus)?.article ||
         (thread?.thread?.length ?? 0) > 1
       );
   }
@@ -273,25 +272,25 @@ export const handleStatus = async (
   let overrideMedia: APIMedia | undefined;
 
   await i18next.use(icu).init({
-    lng: normalizeLanguage(language ?? post.lang ?? 'en'),
+    lng: normalizeLanguage(language ?? status.lang ?? 'en'),
     resources: translationResources,
     fallbackLng: 'en'
   });
 
-  // Check if mediaNumber exists, and if that media exists in post.media.all. If it does, we'll store overrideMedia variable
-  if (mediaNumber && post.media && post.media.all && post.media.all[mediaNumber - 1]) {
-    overrideMedia = post.media.all[mediaNumber - 1] as APIMedia;
+  // Check if mediaNumber exists, and if that media exists in status.media.all. If it does, we'll store overrideMedia variable
+  if (mediaNumber && status.media && status.media.all && status.media.all[mediaNumber - 1]) {
+    overrideMedia = status.media.all[mediaNumber - 1] as APIMedia;
   }
 
   /* Catch direct media request (d.fxtwitter.com, or .mp4 / .jpg) */
-  if (flags?.direct && !flags?.textOnly && post.media) {
+  if (flags?.direct && !flags?.textOnly && status.media) {
     let redirectUrl: string | null = null;
-    const all = post.media.all || [];
-    // if (post.media.videos) {
-    //   const { videos } = post.media;
+    const all = status.media.all || [];
+      // if (status.media.videos) {
+    //   const { videos } = status.media;
     //   redirectUrl = (videos[(mediaNumber || 1) - 1] || videos[0]).url;
-    // } else if (post.media.photos) {
-    //   const { photos } = post.media;
+    // } else if (status.media.photos) {
+    //   const { photos } = status.media;
     //   redirectUrl = (photos[(mediaNumber || 1) - 1] || photos[0]).url;
     // }
 
@@ -309,16 +308,16 @@ export const handleStatus = async (
       if (selectedMedia?.type === 'video') {
         if (
           experimentCheck(Experiment.KITCHENSINK_VIDEO, isTelegram) &&
-          post.provider !== DataProvider.TikTok
+          status.provider !== DataProvider.TikTok
         ) {
           const domain =
-            post.provider === DataProvider.Twitter
-              ? getVideoTranscodeDomain(post.id)
-              : getVideoTranscodeDomainBluesky(post.author.id);
+            status.provider === DataProvider.Twitter
+              ? getVideoTranscodeDomain(status.id)
+              : getVideoTranscodeDomainBluesky(status.author.id);
           redirectUrl = `https://${domain}${new URL(redirectUrl).pathname}`;
         } else if (
           experimentCheck(Experiment.VIDEO_REDIRECT_WORKAROUND, !!Constants.API_HOST_LIST) &&
-          post.provider !== DataProvider.TikTok
+          status.provider !== DataProvider.TikTok
         ) {
           redirectUrl = `https://${Constants.API_HOST_LIST[0]}/2/go?url=${encodeURIComponent(redirectUrl)}`;
         }
@@ -333,53 +332,53 @@ export const handleStatus = async (
   }
 
   /* User requested gallery view, but this isn't a status with media */
-  if (flags.gallery && (post.media?.all?.length ?? 0) < 1) {
+  if (flags.gallery && (status.media?.all?.length ?? 0) < 1) {
     flags.gallery = false;
   }
 
   /* At this point, we know we're going to have to create a
      regular embed because it's not an API or direct media request */
 
-  let authorText = getSocialProof(post as APIStatus) || Strings.DEFAULT_AUTHOR_TEXT;
+  let authorText = getSocialProof(status as APIStatus) || Strings.DEFAULT_AUTHOR_TEXT;
   const engagementText = authorText.replace(/ {4}/g, ' ');
   const originalSiteName = getBranding(c).name;
   let siteName = originalSiteName;
 
-  if ((post as APITwitterStatus).article && isTelegram && useIV) {
+  if ((status as APITwitterStatus).article && isTelegram && useIV) {
     siteName = i18next.t('articleIndicator', { brandingName: siteName });
   } else if (thread.thread && thread.thread.length > 1 && isTelegram && useIV) {
     siteName = i18next.t('threadIndicator', { brandingName: siteName });
   }
 
   if (
-    post.provider === DataProvider.Twitter &&
-    (post as APITwitterStatus).card?.domain &&
-    (post as APITwitterStatus).embed_card !== 'player'
+    status.provider === DataProvider.Twitter &&
+    (status as APITwitterStatus).card?.domain &&
+    (status as APITwitterStatus).embed_card !== 'player'
   ) {
-    const d = (post as APITwitterStatus).card!.domain!.replace(/^www\./, '');
+    const d = (status as APITwitterStatus).card!.domain!.replace(/^www\./, '');
     siteName = `${originalSiteName} · ${d}`;
   }
 
-  let newText = post.text;
+  let newText = status.text;
 
   /* Base headers included in all responses */
   const headers = [];
 
   const twitterPublicStatusUrl = flags?.horizon
-    ? `${Constants.HORIZON_WEB_ROOT}/${post.author.screen_name}/status/${post.id}`
-    : `${Constants.TWITTER_ROOT}/${post.author.screen_name}/status/${post.id}`;
+    ? `${Constants.HORIZON_WEB_ROOT}/${status.author.screen_name}/status/${status.id}`
+    : `${Constants.TWITTER_ROOT}/${status.author.screen_name}/status/${status.id}`;
   const bskyPublicStatusUrl = flags?.horizon
-    ? `${Constants.HORIZON_WEB_ROOT}/profile/${post.author.screen_name}/post/${post.id}`
-    : `${Constants.BLUESKY_ROOT}/profile/${post.author.screen_name}/post/${post.id}`;
+    ? `${Constants.HORIZON_WEB_ROOT}/profile/${status.author.screen_name}/post/${status.id}`
+    : `${Constants.BLUESKY_ROOT}/profile/${status.author.screen_name}/post/${status.id}`;
 
-  if (post.provider === DataProvider.Twitter) {
+  if (status.provider === DataProvider.Twitter) {
     headers.push(
       `<link rel="canonical" href="${twitterPublicStatusUrl}"/>`,
       `<meta property="og:url" content="${twitterPublicStatusUrl}"/>`,
-      `<meta property="twitter:site" content="@${post.author.screen_name}"/>`,
-      `<meta property="twitter:creator" content="@${post.author.screen_name}"/>`
+      `<meta property="twitter:site" content="@${status.author.screen_name}"/>`,
+      `<meta property="twitter:creator" content="@${status.author.screen_name}"/>`
     );
-  } else if (post.provider === DataProvider.Bluesky) {
+  } else if (status.provider === DataProvider.Bluesky) {
     headers.push(
       `<link rel="canonical" href="${bskyPublicStatusUrl}"/>`,
       `<meta property="og:url" content="${bskyPublicStatusUrl}"/>`
@@ -389,7 +388,7 @@ export const handleStatus = async (
   if (!flags.gallery) {
     headers.push(`<meta property="theme-color" content="${getBranding(c).color}"/>`);
     headers.push(
-      `<meta property="twitter:title" content="${post.author.name} (@${post.author.screen_name})"/>`
+      `<meta property="twitter:title" content="${status.author.name} (@${status.author.screen_name})"/>`
     );
   }
 
@@ -409,11 +408,11 @@ export const handleStatus = async (
     try {
       const instructions = renderInstantView({
         context: c,
-        status: post as APIStatus,
+        status: status as APIStatus,
         thread: thread,
         text: newText,
         flags: flags,
-        targetLanguage: language ?? post.lang ?? 'en'
+        targetLanguage: language ?? status.lang ?? 'en'
       });
       headers.push(...instructions.addHeaders);
       if (instructions.authorText) {
@@ -427,8 +426,8 @@ export const handleStatus = async (
   }
 
   /* This status has a translation attached to it, so we'll render it. */
-  if ((post as APITwitterStatus).translation) {
-    const { translation } = post as APITwitterStatus;
+  if ((status as APITwitterStatus).translation) {
+    const { translation } = status as APITwitterStatus;
 
     const formatText = `📑 {translation}`.format({
       translation: i18next.t('translatedFrom').format({
@@ -440,15 +439,15 @@ export const handleStatus = async (
   }
 
   console.log('overrideMedia', JSON.stringify(overrideMedia));
-  console.log('media', JSON.stringify(post.media));
+  console.log('media', JSON.stringify(status.media));
 
   // Skip for activity to make embed generate faster for mosaic and such
   if (!useActivity && !flags?.textOnly) {
     const media =
-      post.media?.all && post.media?.all.length > 0
-        ? post.media
-        : !isTombstone(post.quote)
-          ? post.quote?.media || {}
+          status.media?.all && status.media?.all.length > 0
+        ? status.media
+        : !isTombstone(status.quote)
+          ? status.quote?.media || {}
           : {};
     if (overrideMedia) {
       let instructions: ResponseInstructions;
@@ -459,7 +458,7 @@ export const handleStatus = async (
           instructions = renderPhoto(
             {
               context: c,
-              status: post as APIStatus,
+              status: status as APIStatus,
               authorText: authorText,
               engagementText: engagementText,
               userAgent: userAgent,
@@ -475,15 +474,15 @@ export const handleStatus = async (
             siteName = instructions.siteName;
           }
           /* Overwrite our Twitter Card if overriding media, so it displays correctly in Discord */
-          if (post.embed_card === 'player') {
-            post.embed_card = 'summary_large_image';
+          if (status.embed_card === 'player') {
+            status.embed_card = 'summary_large_image';
           }
           break;
         case 'video':
           instructions = renderVideo(
             {
               context: c,
-              status: post as APIStatus,
+              status: status as APIStatus,
               userAgent: userAgent,
               text: newText,
               isOverrideMedia: true
@@ -498,15 +497,15 @@ export const handleStatus = async (
             siteName = instructions.siteName;
           }
           /* Overwrite our Twitter Card if overriding media, so it displays correctly in Discord */
-          if (post.embed_card !== 'player') {
-            post.embed_card = 'player';
+          if (status.embed_card !== 'player') {
+            status.embed_card = 'player';
           }
           /* This status has a video to render. */
           break;
       }
     } else if (media?.videos) {
       const instructions = renderVideo(
-        { context: c, status: post as APIStatus, userAgent: userAgent, text: newText },
+        { context: c, status: status as APIStatus, userAgent: userAgent, text: newText },
         media.videos[0]
       );
       headers.push(...instructions.addHeaders);
@@ -522,13 +521,13 @@ export const handleStatus = async (
 
         photos.forEach(photo => {
           /* Override the card type */
-          post.embed_card = 'summary_large_image';
+          status.embed_card = 'summary_large_image';
           console.log('set embed_card to summary_large_image');
 
           const instructions = renderPhoto(
             {
               context: c,
-              status: post as APIStatus,
+              status: status as APIStatus,
               authorText: authorText,
               engagementText: engagementText,
               userAgent: userAgent
@@ -541,7 +540,7 @@ export const handleStatus = async (
         const instructions = renderPhoto(
           {
             context: c,
-            status: post as APIStatus,
+            status: status as APIStatus,
             authorText: authorText,
             engagementText: engagementText,
             userAgent: userAgent
@@ -555,7 +554,7 @@ export const handleStatus = async (
       const instructions = renderPhoto(
         {
           context: c,
-          status: post as APIStatus,
+          status: status as APIStatus,
           authorText: authorText,
           engagementText: engagementText,
           userAgent: userAgent
@@ -564,8 +563,8 @@ export const handleStatus = async (
       );
       headers.push(...instructions.addHeaders);
     }
-    if (post.media?.external && !post.media.videos?.length) {
-      const { external } = post.media;
+    if (status.media?.external && !status.media.videos?.length) {
+      const { external } = status.media;
       authorText = newText || '';
       headers.push(
         `<meta property="twitter:player" content="${external.url}">`,
@@ -577,15 +576,15 @@ export const handleStatus = async (
         `<meta property="og:video:width" content="${external.width}">`,
         `<meta property="og:video:height" content="${external.height}">`
       );
-      if (external.thumbnail_url && !post.media.photos?.length) {
+      if (external.thumbnail_url && !status.media.photos?.length) {
         headers.push(`<meta property="og:image" content="${external.thumbnail_url}">`);
       }
     }
   }
 
   /* This status contains a poll, so we'll render it */
-  if (post.poll) {
-    const { poll } = post;
+  if (status.poll) {
+    const { poll } = status;
     let barLength = 32;
     let str = '';
 
@@ -595,7 +594,7 @@ export const handleStatus = async (
     }
 
     /* Render each poll choice */
-    post.poll.choices.forEach(choice => {
+    status.poll.choices.forEach(choice => {
       const bar = '█'.repeat((choice.percentage / 100) * barLength);
       // eslint-disable-next-line no-irregular-whitespace
       str += `${bar}\n${choice.label}  (${choice.percentage}%)\n`;
@@ -620,8 +619,8 @@ export const handleStatus = async (
   }
 
   /* This Tweet quotes another Tweet, so we'll render the other Tweet where possible */
-  if (post.quote) {
-    const quoteText = handleQuote(post.quote as APIStatus | APIStatusTombstone);
+  if (status.quote) {
+    const quoteText = handleQuote(status.quote as APIStatus | APIStatusTombstone);
     newText += `\n${quoteText}`;
   }
 
@@ -629,20 +628,20 @@ export const handleStatus = async (
     newText = `↩ ${status.replying_to.display_name ?? ''} (@${status.replying_to.screen_name})<br>${newText}`;
   }
 
-  const avatar = post.author.avatar_url;
-  const twitterStatus = post as APITwitterStatus;
+  const avatar = status.author.avatar_url;
+  const twitterStatus = status as APITwitterStatus;
 
   // Check if this is an article-only tweet (text is just the article URL)
   const articleOnly = twitterStatus.article && isArticleOnlyTweet(twitterStatus);
 
   const quoteHasDisplayableMedia =
-    !!post.quote &&
-    !isTombstone(post.quote) &&
-    (!!post.quote.media?.photos?.length || !!post.quote.media?.videos?.length);
+      !!status.quote &&
+    !isTombstone(status.quote) &&
+    (!!status.quote.media?.photos?.length || !!status.quote.media?.videos?.length);
 
   /* If we have no media to display, instead we'll display the user profile picture in the embed,
      OR if this is an article-only tweet, use the article cover image */
-  if (!post.media?.videos && !post.media?.photos && !quoteHasDisplayableMedia && !flags?.textOnly) {
+  if (!status.media?.videos && !status.media?.photos && !quoteHasDisplayableMedia && !flags?.textOnly) {
     // Check if we have an article with cover media to use instead
     if (articleOnly && twitterStatus.article?.cover_media?.media_info?.__typename === 'ApiImage') {
       const coverImage = twitterStatus.article.cover_media.media_info as TwitterApiImage;
@@ -655,7 +654,7 @@ export const handleStatus = async (
         headers.push(`<meta property="twitter:image" content="0"/>`);
       }
       // Update embed card type to show large image
-      post.embed_card = 'summary_large_image';
+      status.embed_card = 'summary_large_image';
     } else {
       /* Use a slightly higher resolution image for profile pics */
       if (!useIV) {
@@ -682,18 +681,18 @@ export const handleStatus = async (
   let text = useIV ? sanitizeText(newText).replace(/\n/g, '<br>') : sanitizeText(newText);
 
   // For article-only tweets, use article title and preview text
-  let ogTitle = `${post.author.name} (@${post.author.screen_name})`;
+  let ogTitle = `${status.author.name} (@${status.author.screen_name})`;
   if (articleOnly && twitterStatus.article && isTelegram) {
     ogTitle = sanitizeText(twitterStatus.article.title);
     text = sanitizeText(twitterStatus.article.preview_text);
   }
 
   const useCard =
-    post.embed_card === 'tweet'
-      ? post.quote && !isTombstone(post.quote)
-        ? post.quote.embed_card
+          status.embed_card === 'tweet'
+      ? status.quote && !isTombstone(status.quote)
+        ? (status.quote as APITwitterStatus).embed_card
         : 'summary'
-      : post.embed_card;
+      : status.embed_card;
 
   headers.push(`<meta property="twitter:card" content="${useCard}"/>`);
 
@@ -711,45 +710,45 @@ export const handleStatus = async (
   } else {
     if (isTelegram) {
       headers.push(
-        `<meta property="og:site_name" content="${post.author.name} (@${post.author.screen_name})"/>`
+        `<meta property="og:site_name" content="${status.author.name} (@${status.author.screen_name})"/>`
       );
     } else {
       headers.push(
-        `<meta property="og:title" content="${post.author.name} (@${post.author.screen_name})"/>`
+        `<meta property="og:title" content="${status.author.name} (@${status.author.screen_name})"/>`
       );
     }
   }
 
   /* Special reply handling if authorText is not overriden */
-  if (post.replying_to && authorText === Strings.DEFAULT_AUTHOR_TEXT) {
-    authorText = `↪ ${i18next.t('replyingTo').format({ screen_name: post.replying_to.screen_name })}`;
+  if (status.replying_to && authorText === Strings.DEFAULT_AUTHOR_TEXT) {
+    authorText = `↪ ${i18next.t('replyingTo').format({ screen_name: status.replying_to.screen_name })}`;
     /* We'll assume it's a thread if it's a reply to themselves */
   } else if (
-    post.replying_to?.screen_name === post.author.screen_name &&
+    status.replying_to?.screen_name === status.author.screen_name &&
     authorText === Strings.DEFAULT_AUTHOR_TEXT
   ) {
-    authorText = `↪ ${i18next.t('threadPartHeader').format({ screen_name: post.author.screen_name })}`;
+    authorText = `↪ ${i18next.t('threadPartHeader').format({ screen_name: status.author.screen_name })}`;
   }
 
   if (!flags.gallery) {
     /* The additional oembed is pulled by Discord to enable improved embeds.
       Telegram does not use this. */
-    let providerEngagementText = getSocialProof(post as APIStatus) ?? Strings.DEFAULT_AUTHOR_TEXT;
+    let providerEngagementText = getSocialProof(status as APIStatus) ?? Strings.DEFAULT_AUTHOR_TEXT;
     providerEngagementText = providerEngagementText.replace(/ {4}/g, '  ');
 
     /* Workaround to prevent us from accidentally doubling up the engagement text in both provider and author fields */
-    if (post.text.trim().length === 0) {
+      if (status.text.trim().length === 0) {
       providerEngagementText = Strings.DEFAULT_AUTHOR_TEXT;
     }
 
     let provider = '';
-    const mediaType = overrideMedia ?? post.media.videos?.[0]?.type;
+    const mediaType = overrideMedia ?? (status as APITwitterStatus).media.videos?.[0]?.type;
     const branding = getBranding(c);
 
     if (mediaType === 'gif') {
       provider = i18next.t('gifIndicator', { brandingName: branding.name });
     } else if (
-      post.embed_card === 'player' &&
+      status.embed_card === 'player' &&
       providerEngagementText !== Strings.DEFAULT_AUTHOR_TEXT
     ) {
       provider = providerEngagementText;
@@ -778,11 +777,11 @@ export const handleStatus = async (
         {
           base: `https://${getBranding(c).domains[0]}`,
           text: flags.gallery
-            ? post.author.name
+                ? status.author.name
             : encodeURIComponent(truncateWithEllipsis(authorText, 255)),
           status: encodeURIComponent(statusId),
-          author: encodeURIComponent(post.author.screen_name || ''),
-          name: post.author.name || '',
+            author: encodeURIComponent(status.author.screen_name || ''),
+          name: status.author.name || '',
           provider: provider ? `&provider=${encodeURIComponent(provider)}` : ''
         }
       )
@@ -802,11 +801,11 @@ export const handleStatus = async (
       i: statusId
     };
     /* Convert necessary flags into snowcode data */
-    if (language !== post.lang) {
+    if (language !== status.lang) {
       data.l = language;
     }
-    if (post.provider === DataProvider.Bluesky) {
-      data.h = post.author.id;
+    if (status.provider === DataProvider.Bluesky) {
+      data.h = status.author.id;
       if (blueskyActivityPdsOut?.pdsHostHint) {
         data.p = blueskyActivityPdsOut.pdsHostHint;
       }
@@ -833,7 +832,7 @@ export const handleStatus = async (
     }
     console.log('snowflake', snowflake);
     let base: string;
-    switch (post.provider) {
+    switch (status.provider) {
       case DataProvider.Bluesky:
         base = Constants.STANDARD_BSKY_DOMAIN_LIST[0];
         break;
@@ -856,7 +855,7 @@ export const handleStatus = async (
       `<link href='{base}/users/{author}/statuses/{status}' rel='alternate' type='application/activity+json'>`.format(
         {
           base: `https://${base}`,
-          author: encodeURIComponent(post.author.screen_name || ''),
+          author: encodeURIComponent(status.author.screen_name || ''),
           status: snowflake
         }
       )
@@ -864,7 +863,7 @@ export const handleStatus = async (
   }
 
   /* When dealing with a Tweet of unknown lang, fall back to en */
-  const lang = post.lang === null ? 'en' : post.lang || 'en';
+  const lang = status.lang === null ? 'en' : status.lang || 'en';
 
   /* Finally, after all that work we return the response HTML! */
   return c.html(
