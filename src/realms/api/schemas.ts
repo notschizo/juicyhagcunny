@@ -582,7 +582,10 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z
 export const SocialThreadSchema = z
   .object({
     code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
-    status: APITwitterStatusSchema.nullable(),
+    status: z
+      .union([APITwitterStatusSchema, APIStatusTombstoneSchema])
+      .nullable()
+      .openapi({ description: 'Focal post, or a tombstone when the post is unavailable' }),
     thread: z.array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema])).nullable(),
     author: APIUserSchema.nullable()
   })

@@ -5,7 +5,11 @@ import { buildLanguageHeaders } from '../../helpers/language';
 import { isGraphQLTwitterStatus } from '../../helpers/graphql';
 import { Context } from 'hono';
 import type { APIStatusTombstone, APITwitterStatus } from '../../realms/api/schemas';
-import { isTombstone, stripTombstones } from '../../helpers/tombstone';
+import {
+  isTombstone,
+  stripTombstones,
+  withLocalizedTombstoneMessage
+} from '../../helpers/tombstone';
 import { buildAPITwitterStatus, twitterTweetTombstoneFromGraphQL } from './processor';
 import { InputFlags } from '../../types/types';
 import {
@@ -58,8 +62,17 @@ const mergeTimelineOrderPreservingTombstones = (
     })
     .map(x => x.i);
   if (tweetIndices.length === 0) return [...chainTweets];
-  const minI = Math.min(...tweetIndices);
-  const maxI = Math.max(...tweetIndices);
+  let minI = Math.min(...tweetIndices);
+  let maxI = Math.max(...tweetIndices);
+  /* Tombstones have no GraphQL Tweet row, so their ids are not in chainIds. A suspended/deleted
+     ancestor often appears immediately before the first reachable chain tweet in timeline order
+     (constructTwitterThread's reply walk stops at the missing parent). Pull those rows in. */
+  while (minI > 0 && isTombstone(ordered[minI - 1])) {
+    minI--;
+  }
+  while (maxI + 1 < ordered.length && isTombstone(ordered[maxI + 1])) {
+    maxI++;
+  }
   return ordered.filter((e, i) => {
     if (i < minI || i > maxI) return false;
     if (isTombstone(e)) return true;
@@ -646,11 +659,23 @@ const processConversationResponse = (
   return bucket;
 };
 
-const findStatusInBucket = (
+/** Focal tweet from TweetDetail: real tweet in `statuses`, or a `TweetTombstone` row (only in `ordered`). */
+const findFocalInBucket = (
   id: string,
   bucket: GraphQLProcessBucket
-): GraphQLTwitterStatus | null => {
-  return bucket.statuses.find(status => (status.rest_id ?? status.legacy?.id_str) === id) ?? null;
+): GraphQLTwitterStatus | APIStatusTombstone | null => {
+  const fromStatuses = bucket.statuses.find(s => (s.rest_id ?? s.legacy?.id_str) === id) as
+    | GraphQLTwitterStatus
+    | undefined;
+  if (fromStatuses) {
+    return fromStatuses;
+  }
+  for (const piece of bucket.ordered) {
+    if (isTombstone(piece) && piece.id === id) {
+      return piece;
+    }
+  }
+  return null;
 };
 
 const findNextStatus = (id: string, bucket: GraphQLProcessBucket): number => {
@@ -887,7 +912,12 @@ export const constructTwitterThread = async (
 
     if (isTombstone(buildStatus)) {
       writeDataPoint(c, language, null, '404');
-      return { status: null, thread: null, author: null, code: 404 };
+      return {
+        status: await withLocalizedTombstoneMessage(buildStatus, language),
+        thread: null,
+        author: null,
+        code: 404
+      };
     }
 
     if ((buildStatus as FetchResults)?.status === 401) {
@@ -943,19 +973,34 @@ export const constructTwitterThread = async (
       ?.instructions ?? [],
     language
   );
-  const originalStatus = findStatusInBucket(id, bucket);
+  const originalPiece = findFocalInBucket(id, bucket);
 
-  /* Don't bother processing thread on a null tweet */
-  if (originalStatus === null) {
+  if (originalPiece === null) {
     writeDataPoint(c, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
 
+  if (isTombstone(originalPiece)) {
+    writeDataPoint(c, language, null, '404');
+    return {
+      status: await withLocalizedTombstoneMessage(originalPiece, language),
+      thread: null,
+      author: null,
+      code: 404
+    };
+  }
+
+  const originalStatus = originalPiece as GraphQLTwitterStatus;
   const builtFocal = await buildAPITwitterStatus(c, originalStatus, language, null, legacyAPI);
 
   if (isTombstone(builtFocal)) {
     writeDataPoint(c, language, null, '404');
-    return { status: null, thread: null, author: null, code: 404 };
+    return {
+      status: await withLocalizedTombstoneMessage(builtFocal, language),
+      thread: null,
+      author: null,
+      code: 404
+    };
   }
 
   status = builtFocal as APITwitterStatus;
@@ -1202,26 +1247,48 @@ export const constructTwitterConversation = async (
     language
   );
 
-  const originalStatus =
-    bucket.chainTweets.find(s => (s.rest_id ?? s.legacy?.id_str) === id) ?? null;
+  const fromChain = bucket.chainTweets.find(s => (s.rest_id ?? s.legacy?.id_str) === id) ?? null;
+  const fromOrderedTomb =
+    fromChain === null
+      ? (bucket.chainOrdered.find((p): p is APIStatusTombstone => isTombstone(p) && p.id === id) ??
+        null)
+      : null;
 
-  if (originalStatus === null) {
+  if (fromOrderedTomb) {
+    return {
+      status: await withLocalizedTombstoneMessage(fromOrderedTomb, language),
+      thread: null,
+      replies: null,
+      author: null,
+      cursor: null,
+      code: 404
+    };
+  }
+
+  if (fromChain === null) {
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
   }
 
-  let status = (await buildAPITwitterStatus(
-    c,
-    originalStatus,
-    language,
-    null,
-    false,
-    false
-  )) as APITwitterStatus;
-
-  if (status === null) {
+  const originalStatus = fromChain;
+  const built = await buildAPITwitterStatus(c, originalStatus, language, null, false, false);
+  if (isTombstone(built)) {
+    return {
+      status: await withLocalizedTombstoneMessage(built, language),
+      thread: null,
+      replies: null,
+      author: null,
+      cursor: null,
+      code: 404
+    };
+  }
+  if ((built as FetchResults)?.status === 401) {
+    return { status: null, thread: null, replies: null, author: null, cursor: null, code: 401 };
+  }
+  if (built === null || (built as FetchResults)?.status === 404) {
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
   }
 
+  let status = built as APITwitterStatus;
   status = await enrichArticleWithFullContent(c, status, id, language, false, false);
 
   const author = status.author;

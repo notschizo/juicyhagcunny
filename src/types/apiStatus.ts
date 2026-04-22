@@ -95,7 +95,7 @@ export type ThreadOrStatusItem = APIStatus | APITwitterStatus | APIStatusTombsto
 
 /** Used by Twitter v2 API, embed pipeline, Bluesky/TikTok conversations (broader than OpenAPI `SocialThreadSchema`). */
 export interface SocialThread {
-  status: APIStatus | APITwitterStatus | null;
+  status: ThreadOrStatusItem | null;
   thread: ThreadOrStatusItem[] | null;
   author: APIUser | null;
   code: number;

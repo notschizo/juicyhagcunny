@@ -419,9 +419,17 @@ export const buildAPITwitterStatus = async (
     }
     if (status.__typename === 'TweetUnavailable' && status.reason === 'Protected') {
       return { status: 401 };
-    } else {
-      return { status: 404 };
     }
+    if (!legacyAPI && (status as unknown as TweetStub).__typename === 'TweetUnavailable') {
+      const g = status as GraphQLTwitterStatus;
+      const id = tombstoneIdHint ?? g.rest_id ?? g.legacy?.id_str;
+      return tweetUnavailableToTombstone(
+        status as TweetStub,
+        id,
+        id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+      );
+    }
+    return { status: 404 };
   }
 
   // console.log('status', JSON.stringify(status));

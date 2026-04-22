@@ -20,7 +20,7 @@ import {
   facetUtf16RangeOnPlainText,
   normalizeUtf16EntityRange
 } from '../helpers/twitterTextIndices';
-import { isTombstone } from '../helpers/tombstone';
+import { isTombstone, tombstoneMessageForReason } from '../helpers/tombstone';
 
 const convertArticleMediaToAttachment = (
   media: TwitterApiMedia
@@ -432,6 +432,10 @@ export const handleActivity = async (
       );
     }
     return returnError(c, Strings.ERROR_API_FAIL);
+  }
+
+  if (isTombstone(thread.status)) {
+    return returnError(c, tombstoneMessageForReason(thread.status.reason));
   }
 
   // Get status text and article media

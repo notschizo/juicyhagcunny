@@ -1,0 +1,12 @@
+{
+  "data": {
+    "tweetResult": [
+      {
+        "result": {
+          "__typename": "TweetUnavailable",
+          "reason": "Suspended"
+        }
+      }
+    ]
+  }
+}

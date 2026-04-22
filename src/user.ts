@@ -13,6 +13,7 @@ export const returnError = (c: Context, error: string): Response => {
     Strings.BASE_HTML.format({
       runtime: formatRuntime(),
       lang: '',
+      body: '',
       headers: [
         `<meta property="og:title" content="${branding.name}"/>`,
         `<meta property="og:description" content="${error}"/>`,
@@ -78,7 +79,8 @@ export const handleProfile = async (
       runtime: formatRuntime(),
       brandingName: branding.name,
       lang: `lang="en"`,
-      headers: headers.join('')
+      headers: headers.join(''),
+      body: ''
     })
   );
 };

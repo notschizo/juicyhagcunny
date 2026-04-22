@@ -99,6 +99,40 @@ test('API v2 /2/status empty quoted_status_result yields tombstone quote', async
   );
 });
 
+test('API v2 /2/status focal TweetUnavailable (TweetResultByRestId) returns suspended tombstone on status', async () => {
+  const res = await app.request(
+    new Request('https://api.fxtwitter.com/2/status/991500', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(res.status).toBe(404);
+  const body = (await res.json()) as { code: number; status?: APIStatusTombstone };
+  expect(body.code).toBe(404);
+  expect(body.status?.type).toBe('tombstone');
+  expect(body.status?.reason).toBe('suspended');
+  expect((body.status?.message ?? '').length).toBeGreaterThan(0);
+});
+
+test('API v2 /2/status focal TweetTombstone only (TweetDetail) returns suspended tombstone on status', async () => {
+  const res = await app.request(
+    new Request('https://api.fxtwitter.com/2/status/991503', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(res.status).toBe(404);
+  const body = (await res.json()) as { code: number; status?: APIStatusTombstone };
+  expect(body.code).toBe(404);
+  expect(body.status?.type).toBe('tombstone');
+  expect(body.status?.reason).toBe('suspended');
+  expect((body.status?.message ?? '').length).toBeGreaterThan(0);
+});
+
 test('API v2 /2/status TweetUnavailable Suspended quote yields suspended tombstone', async () => {
   const res = await app.request(
     new Request('https://api.fxtwitter.com/2/status/991004', {
@@ -136,6 +170,29 @@ test('API v2 /2/thread includes tombstone between chain tweets', async () => {
   );
   expect(threadTombs?.length).toBe(1);
   expect(threadTombs?.[0]?.reason).toBe('deleted');
+});
+
+/** Leading ancestor is only a TweetTombstone row (e.g. suspended); merge min index was past it. */
+test('API v2 /2/thread includes leading suspended tombstone before chain tweets', async () => {
+  const res = await app.request(
+    new Request('https://api.fxtwitter.com/2/thread/991302', {
+      method: 'GET',
+      headers: botHeaders
+    }),
+    undefined,
+    harness
+  );
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as {
+    thread: unknown[] | null;
+  };
+  expect(body.thread?.length).toBeGreaterThanOrEqual(3);
+  const threadTombs = body.thread?.filter(
+    (x): x is APIStatusTombstone =>
+      typeof x === 'object' && x !== null && (x as APIStatusTombstone).type === 'tombstone'
+  );
+  expect(threadTombs?.length).toBe(1);
+  expect(threadTombs?.[0]?.reason).toBe('suspended');
 });
 
 /** Focal tweet still references deleted parent id in `in_reply_to` (not bridged to root). */
