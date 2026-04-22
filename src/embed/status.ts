@@ -64,6 +64,7 @@ const isArticleOnlyTweet = (status: APITwitterStatus): boolean => {
 
 export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
+  console.log('branding', JSON.stringify(branding));
   return c.html(
     Strings.BASE_HTML.format({
       runtime: formatRuntime(),
@@ -72,7 +73,8 @@ export const returnError = (c: Context, error: string): Response => {
       lang: '',
       headers: [
         `<meta property="og:title" content="${branding.name}"/>`,
-        `<meta property="og:description" content="${error}"/>`
+        `<meta property="og:description" content="${error}"/>`,
+        `<meta property="theme-color" content="${branding.color}"/>`
       ].join('')
     })
   ) as Response;

@@ -38,6 +38,7 @@ export const Strings = {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="{brandingName}" property="og:title"/>
+    <meta content="#6363ff" name="theme-color"/>
     <meta content="Owie, you crashed {brandingName} :(
 
 This may be caused by API downtime or a new bug. Try again in a little while." property="og:description"/></head>
@@ -72,6 +73,7 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="{brandingName}" property="og:title"/>
+    <meta content="#6363ff" name="theme-color"/>
     <meta content="A downstream timeout occurred while trying to generate the embed. Please try again in a little while." property="og:description"/></head>
     <title>:(</title>
     <style>
@@ -232,7 +234,7 @@ This may be caused by API downtime or a new bug. Try again in a little while." p
 # Do you want an easy way to fetch posts but Elon Musk wants to charge you $100 per month?
 # Did you know we have a fetch API you can use for free, no API keys required?
 
-# Check out the docs at ${Constants.API_HOST_ROOT} to learn how to use it
+# Check out the docs at https://docs.fxembed.com to learn how to use it
 
 # Good luck, have fun and try not to take over the world!
 
