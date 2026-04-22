@@ -53,8 +53,9 @@ export const processTimelineInstructions = (
     const entryType = result?.__typename;
     if (entryType === 'Tweet') {
       statuses.push(result as GraphQLTwitterStatus);
-    } else if (entryType === 'TweetWithVisibilityResults') {
-      statuses.push((itemContent as GraphQLTweetWithVisibilityResults).tweet);
+    } else if (entryType === 'TweetWithVisibilityResults' && result) {
+      const tw = (result as GraphQLTweetWithVisibilityResults).tweet;
+      if (tw) statuses.push(tw);
     }
   };
 
@@ -209,7 +210,8 @@ export const processGroupedTimelineInstructions = (
       return result as GraphQLTwitterStatus;
     }
     if (entryType === 'TweetWithVisibilityResults') {
-      return (itemContent as GraphQLTweetWithVisibilityResults).tweet;
+      if (!result) return null;
+      return (result as GraphQLTweetWithVisibilityResults).tweet;
     }
     return null;
   };
