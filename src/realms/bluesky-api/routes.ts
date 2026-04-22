@@ -37,7 +37,7 @@ const blueskySearchQueryString = (openapiMeta: { description: string; example: s
 export const blueskyStatusV2Route = createRoute({
   method: 'get',
   path: '/2/status/{handle}/{rkey}',
-  summary: 'Get a single Bluesky post',
+  summary: 'Get post',
   description:
     'Returns one Bluesky post by handle and record key (rkey), in the same envelope as FxTwitter API v2 (`code`, `status`, `thread`, `author`).',
   request: {
@@ -80,7 +80,7 @@ export const blueskyStatusV2Route = createRoute({
 export const blueskyStatusRepostsV2Route = createRoute({
   method: 'get',
   path: '/2/status/{handle}/{rkey}/reposts',
-  summary: 'List accounts that reposted a post',
+  summary: 'List reposters of post',
   description:
     'Returns users who reposted the given post, in the same envelope as FxTwitter `GET /2/status/{id}/reposts` (`code`, `results`, `cursor`). Pagination uses Bluesky `app.bsky.feed.getRepostedBy`: pass the prior `cursor.bottom` as the `cursor` query param. `handle` may be a handle or DID (`did:plc:…`). `cursor.top` is always null.',
   request: {
@@ -128,7 +128,7 @@ export const blueskyStatusRepostsV2Route = createRoute({
 export const blueskyStatusLikesV2Route = createRoute({
   method: 'get',
   path: '/2/status/{handle}/{rkey}/likes',
-  summary: 'List accounts that liked a post',
+  summary: 'List likers of post',
   description:
     'Returns users who liked the given post, in the same envelope as FxTwitter-style user list results (`code`, `results`, `cursor`). Pagination uses Bluesky `app.bsky.feed.getLikes`: pass the prior `cursor.bottom` as the `cursor` query param. `handle` may be a handle or DID (`did:plc:…`). `cursor.top` is always null.',
   request: {
@@ -176,7 +176,7 @@ export const blueskyStatusLikesV2Route = createRoute({
 export const blueskyThreadV2Route = createRoute({
   method: 'get',
   path: '/2/thread/{handle}/{rkey}',
-  summary: 'Get a Bluesky thread (main post + parents + self-thread replies)',
+  summary: 'Get unrolled thread',
   description:
     'Returns the post chain for a Bluesky thread, matching the shape of FxTwitter `GET /2/thread/{id}`.',
   request: {
@@ -213,7 +213,7 @@ export const blueskyThreadV2Route = createRoute({
 export const blueskyConversationV2Route = createRoute({
   method: 'get',
   path: '/2/conversation/{handle}/{rkey}',
-  summary: 'Get a Bluesky post with full thread and paginated replies',
+  summary: 'Get unrolled thread and replies',
   description:
     'Returns the focal post, ancestor chain and author self-thread (same as `/2/thread/{handle}/{rkey}` on the first page), plus **direct** replies from other participants. Replies are sorted by `ranking_mode` (default likes). Pagination uses an opaque `cursor` query param (`cursor.bottom` from the prior response); Bluesky `getPostThread` has no native reply cursor, so each page refetches the thread slice. Optional `count` (1–100, default 20) sets the reply page size. Very large reply lists still require a large upstream payload when loading direct replies.',
   request: {
@@ -269,7 +269,7 @@ export const blueskyConversationV2Route = createRoute({
 export const blueskySearchV2Route = createRoute({
   method: 'get',
   path: '/2/search',
-  summary: 'Search posts',
+  summary: 'Search posts by query',
   description:
     'Search posts via Bluesky `app.bsky.feed.searchPosts`. Response shape matches FxTwitter `GET /2/search` (`code`, `results`, `cursor`). `cursor.top` is always null; pass `cursor.bottom` as the `cursor` query param. `feed=latest` and `feed=top` map to Bluesky `sort`. `feed=media` uses `sort=latest` then keeps posts with image, video, or external link embeds (may return fewer hits than `count`). `lang` is used for inline translation only, not the upstream post-language filter.',
   request: {
@@ -361,7 +361,7 @@ export const blueskyTrendsV2Route = createRoute({
 export const blueskyProfileV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}',
-  summary: 'Get Bluesky actor profile',
+  summary: 'Get profile',
   description:
     'Returns profile fields in the same envelope as FxTwitter `GET /2/profile/{handle}` (`code`, `message`, `user`). `handle` may be a handle (e.g. `user.bsky.social`) or a DID (`did:plc:…`).',
   request: {
@@ -395,7 +395,7 @@ export const blueskyProfileV2Route = createRoute({
 export const blueskyProfileFollowersV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/followers',
-  summary: 'List followers of an actor',
+  summary: 'List followers of user',
   description:
     'Returns a page in the same shape as FxTwitter `GET /2/profile/{handle}/followers` (`code`, `results`, `cursor`). `handle` may be a handle or DID. Pagination uses Bluesky `app.bsky.graph.getFollowers`: pass the prior `cursor.bottom` as the `cursor` query param. `cursor.top` is always null.',
   request: {
@@ -439,7 +439,7 @@ export const blueskyProfileFollowersV2Route = createRoute({
 export const blueskyProfileFollowingV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/following',
-  summary: 'List accounts an actor follows',
+  summary: 'List following of user',
   description:
     'Returns a page in the same shape as FxTwitter `GET /2/profile/{handle}/following` (`code`, `results`, `cursor`). `handle` may be a handle or DID. Pagination uses Bluesky `app.bsky.graph.getFollows`: pass the prior `cursor.bottom` as the `cursor` query param. `cursor.top` is always null.',
   request: {
@@ -577,7 +577,7 @@ export const blueskyProfileLikesV2Route = createRoute({
 export const blueskyProfileStatusesV2Route = createRoute({
   method: 'get',
   path: '/2/profile/{handle}/statuses',
-  summary: 'List posts for an actor',
+  summary: 'List user statuses',
   description:
     'Returns a timeline page in the same shape as FxTwitter `GET /2/profile/{handle}/statuses` (`code`, `results`, `cursor`). `handle` may be a handle or DID. Pagination uses Bluesky `app.bsky.feed.getAuthorFeed`: `cursor.bottom` is the opaque next-page token (pass as `cursor` query param). `cursor.top` is always null—there is no reverse cursor on this upstream endpoint. Optional `since` (Unix time): when used without `cursor`, returns **204 No Content** if no posts are strictly newer than that instant. Values ≥ 1e12 are treated as milliseconds.',
   request: {

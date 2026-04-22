@@ -194,7 +194,9 @@ export const handleStatus = async (
     if (provider === DataProvider.Bluesky) {
       return returnError(
         c,
-        thread.code === 404 ? Strings.ERROR_TWEET_NOT_FOUND : Strings.ERROR_API_FAIL
+        thread.code === 404
+          ? Strings.ERROR_BLUESKY_POST_NOT_FOUND
+          : Strings.ERROR_BLUESKY_UNAVAILABLE
       );
     } else {
       return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
