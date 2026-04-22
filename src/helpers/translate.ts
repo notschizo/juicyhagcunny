@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import type { APITwitterStatus } from '../realms/api/schemas';
+import type { APIMastodonStatus, APITwitterStatus } from '../realms/api/schemas';
 import { Constants } from '../constants';
 import { normalizeLanguage } from './language';
 
@@ -14,7 +14,7 @@ const getDomain = (): string | null => {
 
 /* Handles translating statuses when asked! */
 export const translateStatus = async (
-  status: APITwitterStatus | APIBlueskyStatus | APIStatus,
+  status: APITwitterStatus | APIBlueskyStatus | APIMastodonStatus | APIStatus,
   _language: string,
   _c: Context
 ): Promise<PolyglotTranslation | null> => {

@@ -588,9 +588,7 @@ export type APIBlueskyStatus = {
 export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z
   .lazy(() =>
     z.object({
-      type: z
-        .literal('status')
-        .openapi({ description: 'Discriminator: single post/status (API v2).' }),
+      type: z.literal('status').openapi({ description: 'Discriminator: single status' }),
       id: z.string(),
       cid: z.string().optional(),
       at_uri: z.string().optional(),
