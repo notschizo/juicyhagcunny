@@ -428,7 +428,7 @@ const pushTweetFromContent = (
     | GraphQLTimelineTweet
     | TweetTombstone
     | GraphQLTimelineCursor
-    | { tweet: GraphQLTwitterStatus }, // TweetWithVisibilityResults
+    | GraphQLTweetWithVisibilityResults,
   bucket: GraphQLProcessBucket,
   entryId?: string
 ) => {
@@ -440,7 +440,7 @@ const pushTweetFromContent = (
     bucket.statuses.push(tw);
     bucket.ordered.push(tw);
   } else if (entryType === 'TweetWithVisibilityResults') {
-    const tw = (result as unknown as { tweet: GraphQLTwitterStatus }).tweet;
+    const tw = (itemContent as GraphQLTweetWithVisibilityResults).tweet;
     bucket.statuses.push(tw);
     bucket.ordered.push(tw);
   } else if (entryType === 'TweetTombstone') {
@@ -514,14 +514,17 @@ interface GraphQLConversationBucket {
 }
 
 const pushConversationTimelineTweet = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  itemContent: any,
+  itemContent:
+    | GraphQLTimelineTweet
+    | TweetTombstone
+    | GraphQLTimelineCursor
+    | GraphQLTweetWithVisibilityResults,
   bucket: GraphQLConversationBucket,
   target: 'chain' | 'reply',
   entryId?: string
 ) => {
-  if (itemContent?.__typename !== 'TimelineTweet') return;
-  const result = itemContent.tweet_results?.result;
+  if ((itemContent as GraphQLTimelineTweet)?.__typename !== 'TimelineTweet') return;
+  const result = (itemContent as GraphQLTimelineTweet).tweet_results?.result;
   const entryType = result?.__typename;
   if (entryType === 'Tweet') {
     const tw = result as GraphQLTwitterStatus;
@@ -532,7 +535,7 @@ const pushConversationTimelineTweet = (
       bucket.replyStatuses.push(tw);
     }
   } else if (entryType === 'TweetWithVisibilityResults') {
-    const tw = (result as { tweet: GraphQLTwitterStatus }).tweet;
+    const tw = (itemContent as GraphQLTweetWithVisibilityResults).tweet;
     if (target === 'chain') {
       bucket.chainTweets.push(tw);
       bucket.chainOrdered.push(tw);

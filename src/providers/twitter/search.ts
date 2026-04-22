@@ -54,7 +54,7 @@ export const processTimelineInstructions = (
     if (entryType === 'Tweet') {
       statuses.push(result as GraphQLTwitterStatus);
     } else if (entryType === 'TweetWithVisibilityResults') {
-      statuses.push((result as { tweet: GraphQLTwitterStatus }).tweet);
+      statuses.push((itemContent as GraphQLTweetWithVisibilityResults).tweet);
     }
   };
 
@@ -209,7 +209,7 @@ export const processGroupedTimelineInstructions = (
       return result as GraphQLTwitterStatus;
     }
     if (entryType === 'TweetWithVisibilityResults') {
-      return (result as { tweet: GraphQLTwitterStatus }).tweet;
+      return (itemContent as GraphQLTweetWithVisibilityResults).tweet;
     }
     return null;
   };
