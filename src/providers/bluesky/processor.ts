@@ -19,7 +19,7 @@ export const buildBlueskyTombstone = (
   cid?: string
 ): APIStatusTombstone => {
   const rkey = rkeyFromPostAtUri(atUri) ?? undefined;
-  const repo = atUri.startsWith('at://') ? atUri.replace(/^at:\/\//, '').split('/')[0] : '';
+  const repo = didFromAtUri(atUri) ?? '';
   const url =
     rkey && repo
       ? `${Constants.BLUESKY_ROOT}/profile/${encodeURIComponent(repo)}/post/${rkey}`
@@ -137,7 +137,7 @@ const quoteCandidateFromEmbedRecord = (
     return { post: null, tombstone: buildBlueskyTombstone('blocked', u(embedRecord.uri)) };
   }
   if (isDetachedOuterEmbed(embedRecord)) {
-    return { post: null, tombstone: buildBlueskyTombstone('unavailable', u(embedRecord.uri)) };
+    return { post: null, tombstone: buildBlueskyTombstone('blocked', u(embedRecord.uri)) };
   }
 
   const inner = embedRecord.record ?? embedRecord.value ?? embedRecord;

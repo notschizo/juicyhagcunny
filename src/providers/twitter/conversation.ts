@@ -430,7 +430,8 @@ const pushTweetFromContent = (
     | GraphQLTimelineCursor
     | GraphQLTweetWithVisibilityResults,
   bucket: GraphQLProcessBucket,
-  entryId?: string
+  entryId?: string,
+  language?: string
 ) => {
   if ((itemContent as GraphQLTimelineTweet)?.__typename !== 'TimelineTweet') return;
   const result = (itemContent as GraphQLTimelineTweet).tweet_results?.result;
@@ -445,11 +446,16 @@ const pushTweetFromContent = (
     bucket.ordered.push(tw);
   } else if (entryType === 'TweetTombstone') {
     const idHint = entryId?.match(/^tweet-(\d+)$/)?.[1];
-    bucket.ordered.push(twitterTweetTombstoneFromGraphQL(result as TweetTombstone, idHint));
+    bucket.ordered.push(
+      twitterTweetTombstoneFromGraphQL(result as TweetTombstone, idHint, language)
+    );
   }
 };
 
-const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBucket => {
+const processResponse = (
+  instructions: TimelineInstruction[],
+  language?: string
+): GraphQLProcessBucket => {
   const bucket: GraphQLProcessBucket = {
     ordered: [],
     statuses: [],
@@ -482,7 +488,7 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
         } else if (typename === 'TimelineTimelineItem') {
           const itemContent = getItemContent(content);
           if (itemContent?.__typename === 'TimelineTweet') {
-            pushTweetFromContent(itemContent, bucket, entryId);
+            pushTweetFromContent(itemContent, bucket, entryId, language);
           } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
             bucket.cursors.push(normalizeCursor(itemContent));
           }
@@ -491,7 +497,7 @@ const processResponse = (instructions: TimelineInstruction[]): GraphQLProcessBuc
           (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
             const itemContent = getItemContent(item.item);
             if (itemContent?.__typename === 'TimelineTweet') {
-              pushTweetFromContent(itemContent, bucket, entryId);
+              pushTweetFromContent(itemContent, bucket, entryId, language);
             } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
               bucket.cursors.push(normalizeCursor(itemContent));
             }
@@ -521,7 +527,8 @@ const pushConversationTimelineTweet = (
     | GraphQLTweetWithVisibilityResults,
   bucket: GraphQLConversationBucket,
   target: 'chain' | 'reply',
-  entryId?: string
+  entryId?: string,
+  language?: string
 ) => {
   if ((itemContent as GraphQLTimelineTweet)?.__typename !== 'TimelineTweet') return;
   const result = (itemContent as GraphQLTimelineTweet).tweet_results?.result;
@@ -544,7 +551,9 @@ const pushConversationTimelineTweet = (
     }
   } else if (entryType === 'TweetTombstone' && target === 'chain') {
     const idHint = entryId?.match(/^tweet-(\d+)$/)?.[1];
-    bucket.chainOrdered.push(twitterTweetTombstoneFromGraphQL(result as TweetTombstone, idHint));
+    bucket.chainOrdered.push(
+      twitterTweetTombstoneFromGraphQL(result as TweetTombstone, idHint, language)
+    );
   }
 };
 
@@ -554,7 +563,8 @@ const pushConversationTimelineTweet = (
  * entries) and replies (conversationthread-* module entries).
  */
 const processConversationResponse = (
-  instructions: TimelineInstruction[]
+  instructions: TimelineInstruction[],
+  language?: string
 ): GraphQLConversationBucket => {
   const bucket: GraphQLConversationBucket = {
     chainOrdered: [],
@@ -593,7 +603,8 @@ const processConversationResponse = (
               itemContent,
               bucket,
               isReplyEntry ? 'reply' : 'chain',
-              entryId
+              entryId,
+              language
             );
           } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
             bucket.cursors.push(normalizeCursor(itemContent));
@@ -603,7 +614,7 @@ const processConversationResponse = (
           (content as any).items?.forEach((item: { item: Record<string, unknown> }) => {
             const itemContent = getItemContent(item.item);
             if (itemContent?.__typename === 'TimelineTweet') {
-              pushConversationTimelineTweet(itemContent, bucket, 'reply', entryId);
+              pushConversationTimelineTweet(itemContent, bucket, 'reply', entryId, language);
             } else if (itemContent?.__typename === 'TimelineTimelineCursor') {
               bucket.cursors.push(normalizeCursor(itemContent));
             }
@@ -910,7 +921,8 @@ export const constructTwitterThread = async (
 
   const bucket = processResponse(
     (response as TweetDetailResponse).data?.threaded_conversation_with_injections_v2
-      ?.instructions ?? []
+      ?.instructions ?? [],
+    language
   );
   const originalStatus = findStatusInBucket(id, bucket);
 
@@ -1004,7 +1016,8 @@ export const constructTwitterThread = async (
       }
 
       const cursorResponse = processResponse(
-        loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ?? []
+        loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ?? [],
+        language
       );
       bucket.statuses = bucket.statuses.concat(
         filterBucketStatuses(cursorResponse.statuses, originalStatus)
@@ -1069,7 +1082,8 @@ export const constructTwitterThread = async (
         break;
       }
       const cursorResponse = processResponse(
-        loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ?? []
+        loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ?? [],
+        language
       );
       bucket.statuses = cursorResponse.statuses.concat(
         filterBucketStatuses(bucket.statuses, originalStatus)
@@ -1161,7 +1175,8 @@ export const constructTwitterConversation = async (
   }
 
   const bucket = processConversationResponse(
-    response.data.threaded_conversation_with_injections_v2.instructions
+    response.data.threaded_conversation_with_injections_v2.instructions,
+    language
   );
 
   const originalStatus =

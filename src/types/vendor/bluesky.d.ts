@@ -169,12 +169,19 @@ declare type BlueskyFacet = {
 declare type BlueskyFeedNotFoundPost = {
   $type?: string;
   uri: string;
+  /** Present on AppView thread stubs when the post is missing. */
+  notFound?: true;
+  detached?: boolean;
 };
 
 /** Blocked post in a thread (AppView). */
 declare type BlueskyFeedBlockedPost = {
   $type?: string;
   uri: string;
+  /** Present on AppView thread stubs when the viewer is blocked from the post. */
+  blocked?: true;
+  author?: BlueskyAuthor;
+  detached?: boolean;
 };
 
 declare type BlueskyThreadParent = BlueskyThread | BlueskyFeedNotFoundPost | BlueskyFeedBlockedPost;
@@ -183,7 +190,7 @@ declare type BlueskyThread = {
   $type?: string;
   parent?: BlueskyThreadParent;
   post: BlueskyPost;
-  replies?: BlueskyThread[];
+  replies?: BlueskyThreadParent[];
 };
 
 declare type BlueskyThreadResponse = {

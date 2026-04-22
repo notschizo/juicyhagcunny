@@ -23,8 +23,10 @@ const tombstoneI18nKey: Record<APITombstoneReason, string> = {
 /** User-facing message for API `reason` (i18n when available). */
 export const tombstoneMessageForReason = (reason: APITombstoneReason): string => {
   const key = tombstoneI18nKey[reason];
-  const t = i18next.t(key);
-  return t !== key ? t : fallbackMessageEn(reason);
+  if (i18next.exists(key)) {
+    return i18next.t(key);
+  }
+  return fallbackMessageEn(reason);
 };
 
 function fallbackMessageEn(reason: APITombstoneReason): string {

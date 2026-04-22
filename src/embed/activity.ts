@@ -407,7 +407,6 @@ export const handleActivity = async (
       false,
       c,
       language ?? undefined,
-      false,
       preferredProxyServiceHost ? { preferredProxyServiceHost } : undefined
     );
   } else if (provider === DataProvider.TikTok) {

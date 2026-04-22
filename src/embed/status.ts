@@ -142,7 +142,6 @@ export const handleStatus = async (
       fetchWithThreads,
       c,
       useActivity ? undefined : useLanguage,
-      flags?.api ?? false,
       undefined,
       blueskyActivityPdsOut
     );

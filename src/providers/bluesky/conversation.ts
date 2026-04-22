@@ -2,14 +2,14 @@ import { Context } from 'hono';
 import type {
   APIBlueskyStatus,
   APIStatusTombstone,
+  APITombstoneReason,
   SocialConversationBluesky,
   SocialThreadBluesky
 } from '../../realms/api/schemas';
-import { isTombstone, stripTombstones } from '../../helpers/tombstone';
+import { isTombstone } from '../../helpers/tombstone';
 import { type BlueskyFetchOpts, fetchPostThread, fetchPostThreadResult } from './client';
 import { buildAPIBlueskyPost, buildBlueskyTombstone } from './processor';
 import { atUriForFeedPost } from './uris';
-import type { SocialThread } from '../../types/apiStatus';
 
 const THREAD_FETCH_DEPTH = 10;
 const THREAD_PARENT_HEIGHT_FIRST_PAGE = 80;
@@ -45,11 +45,31 @@ export const fetchBlueskyThread = async (
 
 type BlueskyThreadBucketItem = BlueskyPost | APIStatusTombstone;
 
+/** Match `quoteCandidateFromEmbedRecord` / `isDetachedOuterEmbed` for thread parent stubs. */
+const blueskyThreadStubTombstoneReason = (
+  node: BlueskyFeedNotFoundPost | BlueskyFeedBlockedPost
+): APITombstoneReason => {
+  if ((node as BlueskyFeedNotFoundPost).notFound === true) return 'deleted';
+  if ((node as BlueskyFeedBlockedPost).blocked === true) return 'blocked';
+  const rawType = (node as { $type?: string }).$type ?? '';
+  if (
+    (node as { detached?: boolean }).detached === true ||
+    rawType.includes('viewDetached') ||
+    rawType.includes('Detached')
+  ) {
+    return 'blocked';
+  }
+  const pt = rawType.toLowerCase();
+  if (pt.includes('blocked')) return 'blocked';
+  return 'deleted';
+};
+
 const followReplyChain = (thread: BlueskyThread): BlueskyPost[] => {
   if (!thread.replies?.length) return [];
   const parentCid = thread.post.cid;
 
   for (const child of thread.replies) {
+    if (!('post' in child)) continue;
     const post = child.post;
     if (!post?.author || post.author.did !== thread.post.author?.did) {
       continue;
@@ -81,8 +101,9 @@ const collectProcessedThreadPosts = async (
         parentNode = th.parent;
       } else if ('uri' in parentNode && !('post' in parentNode)) {
         const uri = (parentNode as BlueskyFeedNotFoundPost).uri;
-        const pt = (parentNode as { $type?: string }).$type?.toLowerCase() ?? '';
-        const reason = pt.includes('blocked') ? 'blocked' : 'deleted';
+        const reason = blueskyThreadStubTombstoneReason(
+          parentNode as BlueskyFeedNotFoundPost | BlueskyFeedBlockedPost
+        );
         bucket.unshift(buildBlueskyTombstone(reason, uri));
         break;
       } else {
@@ -125,6 +146,7 @@ const findSelfBranchFirstReplyChild = (focal: BlueskyThread): BlueskyThread | un
   const focalAuthorDid = focal.post.author?.did;
   if (!parentCid || !focalAuthorDid) return undefined;
   for (const child of focal.replies ?? []) {
+    if (!('post' in child)) continue;
     const post = child.post;
     if (!post?.author || post.author.did !== focalAuthorDid) continue;
     if (post.record?.reply?.parent?.cid === parentCid) return child;
@@ -138,7 +160,7 @@ const collectDirectReplyPosts = (focal: BlueskyThread): BlueskyPost[] => {
   const selfUri = selfChild?.post?.uri;
   const out: BlueskyPost[] = [];
   for (const child of focal.replies ?? []) {
-    if (!child?.post?.uri) continue;
+    if (!('post' in child) || !child.post?.uri) continue;
     if (selfUri && child.post.uri === selfUri) continue;
     out.push(child.post);
   }
@@ -201,7 +223,6 @@ export const constructBlueskyThread = async (
   processThread = false,
   c: Context,
   language: string | undefined,
-  legacyAPI = false,
   extraFetchOpts?: BlueskyFetchOpts,
   out?: { pdsHostHint?: string }
 ): Promise<SocialThreadBluesky> => {
@@ -257,18 +278,12 @@ export const constructBlueskyThread = async (
     )
   )) as (APIBlueskyStatus | APIStatusTombstone)[];
 
-  const result: SocialThreadBluesky = {
+  return {
     status: consumedPost,
     thread: consumedPosts,
     author: consumedPost.author,
     code: 200
   };
-
-  if (legacyAPI) {
-    stripTombstones(result as SocialThread);
-  }
-
-  return result;
 };
 
 export const constructBlueskyConversation = async (

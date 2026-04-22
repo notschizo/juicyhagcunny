@@ -43,7 +43,7 @@ const unixTimestampParamToMs = (unix: number): number =>
 export const blueskyStatusAPIRequest: RouteHandler<typeof blueskyStatusV2Route> = async c => {
   const { handle, rkey } = c.req.valid('param');
   const { lang } = c.req.valid('query');
-  const processedResponse = await constructBlueskyThread(rkey, handle, false, c, lang, false);
+  const processedResponse = await constructBlueskyThread(rkey, handle, false, c, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500, 503] as const,
@@ -101,7 +101,7 @@ export const blueskyStatusLikesAPIRequest: RouteHandler<
 export const blueskyThreadAPIRequest: RouteHandler<typeof blueskyThreadV2Route> = async c => {
   const { handle, rkey } = c.req.valid('param');
   const { lang } = c.req.valid('query');
-  const processedResponse = await constructBlueskyThread(rkey, handle, true, c, lang, false);
+  const processedResponse = await constructBlueskyThread(rkey, handle, true, c, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500, 503] as const,

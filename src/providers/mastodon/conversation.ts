@@ -7,8 +7,6 @@ import type {
 } from '../../realms/api/schemas';
 import { fetchStatus, fetchStatusContext } from './client';
 import { buildAPIMastodonPost } from './processor';
-import { stripTombstones } from '../../helpers/tombstone';
-import type { SocialThread } from '../../types/apiStatus';
 
 const CURSOR_V = 1 as const;
 type ConversationCursorPayload = {
@@ -124,8 +122,7 @@ export const constructMastodonThread = async (
   domain: string,
   processThread: boolean,
   c: Context,
-  language: string | undefined,
-  legacyAPI = false
+  language: string | undefined
 ): Promise<SocialStatusMastodon | SocialThreadMastodon> => {
   const st = await fetchStatus(domain, id);
   if (!st.ok || !st.data) {
@@ -150,14 +147,12 @@ export const constructMastodonThread = async (
   const ctx = await fetchStatusContext(domain, focalCore.id);
   if (!ctx.ok || !ctx.data) {
     const consumed = (await buildAPIMastodonPost(c, focal, domain, language)) as APIMastodonStatus;
-    const threadOut: SocialThreadMastodon = {
+    return {
       code: 200,
       status: consumed,
       thread: [consumed],
       author: consumed.author
     };
-    if (legacyAPI) stripTombstones(threadOut as SocialThread);
-    return threadOut;
   }
 
   const ancestors = ctx.data.ancestors ?? [];
@@ -172,14 +167,12 @@ export const constructMastodonThread = async (
   const focalIndex = ancestors.length;
   const focalConsumed = consumedPosts[focalIndex]!;
 
-  const threadResult: SocialThreadMastodon = {
+  return {
     code: 200,
     status: focalConsumed,
     thread: consumedPosts,
     author: focalConsumed.author
   };
-  if (legacyAPI) stripTombstones(threadResult as SocialThread);
-  return threadResult;
 };
 
 export type MastodonConversationResult =

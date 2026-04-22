@@ -705,6 +705,11 @@ type TweetTombstone = {
       text: string; // "You’re unable to view this Tweet because this account owner limits who can view their Tweets. Learn more"
       entities: unknown[];
     };
+    /** Present on some GraphQL clients alongside or instead of structured hints in `text`. */
+    richText?: {
+      text?: string;
+      entities?: unknown[];
+    };
   };
 };
 
