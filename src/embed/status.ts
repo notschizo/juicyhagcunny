@@ -62,6 +62,7 @@ const isArticleOnlyTweet = (status: APITwitterStatus): boolean => {
 
 export const returnError = (c: Context, error: string): Response => {
   const branding = getBranding(c);
+  console.log('branding', JSON.stringify(branding));
   return c.html(
     Strings.BASE_HTML.format({
       runtime: formatRuntime(),
@@ -69,7 +70,8 @@ export const returnError = (c: Context, error: string): Response => {
       lang: '',
       headers: [
         `<meta property="og:title" content="${branding.name}"/>`,
-        `<meta property="og:description" content="${error}"/>`
+        `<meta property="og:description" content="${error}"/>`,
+        `<meta property="theme-color" content="${branding.color}"/>`
       ].join('')
     })
   ) as Response;
@@ -194,9 +196,7 @@ export const handleStatus = async (
     if (provider === DataProvider.Bluesky) {
       return returnError(
         c,
-        thread.code === 404
-          ? Strings.ERROR_BLUESKY_POST_NOT_FOUND
-          : Strings.ERROR_BLUESKY_UNAVAILABLE
+        thread.code === 404 ? Strings.ERROR_TWEET_NOT_FOUND : Strings.ERROR_BLUESKY_UNAVAILABLE
       );
     } else {
       return returnError(c, Strings.ERROR_TWEET_NOT_FOUND);
