@@ -32,7 +32,7 @@ import {
   mastodonStatusRepostsV2Route,
   mastodonStatusV2Route,
   mastodonThreadV2Route
-} from './routes';
+} from './mastodon-routes';
 
 const setApiHeaders = (c: Context, options?: { skipContentType?: boolean }) => {
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

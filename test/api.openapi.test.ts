@@ -53,12 +53,17 @@ test('FxTwitter OpenAPI includes grouped timeline and v2 type discriminators', a
   expect(schemas?.APIGroupedSearchResults).toBeDefined();
   expect(schemas?.APITwitterStatus?.properties?.type).toBeDefined();
   expect(schemas?.APIUser?.properties?.type).toBeDefined();
+  const timelineEntry = schemas?.TimelineEntryTwitter as {
+    discriminator?: { mapping?: Record<string, string>; propertyName?: string };
+    oneOf?: unknown[];
+  };
   /* zod-openapi emits discriminated unions as plain `oneOf` (no `discriminator` block) when the
    * branches are wrapped in `z.lazy`, which our self-referential status schemas require. Verify the
    * union still references both branches. */
   const refs = (schemas?.TimelineEntryTwitter?.oneOf ?? []).map(b => b.$ref);
   expect(refs).toContain('#/components/schemas/APITwitterStatus');
   expect(refs).toContain('#/components/schemas/TimelineThreadTwitter');
+  expect(timelineEntry?.discriminator?.mapping?.undefined).toBeUndefined();
 });
 
 test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
@@ -76,7 +81,18 @@ test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
   };
   expect(doc.components?.schemas?.TimelineEntryBluesky).toBeDefined();
   expect(doc.components?.schemas?.APIGroupedSearchResultsBluesky).toBeDefined();
-  const refs = (doc.components?.schemas?.TimelineEntryBluesky?.oneOf ?? []).map(b => b.$ref);
-  expect(refs).toContain('#/components/schemas/APIBlueskyStatus');
-  expect(refs).toContain('#/components/schemas/TimelineThreadBluesky');
+  const entry = doc.components?.schemas?.TimelineEntryBluesky as {
+    discriminator?: { mapping?: Record<string, string> };
+    oneOf?: unknown[];
+  };
+  const bskyMapping = entry?.discriminator?.mapping;
+  if (bskyMapping?.status) {
+    expect(bskyMapping.status).toBe('#/components/schemas/APIBlueskyStatus');
+  } else {
+    expect(entry).toBeDefined();
+    const refs = (doc.components?.schemas?.TimelineEntryBluesky?.oneOf ?? []).map(b => b.$ref);
+    expect(refs).toContain('#/components/schemas/APIBlueskyStatus');
+    expect(refs).toContain('#/components/schemas/TimelineThreadBluesky');
+  }
+  expect(entry?.discriminator?.mapping?.undefined).toBeUndefined();
 });

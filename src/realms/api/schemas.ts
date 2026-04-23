@@ -738,7 +738,7 @@ export const TimelineThreadTwitterSchema = z
         'True when the conversation has more posts than listed in `statuses` (Twitter: `allTweetIds` length vs visible). False when counts match or upstream did not provide `allTweetIds`.'
     })
   })
-  .openapi('TimelineThreadTwitter');  
+  .openapi('TimelineThreadTwitter');
 export const TimelineEntryTwitterSchema = z
   .discriminatedUnion('type', [APITwitterStatusSchema, TimelineThreadTwitterSchema])
   .openapi('TimelineEntryTwitter');

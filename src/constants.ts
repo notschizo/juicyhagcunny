@@ -26,12 +26,12 @@ export const Constants = {
       .filter(Boolean)[0];
     return h ? `https://${h}` : '';
   })(),
-  GENERIC_API_HOST_LIST: (process.env.GENERIC_API_HOST_LIST ?? '')
+  ATMOSPHERE_API_HOST_LIST: (process.env.ATMOSPHERE_API_HOST_LIST ?? '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean),
-  GENERIC_API_HOST_ROOT: (() => {
-    const h = (process.env.GENERIC_API_HOST_LIST ?? '')
+  ATMOSPHERE_API_HOST_ROOT: (() => {
+    const h = (process.env.ATMOSPHERE_API_HOST_LIST ?? '')
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)[0];
