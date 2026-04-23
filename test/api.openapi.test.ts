@@ -41,20 +41,24 @@ test('FxTwitter OpenAPI includes grouped timeline and v2 type discriminators', a
   );
   expect(result.status).toBe(200);
   const doc = (await result.json()) as {
-    components?: { schemas?: Record<string, { properties?: Record<string, unknown> }> };
+    components?: {
+      schemas?: Record<
+        string,
+        { properties?: Record<string, unknown>; oneOf?: Array<{ $ref?: string }> }
+      >;
+    };
   };
   const schemas = doc.components?.schemas;
   expect(schemas?.TimelineEntryTwitter).toBeDefined();
   expect(schemas?.APIGroupedSearchResults).toBeDefined();
   expect(schemas?.APITwitterStatus?.properties?.type).toBeDefined();
   expect(schemas?.APIUser?.properties?.type).toBeDefined();
-  const timelineEntry = schemas?.TimelineEntryTwitter as {
-    discriminator?: { mapping?: Record<string, string> };
-  };
-  expect(timelineEntry?.discriminator?.mapping?.status).toBe(
-    '#/components/schemas/APITwitterStatus'
-  );
-  expect(timelineEntry?.discriminator?.mapping?.undefined).toBeUndefined();
+  /* zod-openapi emits discriminated unions as plain `oneOf` (no `discriminator` block) when the
+   * branches are wrapped in `z.lazy`, which our self-referential status schemas require. Verify the
+   * union still references both branches. */
+  const refs = (schemas?.TimelineEntryTwitter?.oneOf ?? []).map(b => b.$ref);
+  expect(refs).toContain('#/components/schemas/APITwitterStatus');
+  expect(refs).toContain('#/components/schemas/TimelineThreadTwitter');
 });
 
 test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
@@ -68,13 +72,11 @@ test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
   );
   expect(result.status).toBe(200);
   const doc = (await result.json()) as {
-    components?: { schemas?: Record<string, unknown> };
+    components?: { schemas?: Record<string, { oneOf?: Array<{ $ref?: string }> }> };
   };
   expect(doc.components?.schemas?.TimelineEntryBluesky).toBeDefined();
   expect(doc.components?.schemas?.APIGroupedSearchResultsBluesky).toBeDefined();
-  const entry = doc.components?.schemas?.TimelineEntryBluesky as {
-    discriminator?: { mapping?: Record<string, string> };
-  };
-  expect(entry?.discriminator?.mapping?.status).toBe('#/components/schemas/APIBlueskyStatus');
-  expect(entry?.discriminator?.mapping?.undefined).toBeUndefined();
+  const refs = (doc.components?.schemas?.TimelineEntryBluesky?.oneOf ?? []).map(b => b.$ref);
+  expect(refs).toContain('#/components/schemas/APIBlueskyStatus');
+  expect(refs).toContain('#/components/schemas/TimelineThreadBluesky');
 });
