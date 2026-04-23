@@ -41,7 +41,12 @@ test('FxTwitter OpenAPI includes grouped timeline and v2 type discriminators', a
   );
   expect(result.status).toBe(200);
   const doc = (await result.json()) as {
-    components?: { schemas?: Record<string, { properties?: Record<string, unknown> }> };
+    components?: {
+      schemas?: Record<
+        string,
+        { properties?: Record<string, unknown>; oneOf?: Array<{ $ref?: string }> }
+      >;
+    };
   };
   const schemas = doc.components?.schemas;
   expect(schemas?.TimelineEntryTwitter).toBeDefined();
@@ -52,15 +57,12 @@ test('FxTwitter OpenAPI includes grouped timeline and v2 type discriminators', a
     discriminator?: { mapping?: Record<string, string>; propertyName?: string };
     oneOf?: unknown[];
   };
-  /* zod-to-openapi v8 + Zod 4 may omit `discriminator.mapping` for some lazy unions; assert refs exist. */
-  const mapping = timelineEntry?.discriminator?.mapping;
-  if (mapping?.status) {
-    expect(mapping.status).toBe('#/components/schemas/APITwitterStatus');
-  } else {
-    expect(timelineEntry).toBeDefined();
-    expect(JSON.stringify(timelineEntry)).toContain('APITwitterStatus');
-    expect(JSON.stringify(timelineEntry)).toContain('TimelineThreadTwitter');
-  }
+  /* zod-openapi emits discriminated unions as plain `oneOf` (no `discriminator` block) when the
+   * branches are wrapped in `z.lazy`, which our self-referential status schemas require. Verify the
+   * union still references both branches. */
+  const refs = (schemas?.TimelineEntryTwitter?.oneOf ?? []).map(b => b.$ref);
+  expect(refs).toContain('#/components/schemas/APITwitterStatus');
+  expect(refs).toContain('#/components/schemas/TimelineThreadTwitter');
   expect(timelineEntry?.discriminator?.mapping?.undefined).toBeUndefined();
 });
 
@@ -75,7 +77,7 @@ test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
   );
   expect(result.status).toBe(200);
   const doc = (await result.json()) as {
-    components?: { schemas?: Record<string, unknown> };
+    components?: { schemas?: Record<string, { oneOf?: Array<{ $ref?: string }> }> };
   };
   expect(doc.components?.schemas?.TimelineEntryBluesky).toBeDefined();
   expect(doc.components?.schemas?.APIGroupedSearchResultsBluesky).toBeDefined();
@@ -88,8 +90,9 @@ test('FxBluesky OpenAPI includes grouped timeline entry schema', async () => {
     expect(bskyMapping.status).toBe('#/components/schemas/APIBlueskyStatus');
   } else {
     expect(entry).toBeDefined();
-    expect(JSON.stringify(entry)).toContain('APIBlueskyStatus');
-    expect(JSON.stringify(entry)).toContain('TimelineThreadBluesky');
+    const refs = (doc.components?.schemas?.TimelineEntryBluesky?.oneOf ?? []).map(b => b.$ref);
+    expect(refs).toContain('#/components/schemas/APIBlueskyStatus');
+    expect(refs).toContain('#/components/schemas/TimelineThreadBluesky');
   }
   expect(entry?.discriminator?.mapping?.undefined).toBeUndefined();
 });
