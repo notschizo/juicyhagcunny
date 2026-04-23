@@ -9,6 +9,7 @@ import { registerOpenApiJsonRoute } from '../api/openapi-json-route';
 import { apiOpenapiValidationHook } from '../api/openapi-validation-hook';
 import { jsonAfterNormalize, normalizeApiJsonResponse } from '../api/normalizeApiJsonResponse';
 import { SocialThreadSchema } from '../api/schemas';
+import type { SocialThread } from '../../types/apiStatus';
 import { constructTikTokVideo } from '../../providers/tiktok/conversation';
 import {
   mastodonConversationAPIRequest,
@@ -121,17 +122,31 @@ atmosphere.openapi(tiktokStatusV2Route, async c => {
   const { id } = c.req.valid('param');
   const url = new URL(c.req.url);
   const proxyBase = `${url.protocol}//${url.host}`;
-  const thread = await constructTikTokVideo(id, proxyBase, c.req.header('user-agent') ?? undefined);
-  const { httpStatus, payload } = normalizeApiJsonResponse(
-    thread,
-    [200, 404, 500] as const,
-    'tiktokStatusAPIRequest'
-  );
-  c.status(httpStatus);
-  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
-    c.header(header, value);
+
+  const respond = (body: SocialThread) => {
+    const { httpStatus, payload } = normalizeApiJsonResponse(
+      body,
+      [200, 404, 500] as const,
+      'tiktokStatusAPIRequest'
+    );
+    c.status(httpStatus);
+    for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+      c.header(header, value);
+    }
+    return jsonAfterNormalize<typeof tiktokStatusV2Route>(c, payload, httpStatus);
+  };
+
+  try {
+    const thread = await constructTikTokVideo(id, proxyBase, c.req.header('user-agent') ?? undefined);
+    return respond(thread);
+  } catch {
+    return respond({
+      code: 500,
+      status: null,
+      thread: [],
+      author: null
+    });
   }
-  return jsonAfterNormalize<typeof tiktokStatusV2Route>(c, payload, httpStatus);
 });
 
 registerOpenApiJsonRoute(atmosphere, '/2/openapi.json', {
