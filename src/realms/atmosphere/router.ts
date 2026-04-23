@@ -137,7 +137,11 @@ atmosphere.openapi(tiktokStatusV2Route, async c => {
   };
 
   try {
-    const thread = await constructTikTokVideo(id, proxyBase, c.req.header('user-agent') ?? undefined);
+    const thread = await constructTikTokVideo(
+      id,
+      proxyBase,
+      c.req.header('user-agent') ?? undefined
+    );
     return respond(thread);
   } catch {
     return respond({
