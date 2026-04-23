@@ -39,7 +39,7 @@ export const cacheMiddleware = (): MiddlewareHandler => async (c, next) => {
   const apiRealmHost =
     Constants.API_HOST_LIST.includes(cacheUrl.hostname) ||
     Constants.BLUESKY_API_HOST_LIST.includes(cacheUrl.hostname) ||
-    Constants.GENERIC_API_HOST_LIST.includes(cacheUrl.hostname);
+    Constants.ATMOSPHERE_API_HOST_LIST.includes(cacheUrl.hostname);
   const returnAsJson = apiRealmHost;
   const skipReadThroughCache = apiRealmHost;
 

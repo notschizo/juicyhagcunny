@@ -16,7 +16,7 @@ declare namespace NodeJS {
     POLYGLOT_ACCESS_TOKEN?: string;
     API_HOST_LIST?: string;
     BLUESKY_API_HOST_LIST?: string;
-    GENERIC_API_HOST_LIST?: string;
+    ATMOSPHERE_API_HOST_LIST?: string;
     GIF_TRANSCODE_DOMAIN_LIST?: string;
     VIDEO_TRANSCODE_DOMAIN_LIST?: string;
     VIDEO_TRANSCODE_BSKY_DOMAIN_LIST?: string;

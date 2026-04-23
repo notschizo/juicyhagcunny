@@ -347,7 +347,7 @@ const plainTextAndFacetsFromMastodonNote = (
 
 /**
  * Mastodon uses a bare local username in `acct` for accounts on the requesting instance.
- * Horizon and the generic API contract treat `screen_name` as full fediverse acct (`user@host`).
+ * Horizon and the Atmosphere API contract treat `screen_name` as full fediverse acct (`user@host`).
  */
 const mastodonFullAcct = (
   account: Pick<MastodonAccount, 'acct' | 'username'>,
