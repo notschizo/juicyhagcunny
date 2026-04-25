@@ -11,7 +11,7 @@ import {
 
 export type InstagramConversationResult =
   | { ok: true; data: SocialConversationInstagram }
-  | { ok: false; message: string };
+  | { ok: false; message: string; data?: SocialConversationInstagram };
 
 export async function constructInstagramConversation(
   shortcode: string,
@@ -123,7 +123,8 @@ export async function constructInstagramConversation(
       gqlOk: gql.ok
     });
     return {
-      ok: true,
+      ok: false,
+      message: 'Instagram comment fetch failed',
       data: {
         code: 500,
         status,

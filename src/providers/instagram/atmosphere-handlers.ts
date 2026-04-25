@@ -65,7 +65,8 @@ const instagramSearch500: APISearchResultsInstagram = {
 };
 
 const instagramConversationError: InstagramConversationResult = {
-  ok: true,
+  ok: false,
+  message: 'Internal server error',
   data: {
     code: 500,
     status: null,
@@ -194,6 +195,16 @@ export const instagramConversationAPIRequest: RouteHandler<
     instagramConversationError
   );
   if (!result.ok) {
+    if (result.data) {
+      const { httpStatus, payload } = normalizeApiJsonResponse(
+        result.data,
+        [200, 400, 404, 500] as const,
+        'instagramConversationAPIRequest'
+      );
+      c.status(httpStatus);
+      setApiHeaders(c);
+      return jsonAfterNormalize<typeof instagramConversationV2Route>(c, payload, httpStatus);
+    }
     setApiHeaders(c);
     return c.json({ code: 400 as const, message: result.message }, 400);
   }
