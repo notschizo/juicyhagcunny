@@ -45,7 +45,6 @@ const atmosphereRoot = async (c: Context) => {
 };
 
 atmosphere.get('/', atmosphereRoot);
-atmosphere.get('', atmosphereRoot);
 
 registerMastodonAtmosphereRoutes(atmosphere);
 registerInstagramAtmosphereRoutes(atmosphere);

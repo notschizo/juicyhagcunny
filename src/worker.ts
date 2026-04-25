@@ -195,7 +195,7 @@ app.get('/', c => {
 
 app.route(`/api`, api);
 app.route(`/blueskyapi`, blueskyApi);
-app.route(`/atmosphere`, atmosphere);
+app.route(`/atmosphere/`, atmosphere);
 app.route(`/twitter`, twitter);
 app.route(`/bluesky`, bluesky);
 app.route(`/tiktok`, tiktok);
