@@ -12,6 +12,8 @@ import type {
   APIPoll,
   APIReplyingTo,
   APIRepostedBy,
+  APIInstagramStatus,
+  APISubstatus,
   APITranslate,
   APITwitterStatus,
   APIUser,
@@ -87,6 +89,8 @@ export interface APITikTokStatus extends APIStatus {
   views?: number | null;
 }
 
+export type { APIInstagramStatus, APISubstatus };
+
 export interface SocialPost {
   status: APIStatus | APITwitterStatus | null;
   author: APIUser | null;
@@ -94,6 +98,7 @@ export interface SocialPost {
 
 export type ThreadOrStatusItem =
   | APIStatus
+  | APIInstagramStatus
   | APITwitterStatus
   | APIStatusTombstone
   | SchemasAPIBlueskyStatus;
@@ -108,7 +113,7 @@ export interface SocialThread {
 
 /** Thread + replies with cursor-based pagination for the conversation endpoint. */
 export interface SocialConversation extends SocialThread {
-  replies: (APIStatus | APITwitterStatus)[] | null;
+  replies: (APIStatus | APITwitterStatus | APISubstatus)[] | null;
   cursor: {
     bottom: string | null;
   } | null;

@@ -2,6 +2,7 @@ import i18next from 'i18next';
 import icu from 'i18next-icu';
 import type {
   APIBlueskyStatus,
+  APIInstagramStatus,
   APIMastodonStatus,
   APITombstoneReason,
   APITwitterStatus,
@@ -79,7 +80,12 @@ function fallbackMessageEn(reason: APITombstoneReason): string {
   }
 }
 
-type Statusish = APIStatus | APITwitterStatus | APIBlueskyStatus | APIMastodonStatus;
+type Statusish =
+  | APIStatus
+  | APITwitterStatus
+  | APIBlueskyStatus
+  | APIMastodonStatus
+  | APIInstagramStatus;
 
 function stripQuotesDeep(s: Statusish): void {
   if (isTombstone(s)) return;
@@ -105,7 +111,9 @@ export function stripTombstones<T extends SocialThread | SocialConversation>(obj
   }
   if ('replies' in obj && obj.replies?.length) {
     for (const item of obj.replies) {
-      if (!isTombstone(item)) stripQuotesDeep(item as Statusish);
+      if (isTombstone(item)) continue;
+      if (item.type === 'substatus') continue;
+      stripQuotesDeep(item as Statusish);
     }
     (obj as SocialConversation).replies = obj.replies.filter(
       s => !isTombstone(s)
