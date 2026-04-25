@@ -245,8 +245,9 @@ export async function constructInstagramProfileStatuses(
     const s = edgeNodeToStatus(e, ownerFb);
     if (s) results.push(s);
   }
+  const truncated = conn.edges.length > count;
   const bottom =
-    conn.page_info.has_next_page && conn.page_info.end_cursor
+    !truncated && conn.page_info.has_next_page && conn.page_info.end_cursor
       ? encodeProfileCursor({
           v: 1,
           k: 't',
@@ -287,8 +288,9 @@ export async function constructInstagramProfileVideos(
     const s = edgeNodeToStatus(e, ownerFb);
     if (s) results.push(s);
   }
+  const truncated = conn.edges.length > count;
   const bottom =
-    conn.page_info.has_next_page && conn.page_info.end_cursor
+    !truncated && conn.page_info.has_next_page && conn.page_info.end_cursor
       ? encodeProfileCursor({
           v: 1,
           k: 'r',
