@@ -73,9 +73,12 @@ export async function constructInstagramConversation(
       : null);
 
   if (!options.cursor) {
-    const replies = mapCommentEdges(conn?.edges, shortcode, fb.username);
+    const edges = conn?.edges ?? [];
+    const slicedEdges = edges.slice(0, count);
+    const replies = mapCommentEdges(slicedEdges, shortcode, fb.username);
+    const truncated = edges.length > count;
     const bottom =
-      mediaPk && hasNext && endCursor
+      !truncated && mediaPk && hasNext && endCursor
         ? encodeCommentCursor({
             v: 1,
             mediaId: mediaPk,
@@ -137,8 +140,27 @@ export async function constructInstagramConversation(
   }
 
   const parsed = extractCommentsFromGraphqlJson(gql.json);
-  const replies = parsed ? mapCommentEdges(parsed.edges, shortcode, fb.username) : [];
-  const pi = parsed?.page_info;
+  if (!parsed) {
+    console.error(
+      '[instagram] constructInstagramConversation comment GraphQL response parse failed',
+      { shortcode, sort: decoded.sort, after: decoded.after, count: decoded.count }
+    );
+    return {
+      ok: false,
+      message: 'Instagram comment response parse failed',
+      data: {
+        code: 500,
+        status,
+        thread: [status],
+        replies: [],
+        author: status.author,
+        cursor: { bottom: options.cursor }
+      }
+    };
+  }
+
+  const replies = mapCommentEdges(parsed.edges, shortcode, fb.username);
+  const pi = parsed.page_info;
   const nextBottom =
     pi?.has_next_page && pi.end_cursor
       ? encodeCommentCursor({
