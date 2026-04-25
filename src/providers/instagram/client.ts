@@ -55,7 +55,9 @@ export async function fetchInstagramCsrfToken(
  * One logged-out navigation to the homepage to collect cookies (`csrftoken`, `mid`, `ig_did`, …).
  * Post permalink HTML often does not embed `xdt_api__v1__media__shortcode__web_info` without them.
  */
-export async function fetchInstagramLoggedOutSession(userAgent: string | undefined): Promise<string> {
+export async function fetchInstagramLoggedOutSession(
+  userAgent: string | undefined
+): Promise<string> {
   try {
     const res = await withTimeout(signal =>
       fetch(`${INSTAGRAM_ORIGIN}/`, {

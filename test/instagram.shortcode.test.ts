@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { instagramShortcodeToPk, normalizeInstagramPostId } from '../src/providers/instagram/shortcode';
+import {
+  instagramShortcodeToPk,
+  normalizeInstagramPostId
+} from '../src/providers/instagram/shortcode';
 
 describe('normalizeInstagramPostId', () => {
   it('extracts shortcode from /p/ URL', () => {

@@ -57,7 +57,9 @@ describe('instagram processor', () => {
   });
 
   it('maps comment edges', () => {
-    const edges = [{ node: { pk: '1', text: 'a', created_at: 1, user: { pk: '2', username: 'u' } } }];
+    const edges = [
+      { node: { pk: '1', text: 'a', created_at: 1, user: { pk: '2', username: 'u' } } }
+    ];
     const out = mapCommentEdges(edges, 'SC');
     expect(out).toHaveLength(1);
     expect(out[0]!.id).toBe('1');

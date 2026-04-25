@@ -39,8 +39,7 @@ export async function constructInstagramConversation(
   }
   const item = page.item;
   const htmlBody = page.html;
-  const refererForGraphql =
-    page.pathUsed ?? `/p/${encodeURIComponent(shortcode)}/`;
+  const refererForGraphql = page.pathUsed ?? `/p/${encodeURIComponent(shortcode)}/`;
   const owner = item.user as Record<string, unknown> | undefined;
   const fb = {
     id: String(owner?.pk ?? owner?.id ?? ''),
