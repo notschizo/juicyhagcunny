@@ -282,13 +282,32 @@ export async function constructInstagramProfileVideos(
     return { code: 404, results: [], cursor: { top: null, bottom: null } };
   }
   const ownerFb = ownerFallbackFromUser(user);
-  const conn = connection(user, 'edge_felix_video_timeline');
+  const felix = connection(user, 'edge_felix_video_timeline');
   const results: APIInstagramStatus[] = [];
-  for (const e of conn.edges.slice(0, count)) {
-    const s = edgeNodeToStatus(e, ownerFb);
-    if (s) results.push(s);
+  let conn: ReturnType<typeof connection>;
+  let truncated: boolean;
+  if (felix.edges.length > 0) {
+    conn = felix;
+    for (const e of conn.edges.slice(0, count)) {
+      const s = edgeNodeToStatus(e, ownerFb);
+      if (s) results.push(s);
+    }
+    truncated = conn.edges.length > count;
+  } else {
+    conn = connection(user, 'edge_owner_to_timeline_media');
+    let moreOnPage = false;
+    for (const e of conn.edges) {
+      if (results.length >= count) {
+        moreOnPage = true;
+        break;
+      }
+      const n = (e as { node?: Record<string, unknown> }).node;
+      if (!nodeShowsVideoInGrid(n ?? null)) continue;
+      const s = edgeNodeToStatus(e, ownerFb);
+      if (s) results.push(s);
+    }
+    truncated = moreOnPage;
   }
-  const truncated = conn.edges.length > count;
   const bottom =
     !truncated && conn.page_info.has_next_page && conn.page_info.end_cursor
       ? encodeProfileCursor({
