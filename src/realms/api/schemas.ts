@@ -882,6 +882,170 @@ export const SocialConversationMastodonSchema = z
 
 export type SocialConversationMastodon = z.infer<typeof SocialConversationMastodonSchema>;
 
+/**
+ * Dependent row (e.g. comment) derived from a parent status; not a standalone timeline post.
+ * Reusable across providers (Instagram comments today, TikTok comments later).
+ */
+export type APISubstatus = {
+  type: 'substatus';
+  parent_id: string;
+  id: string;
+  url: string;
+  text: string;
+  created_at: string;
+  created_timestamp: number;
+  likes: number;
+  reposts: number;
+  replies: number;
+  author: z.infer<typeof APIUserSchema>;
+  media: z.infer<typeof APIMediaContainerSchema>;
+  raw_text: {
+    text: string;
+    facets: z.infer<typeof APIFacetSchema>[];
+  };
+  lang: string | null;
+  possibly_sensitive: boolean;
+  replying_to: APIReplyingTo | null;
+  source: string | null;
+  embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
+  provider: 'instagram' | 'tiktok';
+};
+
+export const APISubstatusSchema: z.ZodType<APISubstatus> = z.lazy(() =>
+  z
+    .object({
+      type: z
+        .literal('substatus')
+        .openapi({ description: 'Discriminator: child of a parent status (e.g. comment).' }),
+      parent_id: z
+        .string()
+        .openapi({ description: 'Parent post id (e.g. Instagram shortcode / media key).' }),
+      id: z.string(),
+      url: z.string(),
+      text: z.string(),
+      created_at: z.string(),
+      created_timestamp: z.number(),
+      likes: z.number(),
+      reposts: z.number(),
+      replies: z.number(),
+      author: APIUserSchema,
+      media: APIMediaContainerSchema,
+      raw_text: z.object({
+        text: z.string(),
+        facets: z.array(APIFacetSchema)
+      }),
+      lang: z.string().nullable(),
+      possibly_sensitive: z.boolean(),
+      replying_to: APIReplyingToSchema.nullable(),
+      source: z.string().nullable(),
+      embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
+      provider: z.enum(['instagram', 'tiktok'])
+    })
+    .openapi('APISubstatus')
+);
+
+/** Instagram web-normalized post (API v2 baseline). */
+export type APIInstagramStatus = {
+  type: 'status';
+  id: string;
+  url: string;
+  text: string;
+  created_at: string;
+  created_timestamp: number;
+  likes: number;
+  reposts: number;
+  quotes?: number;
+  replies: number;
+  quote?: APIInstagramStatus | APIStatusTombstone;
+  poll?: z.infer<typeof APIPollSchema>;
+  author: z.infer<typeof APIUserSchema>;
+  media: z.infer<typeof APIMediaContainerSchema>;
+  raw_text: {
+    text: string;
+    facets: z.infer<typeof APIFacetSchema>[];
+  };
+  lang: string | null;
+  translation?: z.infer<typeof APITranslateSchema>;
+  possibly_sensitive: boolean;
+  replying_to: APIReplyingTo | null;
+  source: string | null;
+  embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
+  provider: 'instagram';
+  reposted_by?: z.infer<typeof APIRepostedBySchema>;
+  /** Instagram numeric media pk when known (for comment pagination). */
+  media_pk?: string;
+};
+
+export const APIInstagramStatusSchema: z.ZodType<APIInstagramStatus> = z.lazy(() =>
+  z
+    .object({
+      type: z.literal('status').openapi({ description: 'Discriminator: single Instagram post.' }),
+      id: z.string(),
+      url: z.string(),
+      text: z.string(),
+      created_at: z.string(),
+      created_timestamp: z.number(),
+      likes: z.number(),
+      reposts: z.number(),
+      quotes: z.number().optional(),
+      replies: z.number(),
+      quote: z.union([APIInstagramStatusSchema, APIStatusTombstoneSchema]).optional(),
+      poll: APIPollSchema.optional(),
+      author: APIUserSchema,
+      media: APIMediaContainerSchema,
+      raw_text: z.object({
+        text: z.string(),
+        facets: z.array(APIFacetSchema)
+      }),
+      lang: z.string().nullable(),
+      translation: APITranslateSchema.optional(),
+      possibly_sensitive: z.boolean(),
+      replying_to: APIReplyingToSchema.nullable(),
+      source: z.string().nullable(),
+      embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
+      provider: z.literal('instagram'),
+      reposted_by: APIRepostedBySchema.optional(),
+      media_pk: z.string().optional()
+    })
+    .openapi('APIInstagramStatus')
+);
+
+export const SocialThreadInstagramSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APIInstagramStatusSchema.nullable(),
+    thread: z.array(z.union([APIInstagramStatusSchema, APIStatusTombstoneSchema])).nullable(),
+    author: APIUserSchema.nullable()
+  })
+  .openapi('SocialThreadInstagram');
+
+export type SocialThreadInstagram = z.infer<typeof SocialThreadInstagramSchema>;
+
+export const SocialConversationInstagramSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: APIInstagramStatusSchema.nullable(),
+    thread: z.array(z.union([APIInstagramStatusSchema, APIStatusTombstoneSchema])).nullable(),
+    replies: z.array(APISubstatusSchema).nullable(),
+    author: APIUserSchema.nullable(),
+    cursor: z
+      .object({
+        bottom: z.string().nullable()
+      })
+      .nullable()
+  })
+  .openapi('SocialConversationInstagram');
+
+export type SocialConversationInstagram = z.infer<typeof SocialConversationInstagramSchema>;
+
+export const APISearchResultsInstagramSchema = z
+  .object({
+    code: z.number(),
+    results: z.array(APIInstagramStatusSchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APISearchResultsInstagram');
+
 export const APISearchResultsMastodonSchema = z
   .object({
     code: z.number(),

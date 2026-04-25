@@ -23,7 +23,7 @@ export function normalizeApiJsonResponse<
     return { httpStatus: code as A[number], payload: body };
   }
   const fb = fallbackHttpStatus(allowed) as A[number];
-  console.debug(
+  console.warn(
     `[api] response envelope code ${String(raw)} not in OpenAPI set [${allowed.join(', ')}] for ${context}; using HTTP ${fb}`
   );
   return { httpStatus: fb, payload: { ...body, code: fb } as T };

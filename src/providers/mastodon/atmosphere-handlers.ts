@@ -1,25 +1,12 @@
 import type { RouteHandler } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import { Constants } from '../../constants';
-import { jsonAfterNormalize, normalizeApiJsonResponse } from '../api/normalizeApiJsonResponse';
-import type { APISearchResultsMastodon } from '../api/schemas';
 import { isParamTruthy } from '../../helpers/utils';
 import {
-  constructMastodonConversation,
-  constructMastodonThread
-} from '../../providers/mastodon/conversation';
-import { mastodonUserProfileAPI } from '../../providers/mastodon/profile';
-import {
-  mastodonProfileFollowersAPI,
-  mastodonProfileFollowingAPI
-} from '../../providers/mastodon/profileFollowers';
-import {
-  mastodonProfileMediaAPI,
-  mastodonProfileStatusesAPI
-} from '../../providers/mastodon/profileStatuses';
-import { mastodonSearchAPI } from '../../providers/mastodon/search';
-import { mastodonStatusLikesAPI } from '../../providers/mastodon/statusLikes';
-import { mastodonStatusRepostsAPI } from '../../providers/mastodon/statusReposts';
+  jsonAfterNormalize,
+  normalizeApiJsonResponse
+} from '../../realms/api/normalizeApiJsonResponse';
+import type { APISearchResultsMastodon } from '../../realms/api/schemas';
 import {
   mastodonConversationV2Route,
   mastodonProfileFollowersV2Route,
@@ -32,7 +19,14 @@ import {
   mastodonStatusRepostsV2Route,
   mastodonStatusV2Route,
   mastodonThreadV2Route
-} from './mastodon-routes';
+} from './atmosphere-routes';
+import { constructMastodonConversation, constructMastodonThread } from './conversation';
+import { mastodonUserProfileAPI } from './profile';
+import { mastodonProfileFollowersAPI, mastodonProfileFollowingAPI } from './profileFollowers';
+import { mastodonProfileMediaAPI, mastodonProfileStatusesAPI } from './profileStatuses';
+import { mastodonSearchAPI } from './search';
+import { mastodonStatusLikesAPI } from './statusLikes';
+import { mastodonStatusRepostsAPI } from './statusReposts';
 
 const setApiHeaders = (c: Context, options?: { skipContentType?: boolean }) => {
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

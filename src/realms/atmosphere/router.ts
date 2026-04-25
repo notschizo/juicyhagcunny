@@ -11,32 +11,8 @@ import { jsonAfterNormalize, normalizeApiJsonResponse } from '../api/normalizeAp
 import { SocialThreadSchema } from '../api/schemas';
 import type { SocialThread } from '../../types/apiStatus';
 import { constructTikTokVideo } from '../../providers/tiktok/conversation';
-import {
-  mastodonConversationAPIRequest,
-  mastodonProfileAPIRequest,
-  mastodonProfileFollowersAPIRequest,
-  mastodonProfileFollowingAPIRequest,
-  mastodonProfileMediaAPIRequest,
-  mastodonProfileStatusesAPIRequest,
-  mastodonSearchAPIRequest,
-  mastodonStatusAPIRequest,
-  mastodonStatusLikesAPIRequest,
-  mastodonStatusRepostsAPIRequest,
-  mastodonThreadAPIRequest
-} from './handlers';
-import {
-  mastodonConversationV2Route,
-  mastodonProfileFollowersV2Route,
-  mastodonProfileFollowingV2Route,
-  mastodonProfileMediaV2Route,
-  mastodonProfileStatusesV2Route,
-  mastodonProfileV2Route,
-  mastodonSearchV2Route,
-  mastodonStatusLikesV2Route,
-  mastodonStatusRepostsV2Route,
-  mastodonStatusV2Route,
-  mastodonThreadV2Route
-} from './mastodon-routes';
+import { registerInstagramAtmosphereRoutes } from '../../providers/instagram/atmosphere-register';
+import { registerMastodonAtmosphereRoutes } from '../../providers/mastodon/atmosphere-register';
 
 export const atmosphere = new OpenAPIHono({ defaultHook: apiOpenapiValidationHook });
 
@@ -55,18 +31,24 @@ atmosphere.use('*', async (c, next) => {
 
 atmosphere.use(trimTrailingSlash());
 
-/* Mastodon / ActivityPub */
-atmosphere.openapi(mastodonStatusV2Route, mastodonStatusAPIRequest);
-atmosphere.openapi(mastodonStatusRepostsV2Route, mastodonStatusRepostsAPIRequest);
-atmosphere.openapi(mastodonStatusLikesV2Route, mastodonStatusLikesAPIRequest);
-atmosphere.openapi(mastodonThreadV2Route, mastodonThreadAPIRequest);
-atmosphere.openapi(mastodonConversationV2Route, mastodonConversationAPIRequest);
-atmosphere.openapi(mastodonSearchV2Route, mastodonSearchAPIRequest);
-atmosphere.openapi(mastodonProfileV2Route, mastodonProfileAPIRequest);
-atmosphere.openapi(mastodonProfileFollowersV2Route, mastodonProfileFollowersAPIRequest);
-atmosphere.openapi(mastodonProfileFollowingV2Route, mastodonProfileFollowingAPIRequest);
-atmosphere.openapi(mastodonProfileMediaV2Route, mastodonProfileMediaAPIRequest);
-atmosphere.openapi(mastodonProfileStatusesV2Route, mastodonProfileStatusesAPIRequest);
+const atmosphereRoot = async (c: Context) => {
+  for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
+    c.header(header, value);
+  }
+  c.header('cache-control', 'max-age=0, no-cache, no-store, must-revalidate');
+  return c.json({
+    service: 'atmosphere' as const,
+    version: '2.0.0' as const,
+    openapi: '/2/openapi.json' as const,
+    note: 'Use `/2/openapi.json` for route and schema details. Twitter (`/2/twitter/…`) and Bluesky (`/2/bluesky/…`) are served by the same in-process API apps as the standalone FxTwitter / FxBluesky API hosts.'
+  });
+};
+
+atmosphere.get('/', atmosphereRoot);
+atmosphere.get('', atmosphereRoot);
+
+registerMastodonAtmosphereRoutes(atmosphere);
+registerInstagramAtmosphereRoutes(atmosphere);
 
 /**
  * FxTwitter API v2 under `/2/twitter/…` — forward to the in-process `api` app (same handlers and
@@ -159,7 +141,7 @@ registerOpenApiJsonRoute(atmosphere, '/2/openapi.json', {
     title: 'FxEmbed Atmosphere API',
     version: '2.0.0',
     description:
-      'Multi-provider JSON API (X/Twitter, Bluesky, Mastodon/ActivityPub, TikTok). Mastodon routes are under `/2/mastodon/{instance}/…`, TikTok under `/2/tiktok/…`. Twitter (`/2/twitter/…`) and Bluesky (`/2/bluesky/…`) are served by forwarding to the same logic as `api.fxtwitter.com` and `api.fxbsky.app`; use their `/2/openapi.json` for full path and schema documentation.'
+      'Multi-provider JSON API (X/Twitter, Bluesky, Mastodon/ActivityPub, TikTok, Instagram). Mastodon routes are under `/2/mastodon/{instance}/…`, TikTok under `/2/tiktok/…`, Instagram under `/2/instagram/…`. Twitter (`/2/twitter/…`) and Bluesky (`/2/bluesky/…`) are served by forwarding to the same logic as `api.fxtwitter.com` and `api.fxbsky.app`; use their `/2/openapi.json` for full path and schema documentation.'
   },
   servers: Constants.ATMOSPHERE_API_HOST_ROOT
     ? [

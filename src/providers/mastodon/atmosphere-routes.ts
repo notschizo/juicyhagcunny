@@ -8,7 +8,7 @@ import {
   SocialStatusMastodonSchema,
   SocialThreadMastodonSchema,
   UserAPIResponseSchema
-} from '../api/schemas';
+} from '../../realms/api/schemas';
 
 const langQuery = z.object({
   lang: z.string().optional().openapi({
