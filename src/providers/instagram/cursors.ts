@@ -18,8 +18,17 @@ export type InstagramCommentCursorV1 = {
 };
 
 const b64urlEncode = (json: string): string => {
-  const b64 = btoa(json);
-  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  try {
+    const bytes = new TextEncoder().encode(json);
+    let bin = '';
+    for (const b of bytes) {
+      bin += String.fromCharCode(b);
+    }
+    const b64 = btoa(bin);
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch {
+    return '';
+  }
 };
 
 const b64urlDecode = (raw: string): string | null => {

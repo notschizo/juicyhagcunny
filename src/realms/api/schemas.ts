@@ -483,7 +483,7 @@ export const APIStatusTombstoneSchema = z
     type: z
       .literal('tombstone')
       .openapi({ description: 'Placeholder for an unavailable post (quote/thread).' }),
-    provider: z.enum(['twitter', 'bluesky', 'mastodon', 'tiktok']),
+    provider: z.enum(['twitter', 'bluesky', 'mastodon', 'tiktok', 'instagram']),
     reason: APITombstoneReasonSchema,
     message: z.string(),
     id: z.string().optional(),
@@ -898,16 +898,16 @@ export type APISubstatus = {
   reposts: number;
   replies: number;
   author: z.infer<typeof APIUserSchema>;
-  media: z.infer<typeof APIMediaContainerSchema>;
+  media?: z.infer<typeof APIMediaContainerSchema> | null;
   raw_text: {
     text: string;
     facets: z.infer<typeof APIFacetSchema>[];
   };
   lang: string | null;
   possibly_sensitive: boolean;
-  replying_to: APIReplyingTo | null;
+  replying_to?: APIReplyingTo | null;
   source: string | null;
-  embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
+  embed_card?: 'tweet' | 'summary' | 'summary_large_image' | 'player';
   provider: 'instagram' | 'tiktok';
 };
 
@@ -929,16 +929,16 @@ export const APISubstatusSchema: z.ZodType<APISubstatus> = z.lazy(() =>
       reposts: z.number(),
       replies: z.number(),
       author: APIUserSchema,
-      media: APIMediaContainerSchema,
+      media: APIMediaContainerSchema.nullable().optional(),
       raw_text: z.object({
         text: z.string(),
         facets: z.array(APIFacetSchema)
       }),
       lang: z.string().nullable(),
       possibly_sensitive: z.boolean(),
-      replying_to: APIReplyingToSchema.nullable(),
+      replying_to: APIReplyingToSchema.nullable().optional(),
       source: z.string().nullable(),
-      embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
+      embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']).optional(),
       provider: z.enum(['instagram', 'tiktok'])
     })
     .openapi('APISubstatus')

@@ -41,6 +41,7 @@ export async function fetchInstagramPageWithWebInfo(
     status: 500,
     html: ''
   };
+  let bestAttempt: { ok: boolean; status: number; html: string } | null = null;
   const attempts: { path: string; httpOk: boolean; status: number; hasWebInfoItem: boolean }[] = [];
   for (const path of paths) {
     const r = await fetchInstagramHtml(path, userAgent, htmlOpts);
@@ -55,7 +56,23 @@ export async function fetchInstagramPageWithWebInfo(
     if (r.ok && item) {
       return { ok: true, status: r.status, html: r.html, item, pathUsed: path };
     }
+    const hasBody = Boolean(r.html && r.html.length > 0);
+    if (hasBody) {
+      if (!bestAttempt) {
+        bestAttempt = r;
+      } else {
+        const b = bestAttempt;
+        if (r.ok && !b.ok) {
+          bestAttempt = r;
+        } else if (r.ok && b.ok) {
+          bestAttempt = r;
+        } else if (!r.ok && !b.ok && r.status > b.status) {
+          bestAttempt = r;
+        }
+      }
+    }
   }
+  const out = bestAttempt ?? last;
   console.error('[instagram] no shortcode web_info after /p and /reel', { shortcode, attempts });
-  return { ok: false, status: last.status, html: last.html, item: null, pathUsed: null };
+  return { ok: false, status: out.status, html: out.html, item: null, pathUsed: null };
 }

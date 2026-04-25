@@ -112,14 +112,7 @@ export function stripTombstones<T extends SocialThread | SocialConversation>(obj
   if ('replies' in obj && obj.replies?.length) {
     for (const item of obj.replies) {
       if (isTombstone(item)) continue;
-      if (
-        typeof item === 'object' &&
-        item !== null &&
-        'type' in item &&
-        (item as { type: string }).type === 'substatus'
-      ) {
-        continue;
-      }
+      if (item.type === 'substatus') continue;
       stripQuotesDeep(item as Statusish);
     }
     (obj as SocialConversation).replies = obj.replies.filter(

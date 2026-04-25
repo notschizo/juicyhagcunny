@@ -18,7 +18,7 @@ describe('instagram extractors', () => {
     const item = extractShortcodeWebInfo(MINIMAL_POST_HTML);
     expect(item).toBeTruthy();
     expect(item?.code).toBe('DXeh-kYiIge');
-    expect(String(item?.pk)).toContain('3881689364048676894');
+    expect(String(item?.pk)).toBe('3881689364048676894');
   });
 
   it('extracts comments connection', () => {

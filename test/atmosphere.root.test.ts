@@ -4,7 +4,7 @@ import { botHeaders } from './helpers/data';
 import harness from './helpers/harness';
 
 const executionCtx = {
-  waitUntil(_promise: Promise<unknown>) {}
+  waitUntil() {}
 };
 
 test('Atmosphere root does not redirect (no trailing-slash 301 loop)', async () => {

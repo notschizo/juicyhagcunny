@@ -29,7 +29,14 @@ atmosphere.use('*', async (c, next) => {
   await next();
 });
 
-atmosphere.use(trimTrailingSlash());
+const trimTrailingSlashMiddleware = trimTrailingSlash();
+atmosphere.use(async (c, next) => {
+  const p = c.req.path;
+  if (p === '/' || p === '') {
+    return next();
+  }
+  return trimTrailingSlashMiddleware(c, next);
+});
 
 const atmosphereRoot = async (c: Context) => {
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {

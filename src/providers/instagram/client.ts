@@ -46,7 +46,11 @@ export async function fetchInstagramCsrfToken(
       })
     );
     return readSetCookieNames(res.headers).get('csrftoken') ?? null;
-  } catch {
+  } catch (err) {
+    console.error('[instagram] fetchInstagramCsrfToken failed', {
+      message: err instanceof Error ? err.message : String(err),
+      name: err instanceof Error ? err.name : undefined
+    });
     return null;
   }
 }
@@ -164,7 +168,12 @@ export async function fetchWebProfileInfo(
       return { ok: false, status: res.status, json: null };
     }
     return { ok: true, status: res.status, json: (await res.json()) as unknown };
-  } catch {
+  } catch (err) {
+    console.error('[instagram] fetchWebProfileInfo failed', {
+      username,
+      message: err instanceof Error ? err.message : String(err),
+      name: err instanceof Error ? err.name : undefined
+    });
     return { ok: false, status: 500, json: null };
   }
 }
@@ -208,7 +217,11 @@ export async function fetchTimelineGraphqlPage(params: {
       return { ok: false, status: res.status, json: null };
     }
     return { ok: true, status: res.status, json: (await res.json()) as unknown };
-  } catch {
+  } catch (err) {
+    console.error('[instagram] fetchTimelineGraphqlPage failed', {
+      message: err instanceof Error ? err.message : String(err),
+      name: err instanceof Error ? err.name : undefined
+    });
     return { ok: false, status: 500, json: null };
   }
 }
@@ -266,7 +279,11 @@ export async function fetchCommentPageGraphql(params: {
       return { ok: false, status: res.status, json: null };
     }
     return { ok: true, status: res.status, json: (await res.json()) as unknown };
-  } catch {
+  } catch (err) {
+    console.error('[instagram] fetchCommentPageGraphql failed', {
+      message: err instanceof Error ? err.message : String(err),
+      name: err instanceof Error ? err.name : undefined
+    });
     return { ok: false, status: 500, json: null };
   }
 }

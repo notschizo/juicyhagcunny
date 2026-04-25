@@ -1,7 +1,7 @@
 import type { SocialConversationInstagram } from '../../realms/api/schemas';
 import { fetchCommentPageGraphql, fetchInstagramCsrfToken } from './client';
 import { decodeCommentCursor, encodeCommentCursor } from './cursors';
-import { extractCommentsConnection } from './extractors';
+import { extractCommentsConnection, extractLsdFromHtml } from './extractors';
 import { fetchInstagramPageWithWebInfo } from './fetch-shortcode-page';
 import {
   extractCommentsFromGraphqlJson,
@@ -73,7 +73,7 @@ export async function constructInstagramConversation(
       : null);
 
   if (!options.cursor) {
-    const replies = mapCommentEdges(conn?.edges, shortcode);
+    const replies = mapCommentEdges(conn?.edges, shortcode, fb.username);
     const bottom =
       mediaPk && hasNext && endCursor
         ? encodeCommentCursor({
@@ -104,6 +104,7 @@ export async function constructInstagramConversation(
   }
 
   const csrf = await fetchInstagramCsrfToken(options.userAgent);
+  const lsd = extractLsdFromHtml(htmlBody) ?? 'a';
   const gql = await fetchCommentPageGraphql({
     mediaId: decoded.mediaId,
     after: decoded.after,
@@ -112,25 +113,30 @@ export async function constructInstagramConversation(
     refererPath: refererForGraphql,
     userAgent: options.userAgent,
     csrfToken: csrf,
-    lsd: 'a'
+    lsd
   });
 
   if (!gql.ok || !gql.json) {
+    console.error('[instagram] constructInstagramConversation comment GraphQL failed', {
+      shortcode,
+      gqlStatus: gql.status,
+      gqlOk: gql.ok
+    });
     return {
       ok: true,
       data: {
-        code: 200,
+        code: 500,
         status,
         thread: [status],
         replies: [],
         author: status.author,
-        cursor: { bottom: null }
+        cursor: { bottom: options.cursor }
       }
     };
   }
 
   const parsed = extractCommentsFromGraphqlJson(gql.json);
-  const replies = parsed ? mapCommentEdges(parsed.edges, shortcode) : [];
+  const replies = parsed ? mapCommentEdges(parsed.edges, shortcode, fb.username) : [];
   const pi = parsed?.page_info;
   const nextBottom =
     pi?.has_next_page && pi.end_cursor

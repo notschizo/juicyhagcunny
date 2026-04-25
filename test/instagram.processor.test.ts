@@ -47,20 +47,29 @@ describe('instagram processor', () => {
         created_at: 1776954000,
         user: { pk: '99', username: 'fan', profile_pic_url: null }
       },
-      'DXeh-kYiIge'
+      'DXeh-kYiIge',
+      'cristiano'
     );
     expect(sub).toBeTruthy();
     expect(sub!.type).toBe('substatus');
     expect(sub!.parent_id).toBe('DXeh-kYiIge');
     expect(sub!.provider).toBe('instagram');
     expect(sub!.replying_to?.status).toBe('DXeh-kYiIge');
+    expect(sub!.replying_to?.screen_name).toBe('cristiano');
   });
 
   it('maps comment edges', () => {
     const edges = [
-      { node: { pk: '1', text: 'a', created_at: 1, user: { pk: '2', username: 'u' } } }
+      {
+        node: {
+          pk: '1',
+          text: 'a',
+          created_at: 1,
+          user: { pk: '2', username: 'u' }
+        }
+      }
     ];
-    const out = mapCommentEdges(edges, 'SC');
+    const out = mapCommentEdges(edges, 'SC', 'postauthor');
     expect(out).toHaveLength(1);
     expect(out[0]!.id).toBe('1');
   });

@@ -78,6 +78,48 @@ function parseTimelineGraphql(json: unknown): {
   };
 }
 
+function nodeShowsVideoInGrid(n: Record<string, unknown> | null | undefined): boolean {
+  if (!n) return false;
+  if (
+    n.is_video ||
+    n.product_type === 'clips' ||
+    n.__typename === 'GraphVideo' ||
+    n.media_type === 2
+  ) {
+    return true;
+  }
+  const carousel = n.carousel_media;
+  if (Array.isArray(carousel)) {
+    for (const c of carousel) {
+      if (c && typeof c === 'object' && nodeShowsVideoInGrid(c as Record<string, unknown>)) {
+        return true;
+      }
+    }
+  }
+  const edgeSide = n.edge_sidecar_to_children as { edges?: unknown[] } | undefined;
+  if (Array.isArray(edgeSide?.edges)) {
+    for (const e of edgeSide.edges) {
+      const nodeCh = (e as { node?: unknown })?.node;
+      if (
+        nodeCh &&
+        typeof nodeCh === 'object' &&
+        nodeShowsVideoInGrid(nodeCh as Record<string, unknown>)
+      ) {
+        return true;
+      }
+    }
+  }
+  const ch = n.children;
+  if (Array.isArray(ch)) {
+    for (const c of ch) {
+      if (c && typeof c === 'object' && nodeShowsVideoInGrid(c as Record<string, unknown>)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function parseFelixGraphql(json: unknown): {
   edges: unknown[];
   page_info: { has_next_page: boolean; end_cursor: string | null };
@@ -142,13 +184,7 @@ async function timelinePageFromGraphql(
     parsed = {
       edges: fallback.edges.filter(e => {
         const n = (e as { node?: Record<string, unknown> }).node;
-        if (!n) return false;
-        return Boolean(
-          n.is_video ||
-          n.product_type === 'clips' ||
-          n.__typename === 'GraphVideo' ||
-          n.media_type === 2
-        );
+        return nodeShowsVideoInGrid(n ?? null);
       }),
       page_info: fallback.page_info
     };

@@ -74,7 +74,7 @@ export const instagramProfileStatusesV2Route = createRoute({
       username: z.string()
     }),
     query: z.object({
-      count: z.coerce.number().int().min(1).max(100).optional().openapi({ default: 20 }),
+      count: z.coerce.number().int().min(1).max(100).default(20).openapi({ default: 20 }),
       cursor: z
         .string()
         .optional()
@@ -110,7 +110,7 @@ export const instagramProfileVideosV2Route = createRoute({
       username: z.string()
     }),
     query: z.object({
-      count: z.coerce.number().int().min(1).max(100).optional().openapi({ default: 20 }),
+      count: z.coerce.number().int().min(1).max(100).default(20).openapi({ default: 20 }),
       cursor: z
         .string()
         .optional()
@@ -150,12 +150,12 @@ export const instagramConversationV2Route = createRoute({
         .openapi({ description: 'Post shortcode or permalink fragment', example: 'DXeh-kYiIge' })
     }),
     query: z.object({
-      sort_order: z.enum(['popular', 'recent']).optional().openapi({ default: 'popular' }),
+      sort_order: z.enum(['popular', 'recent']).default('popular').openapi({ default: 'popular' }),
       cursor: z
         .string()
         .optional()
         .openapi({ description: 'Opaque pagination cursor (`cursor.bottom`)' }),
-      count: z.coerce.number().int().min(1).max(100).optional().openapi({ default: 20 })
+      count: z.coerce.number().int().min(1).max(100).default(20).openapi({ default: 20 })
     })
   },
   responses: {

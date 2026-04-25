@@ -13,6 +13,17 @@ function pickInt(...vals: unknown[]): number {
   return 0;
 }
 
+function pickFloat(...vals: unknown[]): number {
+  for (const v of vals) {
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim() !== '') {
+      const n = Number(v);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return Number.NaN;
+}
+
 function isoFromUnix(sec: number): string {
   if (!Number.isFinite(sec) || sec <= 0) return new Date(0).toISOString();
   return new Date(sec * 1000).toISOString();
@@ -154,7 +165,8 @@ function buildVideo(
 function mediaPkFromNode(node: Record<string, unknown>): string | undefined {
   const pk = node.pk;
   if (typeof pk === 'string' || typeof pk === 'number') {
-    return String(pk).split('_')[0] ?? String(pk);
+    const part = String(pk).split('_')[0];
+    return part || String(pk);
   }
   const id = node.id;
   if (typeof id === 'string') {
@@ -182,12 +194,12 @@ export function instagramNodeToStatus(
   const opic =
     typeof owner.profile_pic_url === 'string' ? owner.profile_pic_url : (ownerFallback.pic ?? null);
   const author = stubAuthorFromIg(oid, ouser, oname, opic, Boolean(owner.is_verified));
-  const taken =
-    pickInt(
-      node.taken_at_timestamp,
-      node.taken_at,
-      (node as { device_timestamp?: number }).device_timestamp
-    ) || Math.floor(Date.now() / 1000);
+  const takenRaw = pickInt(
+    node.taken_at_timestamp,
+    node.taken_at,
+    (node as { device_timestamp?: number }).device_timestamp
+  );
+  const taken = takenRaw > 0 ? takenRaw : 0;
   const likes = pickInt(
     (node.edge_liked_by as { count?: number } | undefined)?.count,
     (node.edge_media_preview_like as { count?: number } | undefined)?.count,
@@ -215,12 +227,14 @@ export function instagramNodeToStatus(
           | undefined;
         const url = (typeof s.video_url === 'string' && s.video_url) || vu?.[0]?.url || '';
         if (url) {
+          const durRaw = pickFloat(s.video_duration);
+          const durationSec = Number.isFinite(durRaw) ? durRaw : 0;
           videos.push(
             buildVideo(
               url,
               pickInt(s.original_width, vu?.[0]?.width, w),
               pickInt(s.original_height, vu?.[0]?.height, h),
-              pickInt(s.video_duration) || 0.001,
+              durationSec,
               typeof s.display_url === 'string' ? s.display_url : undefined
             )
           );
@@ -242,12 +256,14 @@ export function instagramNodeToStatus(
       | undefined;
     const url = (typeof node.video_url === 'string' && node.video_url) || vv?.[0]?.url || '';
     if (url) {
+      const durRaw = pickFloat(node.video_duration);
+      const durationSec = Number.isFinite(durRaw) ? durRaw : 0;
       videos.push(
         buildVideo(
           url,
           pickInt(vv?.[0]?.width, w),
           pickInt(vv?.[0]?.height, h),
-          pickInt(node.video_duration) || 0.001,
+          durationSec,
           typeof node.display_url === 'string' ? node.display_url : undefined
         )
       );
@@ -312,7 +328,8 @@ export function edgeNodeToStatus(
 
 export function commentRecordToSubstatus(
   node: Record<string, unknown>,
-  parentShortcode: string
+  parentShortcode: string,
+  parentAuthorScreenName: string
 ): APISubstatus | null {
   const pk = String(node.pk ?? node.id ?? '');
   if (!pk) return null;
@@ -321,6 +338,7 @@ export function commentRecordToSubstatus(
   const uname = String(user.username ?? 'unknown');
   const text = typeof node.text === 'string' ? node.text : '';
   const created = pickInt(node.created_at, node.created_at_utc);
+  const createdTs = created > 0 ? created : 0;
   const likes = pickInt(
     (node.edge_liked_by as { count?: number } | undefined)?.count,
     node.comment_like_count
@@ -339,30 +357,29 @@ export function commentRecordToSubstatus(
     id: pk,
     url,
     text,
-    created_at: isoFromUnix(created || Math.floor(Date.now() / 1000)),
-    created_timestamp: created || Math.floor(Date.now() / 1000),
+    created_at: isoFromUnix(createdTs),
+    created_timestamp: createdTs,
     likes,
     reposts: 0,
     replies: 0,
     author,
-    media: {},
     raw_text: { text, facets: [] },
     lang: null,
     possibly_sensitive: false,
     replying_to: {
-      screen_name: parentShortcode,
+      screen_name: parentAuthorScreenName,
       status: parentShortcode,
       url: `https://www.instagram.com/p/${encodeURIComponent(parentShortcode)}/`
     },
     source: 'instagram',
-    embed_card: 'summary',
     provider: 'instagram'
   };
 }
 
 export function mapCommentEdges(
   edges: unknown[] | undefined,
-  parentShortcode: string
+  parentShortcode: string,
+  parentAuthorScreenName: string
 ): APISubstatus[] {
   if (!edges?.length) return [];
   const out: APISubstatus[] = [];
@@ -370,7 +387,11 @@ export function mapCommentEdges(
     if (!e || typeof e !== 'object') continue;
     const n = (e as { node?: unknown }).node;
     if (!n || typeof n !== 'object') continue;
-    const s = commentRecordToSubstatus(n as Record<string, unknown>, parentShortcode);
+    const s = commentRecordToSubstatus(
+      n as Record<string, unknown>,
+      parentShortcode,
+      parentAuthorScreenName
+    );
     if (s) out.push(s);
   }
   return out;

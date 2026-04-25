@@ -32,4 +32,30 @@ describe('instagram cursors', () => {
     const enc = encodeCommentCursor(cur);
     expect(decodeCommentCursor(enc)).toEqual(cur);
   });
+
+  it('decodeProfileCursor returns null for bad input', () => {
+    expect(decodeProfileCursor('')).toBeNull();
+    expect(decodeProfileCursor('not-valid-base64!!!')).toBeNull();
+    const junk = btoa('{"v":2,"k":"t"}').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    expect(decodeProfileCursor(junk)).toBeNull();
+  });
+
+  it('decodeCommentCursor returns null for bad or mismatched structure', () => {
+    expect(decodeCommentCursor('')).toBeNull();
+    expect(decodeCommentCursor('!!!')).toBeNull();
+    const wrongV = btoa(
+      JSON.stringify({
+        v: 99,
+        mediaId: '1',
+        shortcode: 'a',
+        sort: 'popular',
+        after: null,
+        count: 1
+      })
+    )
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    expect(decodeCommentCursor(wrongV)).toBeNull();
+  });
 });

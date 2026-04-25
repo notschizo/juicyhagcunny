@@ -131,19 +131,15 @@ export const instagramProfileStatusesAPIRequest: RouteHandler<
     { username },
     () =>
       constructInstagramProfileStatuses(username, {
-        count: q.count ?? 20,
+        count: q.count,
         cursor: q.cursor ?? null,
         userAgent: ua
       }),
     instagramSearch500
   );
-  if (body.code === 400) {
-    setApiHeaders(c);
-    return c.json({ code: 400 as const, message: 'Invalid cursor' }, 400);
-  }
   const { httpStatus, payload } = normalizeApiJsonResponse(
     body,
-    [200, 404, 500] as const,
+    [200, 400, 404, 500] as const,
     'instagramProfileStatusesAPIRequest'
   );
   c.status(httpStatus);
@@ -162,19 +158,15 @@ export const instagramProfileVideosAPIRequest: RouteHandler<
     { username },
     () =>
       constructInstagramProfileVideos(username, {
-        count: q.count ?? 20,
+        count: q.count,
         cursor: q.cursor ?? null,
         userAgent: ua
       }),
     instagramSearch500
   );
-  if (body.code === 400) {
-    setApiHeaders(c);
-    return c.json({ code: 400 as const, message: 'Invalid cursor' }, 400);
-  }
   const { httpStatus, payload } = normalizeApiJsonResponse(
     body,
-    [200, 404, 500] as const,
+    [200, 400, 404, 500] as const,
     'instagramProfileVideosAPIRequest'
   );
   c.status(httpStatus);
@@ -195,8 +187,8 @@ export const instagramConversationAPIRequest: RouteHandler<
     () =>
       constructInstagramConversation(shortcode, {
         cursor: q.cursor ?? null,
-        count: q.count ?? 20,
-        sortOrder: q.sort_order ?? 'popular',
+        count: q.count,
+        sortOrder: q.sort_order,
         userAgent: ua
       }),
     instagramConversationError

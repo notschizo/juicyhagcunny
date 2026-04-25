@@ -10,6 +10,11 @@ const TARGET_KEYS = new Set([
 
 export function extractDataSjsScriptBodies(html: string): string[] {
   const out: string[] = [];
+  /**
+   * Instagram/Meta JSON in these tags escape `</script>` as `<\/script>`, so a real closing tag
+   * will not appear inside the payload. Do not relax this to allow raw `</script>` without a proper
+   * HTML/JSON parser or the match can end too early.
+   */
   /** `type` / `data-sjs` attribute order varies; both must be present on the same tag. */
   const re =
     /<script(?=[^>]*\btype=["']application\/json["'])(?=[^>]*\bdata-sjs)[^>]*>([\s\S]*?)<\/script>/gi;
@@ -20,20 +25,59 @@ export function extractDataSjsScriptBodies(html: string): string[] {
   return out;
 }
 
-export function collectDeepByKey(obj: unknown, key: string, out: unknown[]): void {
+const COLLECT_MAX_DEPTH = 64;
+
+export function collectDeepByKey(
+  obj: unknown,
+  key: string,
+  out: unknown[],
+  currentDepth = 0,
+  seen: WeakSet<object> = new WeakSet()
+): void {
+  if (currentDepth >= COLLECT_MAX_DEPTH) return;
   if (obj === null || obj === undefined) return;
   if (typeof obj !== 'object') return;
   if (Array.isArray(obj)) {
-    for (const item of obj) collectDeepByKey(item, key, out);
+    for (const item of obj) {
+      collectDeepByKey(item, key, out, currentDepth + 1, seen);
+    }
     return;
   }
+  if (seen.has(obj)) return;
+  seen.add(obj);
   const rec = obj as Record<string, unknown>;
   if (Object.prototype.hasOwnProperty.call(rec, key)) {
     out.push(rec[key]);
   }
   for (const v of Object.values(rec)) {
-    collectDeepByKey(v, key, out);
+    collectDeepByKey(v, key, out, currentDepth + 1, seen);
   }
+}
+
+/**
+ * LSD (loaded state / doc token) for GraphQL `lsd` / `X-FB-LSD` from embedded Relay JSON, if present.
+ */
+export function extractLsdFromHtml(html: string): string | null {
+  for (const raw of extractDataSjsScriptBodies(html)) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    for (const k of ['LSD', 'lsd'] as const) {
+      const acc: unknown[] = [];
+      collectDeepByKey(parsed, k, acc);
+      for (const v of acc) {
+        if (typeof v === 'string' && v.length > 0) return v;
+        if (v && typeof v === 'object' && 'token' in (v as object)) {
+          const t = (v as { token?: unknown }).token;
+          if (typeof t === 'string' && t.length > 0) return t;
+        }
+      }
+    }
+  }
+  return null;
 }
 
 export function findRelayBlobs(html: string): unknown[] {
