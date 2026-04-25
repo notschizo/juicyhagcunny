@@ -216,6 +216,7 @@ export function instagramNodeToStatus(
   const h = pickInt(dims.height, node.original_height);
   const photos: APIPhoto[] = [];
   const videos: APIVideo[] = [];
+  const all: (APIPhoto | APIVideo)[] = [];
   const carousel = node.carousel_media;
   if (Array.isArray(carousel) && carousel.length > 0) {
     for (const slide of carousel) {
@@ -229,15 +230,15 @@ export function instagramNodeToStatus(
         if (url) {
           const durRaw = pickFloat(s.video_duration);
           const durationSec = Number.isFinite(durRaw) ? durRaw : 0;
-          videos.push(
-            buildVideo(
-              url,
-              pickInt(s.original_width, vu?.[0]?.width, w),
-              pickInt(s.original_height, vu?.[0]?.height, h),
-              durationSec,
-              typeof s.display_url === 'string' ? s.display_url : undefined
-            )
+          const v = buildVideo(
+            url,
+            pickInt(s.original_width, vu?.[0]?.width, w),
+            pickInt(s.original_height, vu?.[0]?.height, h),
+            durationSec,
+            typeof s.display_url === 'string' ? s.display_url : undefined
           );
+          videos.push(v);
+          all.push(v);
         }
       } else {
         const img =
@@ -246,7 +247,9 @@ export function instagramNodeToStatus(
             ?.url ??
             undefined);
         if (img) {
-          photos.push(buildPhoto(img, pickInt(s.original_width, w), pickInt(s.original_height, h)));
+          const p = buildPhoto(img, pickInt(s.original_width, w), pickInt(s.original_height, h));
+          photos.push(p);
+          all.push(p);
         }
       }
     }
@@ -258,15 +261,15 @@ export function instagramNodeToStatus(
     if (url) {
       const durRaw = pickFloat(node.video_duration);
       const durationSec = Number.isFinite(durRaw) ? durRaw : 0;
-      videos.push(
-        buildVideo(
-          url,
-          pickInt(vv?.[0]?.width, w),
-          pickInt(vv?.[0]?.height, h),
-          durationSec,
-          typeof node.display_url === 'string' ? node.display_url : undefined
-        )
+      const v = buildVideo(
+        url,
+        pickInt(vv?.[0]?.width, w),
+        pickInt(vv?.[0]?.height, h),
+        durationSec,
+        typeof node.display_url === 'string' ? node.display_url : undefined
       );
+      videos.push(v);
+      all.push(v);
     }
   } else {
     const img =
@@ -284,10 +287,11 @@ export function instagramNodeToStatus(
         | undefined
     )?.candidates?.[0];
     if (img) {
-      photos.push(buildPhoto(img, pickInt(cand?.width, w), pickInt(cand?.height, h)));
+      const p = buildPhoto(img, pickInt(cand?.width, w), pickInt(cand?.height, h));
+      photos.push(p);
+      all.push(p);
     }
   }
-  const all: (APIPhoto | APIVideo)[] = [...photos, ...videos];
   const mediaPk = mediaPkFromNode(node);
   return {
     type: 'status',
