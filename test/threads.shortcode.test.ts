@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeThreadsPostId, threadsShortcodeToMediaId } from '../src/providers/threads/shortcode';
+import {
+  normalizeThreadsPostId,
+  threadsShortcodeToMediaId
+} from '../src/providers/threads/shortcode';
 
 describe('normalizeThreadsPostId', () => {
   it('extracts shortcode from /@user/post/ URL', () => {

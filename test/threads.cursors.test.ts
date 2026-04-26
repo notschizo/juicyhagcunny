@@ -26,7 +26,7 @@ describe('threads conversation cursor', () => {
     });
   });
 
-  it('rejects wrong shortcode on decode mismatch check is caller responsibility', () => {
+  it('returns encoded shortcode unchanged (caller must validate mismatch)', () => {
     const cur = decodeThreadsConversationCursor(
       encodeThreadsConversationCursor({
         v: 1,

@@ -1,11 +1,11 @@
 import type { SocialConversation } from '../../types/apiStatus';
-import { fetchThreadsPostPage, fetchThreadsSession } from './client';
+import { fetchThreadsPostPage, fetchThreadsSession, type ThreadsSession } from './client';
 import { decodeThreadsConversationCursor, encodeThreadsConversationCursor } from './cursors';
 import { buildThreadsTombstone, threadsPostToStatus, xdtThreadEdgeToSubstatus } from './processor';
 import { normalizeThreadsPostId, threadsShortcodeToMediaId } from './shortcode';
 
 function extractPostPage(json: unknown): {
-  edges: { node?: Record<string, unknown> }[];
+  edges: { node?: Record<string, unknown>; cursor?: string }[];
   page_info: { has_next_page?: boolean; end_cursor?: string | null };
 } {
   const data = (json as { data?: { data?: Record<string, unknown> } })?.data?.data;
@@ -13,7 +13,7 @@ function extractPostPage(json: unknown): {
     return { edges: [], page_info: {} };
   }
   const edges = Array.isArray(data.edges)
-    ? (data.edges as { node?: Record<string, unknown> }[])
+    ? (data.edges as { node?: Record<string, unknown>; cursor?: string }[])
     : [];
   const pi = data.page_info as Record<string, unknown> | undefined;
   return {
@@ -88,7 +88,7 @@ export async function constructThreadsConversation(
     mediaId,
     sortOrder: sortGraphql,
     after,
-    first: null,
+    first: count + 1,
     session,
     userAgent: options.userAgent
   });
@@ -158,24 +158,39 @@ export async function constructThreadsConversation(
   const threadPrefix =
     chainStatuses.length > 1 ? chainStatuses.slice(0, -1) : ([] as typeof chainStatuses);
 
-  const replyEdges = edges.slice(1);
+  const replyEdgesAll = edges.slice(1);
+  const truncated = replyEdgesAll.length > count;
+  const replyEdges = replyEdgesAll.slice(0, count);
   const replies = replyEdges
     .map(e => xdtThreadEdgeToSubstatus(e as Record<string, unknown>, shortcode, ownerFb.username))
-    .filter((r): r is NonNullable<typeof r> => Boolean(r))
-    .slice(0, count);
+    .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
-  const hasNext = Boolean(page_info.has_next_page) && Boolean(page_info.end_cursor);
-  const bottom =
-    hasNext && page_info.end_cursor
-      ? encodeThreadsConversationCursor({
-          v: 1,
-          postId: mediaId,
-          shortcode,
-          sort: sortGraphql,
-          after: page_info.end_cursor,
-          count
-        })
+  const lastSurfacedEdge = replyEdges[replyEdges.length - 1];
+  const lastSurfacedCursor =
+    lastSurfacedEdge && typeof lastSurfacedEdge.cursor === 'string'
+      ? lastSurfacedEdge.cursor
       : null;
+
+  const hasNextPage = Boolean(page_info.has_next_page);
+  let afterForBottom: string | null = null;
+  if (hasNextPage) {
+    if (!truncated && page_info.end_cursor) {
+      afterForBottom = page_info.end_cursor;
+    } else if (truncated && lastSurfacedCursor) {
+      afterForBottom = lastSurfacedCursor;
+    }
+  }
+
+  const bottom = afterForBottom
+    ? encodeThreadsConversationCursor({
+        v: 1,
+        postId: mediaId,
+        shortcode,
+        sort: sortGraphql,
+        after: afterForBottom,
+        count
+      })
+    : null;
 
   return {
     ok: true,

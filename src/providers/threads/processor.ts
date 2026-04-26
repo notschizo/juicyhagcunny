@@ -111,16 +111,11 @@ function mediaPkFromPost(post: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
-/** Build display `text` + `facets` from `text_post_app_info.text_fragments` (fallback: `caption.text`). */
-export function textAndFacetsFromThreadsPost(post: Record<string, unknown>): {
+/** Concatenated body + facets from `post.text_post_app_info.text_fragments.fragments`. */
+function textAndFacetsFromThreadsTextFragments(post: Record<string, unknown>): {
   text: string;
   facets: APIFacet[];
 } {
-  const cap = post.caption;
-  if (cap && typeof cap === 'object' && typeof (cap as { text?: unknown }).text === 'string') {
-    const t = (cap as { text: string }).text;
-    if (t.length > 0) return { text: t, facets: [] };
-  }
   const tpi = post.text_post_app_info as Record<string, unknown> | undefined;
   const frags = (tpi?.text_fragments as { fragments?: unknown[] } | undefined)?.fragments ?? [];
   let text = '';
@@ -175,6 +170,23 @@ export function textAndFacetsFromThreadsPost(post: Record<string, unknown>): {
     }
   }
   return { text, facets };
+}
+
+/** Prefer `text_post_app_info.text_fragments`; fall back to `caption.text` with empty facets. */
+export function textAndFacetsFromThreadsPost(post: Record<string, unknown>): {
+  text: string;
+  facets: APIFacet[];
+} {
+  const fromFragments = textAndFacetsFromThreadsTextFragments(post);
+  if (fromFragments.text.length > 0) {
+    return fromFragments;
+  }
+  const cap = post.caption;
+  if (cap && typeof cap === 'object' && typeof (cap as { text?: unknown }).text === 'string') {
+    const t = (cap as { text: string }).text;
+    if (t.length > 0) return { text: t, facets: [] };
+  }
+  return { text: '', facets: [] };
 }
 
 function mediaContainerFromThreadsPost(post: Record<string, unknown>): {
@@ -381,11 +393,10 @@ export function xdtThreadEdgeToSubstatus(
     pic: null
   });
   if (!st) return null;
-  const pk = String(post.pk ?? post.id ?? st.id);
   return {
     type: 'substatus',
     parent_id: parentShortcode,
-    id: pk,
+    id: st.id,
     url: st.url,
     text: st.text,
     created_at: st.created_at,
@@ -405,27 +416,33 @@ export function xdtThreadEdgeToSubstatus(
     },
     source: 'threads',
     embed_card: st.embed_card,
-    provider: 'threads'
+    provider: 'threads',
+    media_pk: st.media_pk
   };
 }
 
-function biographyFromProfileUser(user: Record<string, unknown>): string {
-  if (typeof user.biography === 'string' && user.biography.length > 0) return user.biography;
+function biographyFromProfileUser(user: Record<string, unknown>): {
+  text: string;
+  facets: APIFacet[];
+} {
+  if (typeof user.biography === 'string' && user.biography.length > 0) {
+    return { text: user.biography, facets: [] };
+  }
   const tb = user.text_app_biography as Record<string, unknown> | undefined;
   if (tb?.text_fragments) {
     return textAndFacetsFromThreadsPost({
       caption: null,
       text_post_app_info: { text_fragments: tb.text_fragments }
-    }).text;
+    });
   }
-  return '';
+  return { text: '', facets: [] };
 }
 
 export function userFromThreadsProfilePayload(user: Record<string, unknown>): APIUser | null {
   const id = String(user.pk ?? user.id ?? '');
   const username = String(user.username ?? '');
   if (!id || !username) return null;
-  const bio = biographyFromProfileUser(user);
+  const { text, facets } = biographyFromProfileUser(user);
   const picHd = Array.isArray(user.hd_profile_pic_versions)
     ? (user.hd_profile_pic_versions as { url?: string }[])
         .map(x => x?.url)
@@ -443,8 +460,8 @@ export function userFromThreadsProfilePayload(user: Record<string, unknown>): AP
     screen_name: username.replace(/^@/, ''),
     avatar_url: pic,
     banner_url: null,
-    description: bio,
-    raw_description: { text: bio, facets: [] },
+    description: text,
+    raw_description: { text, facets },
     location: '',
     url: `https://www.threads.com/@${encodeURIComponent(username.replace(/^@/, ''))}/`,
     protected: Boolean(user.text_post_app_is_private),

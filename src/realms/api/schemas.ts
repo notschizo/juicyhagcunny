@@ -882,6 +882,8 @@ export type APISubstatus = {
   source: string | null;
   embed_card?: 'tweet' | 'summary' | 'summary_large_image' | 'player';
   provider: 'instagram' | 'tiktok' | 'threads';
+  /** Provider-native media / comment pk when `id` is a public shortcode or other surface id. */
+  media_pk?: string;
 };
 
 export const APISubstatusSchema: z.ZodType<APISubstatus> = z.lazy(() =>
@@ -912,7 +914,11 @@ export const APISubstatusSchema: z.ZodType<APISubstatus> = z.lazy(() =>
       replying_to: APIReplyingToSchema.nullable().optional(),
       source: z.string().nullable(),
       embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']).optional(),
-      provider: z.enum(['instagram', 'tiktok', 'threads'])
+      provider: z.enum(['instagram', 'tiktok', 'threads']),
+      media_pk: z.string().optional().openapi({
+        description:
+          'Underlying media or comment pk from the provider when `id` is a shortcode or other canonical surface id.'
+      })
     })
     .openapi('APISubstatus')
 );

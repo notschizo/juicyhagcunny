@@ -47,6 +47,50 @@ function postFromTimelineEdge(edge: unknown): Record<string, unknown> | null {
   return last.post ?? null;
 }
 
+function cursorFromTimelineEdge(edge: unknown): string | null {
+  const c = (edge as { cursor?: unknown })?.cursor;
+  return typeof c === 'string' && c.length > 0 ? c : null;
+}
+
+/** Build up to `count` statuses and the Relay `after` cursor for the next page (no skipped edges). */
+function profileTimelinePage(
+  edges: unknown[],
+  count: number,
+  ownerFb: { id: string; username: string; pic: string | null },
+  pageInfo: { has_next_page: boolean; end_cursor: string | null }
+): {
+  results: NonNullable<ReturnType<typeof threadsPostToStatus>>[];
+  nextAfter: string | null;
+} {
+  const results: NonNullable<ReturnType<typeof threadsPostToStatus>>[] = [];
+  let filledToCount = false;
+  let innerAfter: string | null = null;
+
+  for (const e of edges) {
+    const post = postFromTimelineEdge(e);
+    if (!post) continue;
+    const s = threadsPostToStatus(post, ownerFb);
+    if (!s) continue;
+    results.push(s);
+    if (results.length === count) {
+      filledToCount = true;
+      innerAfter = cursorFromTimelineEdge(e);
+      break;
+    }
+  }
+
+  let nextAfter: string | null = null;
+  if (pageInfo.has_next_page && pageInfo.end_cursor) {
+    if (filledToCount && innerAfter) {
+      nextAfter = innerAfter;
+    } else {
+      nextAfter = pageInfo.end_cursor;
+    }
+  }
+
+  return { results, nextAfter };
+}
+
 export async function constructThreadsProfile(
   username: string,
   userAgent: string | undefined
@@ -132,7 +176,7 @@ export async function constructThreadsProfileStatuses(
   const ownerFb = { id: userId, username: uname, pic: null as string | null };
   const tl = await fetchThreadsProfileTimeline({
     userId,
-    first: Math.max(count, 12),
+    first: count,
     after,
     session,
     userAgent: options.userAgent
@@ -143,21 +187,15 @@ export async function constructThreadsProfileStatuses(
   }
 
   const { edges, page_info } = parseProfileTimeline(tl.json);
-  const results = edges
-    .map(e => {
-      const post = postFromTimelineEdge(e);
-      return post ? threadsPostToStatus(post, ownerFb) : null;
-    })
-    .filter((s): s is NonNullable<typeof s> => Boolean(s))
-    .slice(0, count);
+  const { results, nextAfter } = profileTimelinePage(edges, count, ownerFb, page_info);
 
   const bottom =
-    page_info.has_next_page && page_info.end_cursor
+    nextAfter != null
       ? encodeThreadsProfileTimelineCursor({
           v: 1,
           userId,
           username: uname,
-          after: page_info.end_cursor,
+          after: nextAfter,
           count
         })
       : null;
