@@ -4,8 +4,6 @@
 
 ### Embed videos, polls, quotes, translations, & more on Discord, Telegram, and others!
 
-![][icons]
-
 [![Crowdin][crowdinbadge]][crowdin]
 [![esbuild][buildbadge]][build]
 [![Tests][testsbadge]][tests]
@@ -14,7 +12,6 @@
 
 <!-- Links & Badges -->
 
-[icons]: https://skillicons.dev/icons?i=typescript,workers
 [build]: https://github.com/FxEmbed/FxEmbed/actions/workflows/build.yml
 [buildbadge]: https://github.com/FxEmbed/FxEmbed/actions/workflows/build.yml/badge.svg
 [tests]: https://github.com/FxEmbed/FxEmbed/actions/workflows/tests.yml
