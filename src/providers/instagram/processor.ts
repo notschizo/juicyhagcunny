@@ -156,7 +156,7 @@ function buildVideo(
     url,
     width: w || 1,
     height: h || 1,
-    duration: durationSec > 0 ? durationSec : 0.001,
+    duration: durationSec > 0 ? durationSec : 0,
     formats: [{ url, width: w || undefined, height: h || undefined }],
     thumbnail_url: thumb ?? null
   };
