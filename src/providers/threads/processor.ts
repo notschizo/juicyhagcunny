@@ -339,10 +339,11 @@ export function threadsPostToStatus(
       ? {
           screen_name: String(replyTo.username ?? ''),
           status: String(replyTo.pk ?? replyTo.id ?? ''),
-          url:
-            typeof replyTo.username === 'string'
-              ? `https://www.threads.com/@${encodeURIComponent(String(replyTo.username))}/`
-              : undefined
+          ...(typeof replyTo.username === 'string'
+            ? {
+                profile_url: `https://www.threads.com/@${encodeURIComponent(String(replyTo.username))}/`
+              }
+            : {})
         }
       : null;
 
