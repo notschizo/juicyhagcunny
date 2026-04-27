@@ -1,10 +1,15 @@
 {
   "name": "fxembed",
   "version": "2.0.0",
+  "private": true,
   "description": "Embed X/Twitter and Bluesky videos, polls, and more on Discord and Telegram",
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "dist/worker.js",
   "scripts": {
-    "build": "node esbuild.config.mjs",
+    "build:atmosphere": "npm run build -w @fxembed/atmosphere",
+    "build": "npm run build:atmosphere && node esbuild.config.mjs",
     "build-local": "node esbuild.config.mjs --no-sentry-upload",
     "deploy": "wrangler deploy --no-bundle",
     "log": "wrangler tail",
@@ -12,8 +17,9 @@
     "dev": "wrangler dev --local",
     "reload": "wrangler deploy --no-bundle && wrangler tail",
     "prettier": "prettier --write .",
-    "lint:eslint": "eslint --max-warnings=0 src",
+    "lint:eslint": "eslint --max-warnings=0 src && npm run lint:eslint -w @fxembed/atmosphere",
     "test": "vitest",
+    "openapi:atmosphere": "npx openapi-typescript https://api.fxtwitter.com/2/openapi.json -o packages/atmosphere/src/relay/generated/fxtwitter-paths.ts && npx openapi-typescript https://api.fxbsky.app/2/openapi.json -o packages/atmosphere/src/relay/generated/fxbsky-paths.ts",
     "credentials:strip": "node tools/stripcredentials.mjs",
     "credentials:add-csrf": "node tools/add_csrf.mjs",
     "credentials:encrypt": "node tools/credential-tools.mjs encrypt",
@@ -51,6 +57,7 @@
     "wrangler": "^4.85.0"
   },
   "dependencies": {
+    "@fxembed/atmosphere": "*",
     "@hono/sentry": "^1.2.2",
     "@hono/zod-openapi": "^1.3.0",
     "cheerio": "^1.2.0",

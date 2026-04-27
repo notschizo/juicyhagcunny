@@ -3,7 +3,7 @@ import {
   parseTrendsFromGenericTimelineInstructions,
   pickExploreTimelineId,
   timelineTrendToApiTrend
-} from '../src/providers/twitter/trends';
+} from '@fxembed/atmosphere/providers/twitter/trends';
 
 type TwitterExplorePageResponse = Parameters<typeof pickExploreTimelineId>[0];
 

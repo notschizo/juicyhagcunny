@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupConsecutiveSelfReplies } from '../src/providers/bluesky/profileStatuses';
+import { groupConsecutiveSelfReplies } from '@fxembed/atmosphere/providers/bluesky/profileStatuses';
 
 const postView = (
   uri: string,

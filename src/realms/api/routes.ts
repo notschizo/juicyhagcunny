@@ -3,7 +3,7 @@ import { TWITTER_NUMERIC_STATUS_ID_PATTERN } from '../../helpers/utils';
 import {
   PUBLIC_EXPLORE_TIMELINE_KINDS,
   type PublicExploreTimelineKind
-} from '../../providers/twitter/trends';
+} from '@fxembed/atmosphere/providers/twitter/trends';
 import {
   APIProfileRelationshipListSchema,
   APIUserListResultsSchema,

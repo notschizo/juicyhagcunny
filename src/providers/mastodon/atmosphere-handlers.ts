@@ -20,13 +20,23 @@ import {
   mastodonStatusV2Route,
   mastodonThreadV2Route
 } from './atmosphere-routes';
-import { constructMastodonConversation, constructMastodonThread } from './conversation';
-import { mastodonUserProfileAPI } from './profile';
-import { mastodonProfileFollowersAPI, mastodonProfileFollowingAPI } from './profileFollowers';
-import { mastodonProfileMediaAPI, mastodonProfileStatusesAPI } from './profileStatuses';
-import { mastodonSearchAPI } from './search';
-import { mastodonStatusLikesAPI } from './statusLikes';
-import { mastodonStatusRepostsAPI } from './statusReposts';
+import {
+  constructMastodonConversation,
+  constructMastodonThread
+} from '@fxembed/atmosphere/providers/mastodon/conversation';
+import { mastodonUserProfileAPI } from '@fxembed/atmosphere/providers/mastodon/profile';
+import {
+  mastodonProfileFollowersAPI,
+  mastodonProfileFollowingAPI
+} from '@fxembed/atmosphere/providers/mastodon/profileFollowers';
+import {
+  mastodonProfileMediaAPI,
+  mastodonProfileStatusesAPI
+} from '@fxembed/atmosphere/providers/mastodon/profileStatuses';
+import { mastodonSearchAPI } from '@fxembed/atmosphere/providers/mastodon/search';
+import { mastodonStatusLikesAPI } from '@fxembed/atmosphere/providers/mastodon/statusLikes';
+import { mastodonStatusRepostsAPI } from '@fxembed/atmosphere/providers/mastodon/statusReposts';
+import { mastodonBuildHostFromContext } from './build-host-adapter';
 
 const setApiHeaders = (c: Context, options?: { skipContentType?: boolean }) => {
   for (const [header, value] of Object.entries(Constants.API_RESPONSE_HEADERS)) {
@@ -40,7 +50,8 @@ const setApiHeaders = (c: Context, options?: { skipContentType?: boolean }) => {
 export const mastodonStatusAPIRequest: RouteHandler<typeof mastodonStatusV2Route> = async c => {
   const { domain, id } = c.req.valid('param');
   const { lang } = c.req.valid('query');
-  const processedResponse = await constructMastodonThread(id, domain, false, c, lang);
+  const host = mastodonBuildHostFromContext(c);
+  const processedResponse = await constructMastodonThread(id, domain, false, host, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500] as const,
@@ -56,15 +67,10 @@ export const mastodonStatusRepostsAPIRequest: RouteHandler<
 > = async c => {
   const { domain, id } = c.req.valid('param');
   const query = c.req.valid('query');
-  const response = await mastodonStatusRepostsAPI(
-    id,
-    domain,
-    {
-      count: query.count ?? 20,
-      cursor: query.cursor ?? null
-    },
-    c
-  );
+  const response = await mastodonStatusRepostsAPI(id, domain, {
+    count: query.count ?? 20,
+    cursor: query.cursor ?? null
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 401, 404, 500] as const,
@@ -80,15 +86,10 @@ export const mastodonStatusLikesAPIRequest: RouteHandler<
 > = async c => {
   const { domain, id } = c.req.valid('param');
   const query = c.req.valid('query');
-  const response = await mastodonStatusLikesAPI(
-    id,
-    domain,
-    {
-      count: query.count ?? 20,
-      cursor: query.cursor ?? null
-    },
-    c
-  );
+  const response = await mastodonStatusLikesAPI(id, domain, {
+    count: query.count ?? 20,
+    cursor: query.cursor ?? null
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 401, 404, 500] as const,
@@ -102,7 +103,8 @@ export const mastodonStatusLikesAPIRequest: RouteHandler<
 export const mastodonThreadAPIRequest: RouteHandler<typeof mastodonThreadV2Route> = async c => {
   const { domain, id } = c.req.valid('param');
   const { lang } = c.req.valid('query');
-  const processedResponse = await constructMastodonThread(id, domain, true, c, lang);
+  const host = mastodonBuildHostFromContext(c);
+  const processedResponse = await constructMastodonThread(id, domain, true, host, lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500] as const,
@@ -118,7 +120,8 @@ export const mastodonConversationAPIRequest: RouteHandler<
 > = async c => {
   const { domain, id } = c.req.valid('param');
   const query = c.req.valid('query');
-  const result = await constructMastodonConversation(id, domain, c, {
+  const host = mastodonBuildHostFromContext(c);
+  const result = await constructMastodonConversation(id, domain, host, {
     rankingMode: query.ranking_mode ?? 'likes',
     cursor: query.cursor ?? null,
     count: query.count ?? 20,
@@ -142,7 +145,8 @@ export const mastodonConversationAPIRequest: RouteHandler<
 export const mastodonSearchAPIRequest: RouteHandler<typeof mastodonSearchV2Route> = async c => {
   const { domain } = c.req.valid('param');
   const query = c.req.valid('query');
-  const searchResponse = await mastodonSearchAPI(domain, c, {
+  const host = mastodonBuildHostFromContext(c);
+  const searchResponse = await mastodonSearchAPI(domain, host, {
     q: query.q,
     feed: query.feed ?? 'latest',
     count: query.count ?? 30,
@@ -161,7 +165,7 @@ export const mastodonSearchAPIRequest: RouteHandler<typeof mastodonSearchV2Route
 
 export const mastodonProfileAPIRequest: RouteHandler<typeof mastodonProfileV2Route> = async c => {
   const { domain, handle } = c.req.valid('param');
-  const processedResponse = await mastodonUserProfileAPI(handle, domain, c);
+  const processedResponse = await mastodonUserProfileAPI(handle, domain);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500] as const,
@@ -177,15 +181,10 @@ export const mastodonProfileFollowersAPIRequest: RouteHandler<
 > = async c => {
   const { domain, handle } = c.req.valid('param');
   const query = c.req.valid('query');
-  const response = await mastodonProfileFollowersAPI(
-    handle,
-    domain,
-    {
-      count: query.count ?? 20,
-      cursor: query.cursor ?? null
-    },
-    c
-  );
+  const response = await mastodonProfileFollowersAPI(handle, domain, {
+    count: query.count ?? 20,
+    cursor: query.cursor ?? null
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -201,15 +200,10 @@ export const mastodonProfileFollowingAPIRequest: RouteHandler<
 > = async c => {
   const { domain, handle } = c.req.valid('param');
   const query = c.req.valid('query');
-  const response = await mastodonProfileFollowingAPI(
-    handle,
-    domain,
-    {
-      count: query.count ?? 20,
-      cursor: query.cursor ?? null
-    },
-    c
-  );
+  const response = await mastodonProfileFollowingAPI(handle, domain, {
+    count: query.count ?? 20,
+    cursor: query.cursor ?? null
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -225,6 +219,7 @@ export const mastodonProfileMediaAPIRequest: RouteHandler<
 > = async c => {
   const { domain, handle } = c.req.valid('param');
   const query = c.req.valid('query');
+  const host = mastodonBuildHostFromContext(c);
   const mediaResponse = await mastodonProfileMediaAPI(
     handle,
     domain,
@@ -233,7 +228,7 @@ export const mastodonProfileMediaAPIRequest: RouteHandler<
       cursor: query.cursor ?? null,
       language: query.lang
     },
-    c
+    host
   );
   const { httpStatus, payload } = normalizeApiJsonResponse(
     mediaResponse,
@@ -256,6 +251,7 @@ export const mastodonProfileStatusesAPIRequest = (async (
   const query = c.req.valid('query');
   const withReplies = isParamTruthy(query.with_replies ?? c.req.query('withReplies'));
 
+  const host = mastodonBuildHostFromContext(c);
   const statusesResponse = await mastodonProfileStatusesAPI(
     handle,
     domain,
@@ -266,7 +262,7 @@ export const mastodonProfileStatusesAPIRequest = (async (
       language: query.lang,
       since: query.since
     },
-    c
+    host
   );
 
   if ('noContent' in statusesResponse && statusesResponse.noContent) {

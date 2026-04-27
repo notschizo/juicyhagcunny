@@ -1,7 +1,8 @@
 import { Context } from 'hono';
 import { Constants } from './constants';
 import { Strings } from './strings';
-import { userAPI } from './providers/twitter/profile';
+import { userAPI } from '@fxembed/atmosphere/providers/twitter/profile';
+import { twitterBuildHostFromContext } from './providers/twitter/build-host-adapter';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 import { getBranding } from './helpers/branding';
 import { InputFlags } from './types/types';
@@ -30,7 +31,7 @@ export const handleProfile = async (
   flags: InputFlags
 ): Promise<Response> => {
   console.log('flags', JSON.stringify(flags));
-  const api = await userAPI(username, c, true);
+  const api = await userAPI(username, twitterBuildHostFromContext(c), true);
   const user = api?.user as APIUser;
 
   /* Catch this request if it's an API response */

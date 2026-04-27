@@ -7,6 +7,62 @@ import { rewriteFramesIntegration } from 'toucan-js';
 
 import { Strings } from './strings';
 import { Constants } from './constants';
+import {
+  setBlueskyProviderEnv,
+  setBlueskyProxyRuntime
+} from '@fxembed/atmosphere/providers/bluesky-runtime';
+import { setMastodonProviderEnv } from '@fxembed/atmosphere/providers/mastodon-runtime';
+import {
+  setTwitterProviderEnv,
+  setTwitterProxyRuntime
+} from '@fxembed/atmosphere/providers/twitter-runtime';
+import * as proxyCreds from './providers/twitter/proxy/credentials';
+
+setBlueskyProviderEnv({
+  apiRoot: Constants.BLUESKY_API_ROOT,
+  webRoot: Constants.BLUESKY_ROOT,
+  videoBase: Constants.BLUESKY_VIDEO_BASE,
+  mosaicBskyDomainList: Constants.MOSAIC_BSKY_DOMAIN_LIST,
+  polyglotDomainList: Constants.POLYGLOT_DOMAIN_LIST
+});
+
+setBlueskyProxyRuntime({
+  initCredentials: proxyCreds.initCredentials,
+  hasBundledEncryptedCredentials: proxyCreds.hasBundledEncryptedCredentials,
+  hasBlueskyProxyAccounts: proxyCreds.hasBlueskyProxyAccounts,
+  getShuffledBlueskyAccounts: proxyCreds.getShuffledBlueskyAccounts,
+  blueskyProxyServiceHostname: proxyCreds.blueskyProxyServiceHostname
+});
+
+setMastodonProviderEnv({
+  userAgent: Constants.FRIENDLY_USER_AGENT,
+  mosaicDomainList: Constants.MOSAIC_DOMAIN_LIST,
+  polyglotDomainList: Constants.POLYGLOT_DOMAIN_LIST
+});
+
+setTwitterProviderEnv({
+  apiRoot: Constants.TWITTER_API_ROOT,
+  webRoot: Constants.TWITTER_ROOT,
+  friendlyUserAgent: Constants.FRIENDLY_USER_AGENT,
+  guestBearerToken: Constants.GUEST_BEARER_TOKEN,
+  baseHeaders: Constants.BASE_HEADERS,
+  guestTokenMaxAge: Constants.GUEST_TOKEN_MAX_AGE,
+  mosaicDomainList: Constants.MOSAIC_DOMAIN_LIST,
+  mosaicBskyDomainList: Constants.MOSAIC_BSKY_DOMAIN_LIST,
+  polyglotDomainList: Constants.POLYGLOT_DOMAIN_LIST,
+  apiHostList: Constants.API_HOST_LIST,
+  videoBase: Constants.TWITTER_VIDEO_BASE,
+  gifTranscodeDomainList: Constants.GIF_TRANSCODE_DOMAIN_LIST,
+  oldEmbedDomains: Constants.OLD_EMBED_DOMAINS,
+  blueskyApiHostList: Constants.BLUESKY_API_HOST_LIST
+});
+
+setTwitterProxyRuntime({
+  initCredentials: proxyCreds.initCredentials,
+  hasBundledEncryptedCredentials: proxyCreds.hasBundledEncryptedCredentials,
+  hasDecryptedCredentials: proxyCreds.hasDecryptedCredentials,
+  getRandomTwitterAccount: proxyCreds.getRandomTwitterAccount
+});
 import { api } from './realms/api/router';
 import { twitter } from './realms/twitter/router';
 import { cacheMiddleware } from './caches';

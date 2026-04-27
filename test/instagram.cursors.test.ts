@@ -4,7 +4,7 @@ import {
   decodeProfileCursor,
   encodeCommentCursor,
   encodeProfileCursor
-} from '../src/providers/instagram/cursors';
+} from '@fxembed/atmosphere/providers/instagram/cursors';
 
 describe('instagram cursors', () => {
   it('roundtrips profile cursor', () => {

@@ -4,7 +4,8 @@ import type { APIBlueskyStatus } from '../../../realms/api/schemas';
 import {
   blueskyProfileMediaAPIPaginated,
   blueskyProfileStatusesAPIPaginated
-} from '../../../providers/bluesky/profileStatuses';
+} from '@fxembed/atmosphere/providers/bluesky/profileStatuses';
+import { blueskyBuildHostFromContext } from '../../../providers/bluesky/build-host-adapter';
 import { isParamTruthy } from '../../../helpers/utils';
 import {
   statusesToFeedItems,
@@ -151,14 +152,19 @@ async function serveFeed(
     apiResult = await blueskyProfileStatusesAPIPaginated(
       handle,
       q.count,
-      c,
+      blueskyBuildHostFromContext(c),
       q.withReplies,
       q.language
     );
   } else {
     const q = parseMediaFeedQuery(c);
     omitSensitive = q.safe;
-    apiResult = await blueskyProfileMediaAPIPaginated(handle, q.count, c, q.language);
+    apiResult = await blueskyProfileMediaAPIPaginated(
+      handle,
+      q.count,
+      blueskyBuildHostFromContext(c),
+      q.language
+    );
   }
 
   const meta = buildMeta(c, handle, kind, apiResult.results);

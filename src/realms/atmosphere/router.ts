@@ -10,7 +10,7 @@ import { apiOpenapiValidationHook } from '../api/openapi-validation-hook';
 import { jsonAfterNormalize, normalizeApiJsonResponse } from '../api/normalizeApiJsonResponse';
 import { SocialThreadSchema } from '../api/schemas';
 import type { SocialThread } from '../../types/apiStatus';
-import { constructTikTokVideo } from '../../providers/tiktok/conversation';
+import { constructTikTokVideo } from '@fxembed/atmosphere/providers/tiktok/conversation';
 import { registerInstagramAtmosphereRoutes } from '../../providers/instagram/atmosphere-register';
 import { registerMastodonAtmosphereRoutes } from '../../providers/mastodon/atmosphere-register';
 import { registerThreadsAtmosphereRoutes } from '../../providers/threads/atmosphere-register';

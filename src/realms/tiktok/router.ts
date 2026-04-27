@@ -5,7 +5,10 @@ import { tiktokVideoRequest } from './routes/video';
 import { oembed } from './routes/oembed';
 import { tiktokVideoProxy, tiktokVideoProxyOptions } from './routes/proxy';
 import { trimTrailingSlash } from 'hono/trailing-slash';
-import { constructTikTokVideo, fetchTikTokVideo } from '../../providers/tiktok/conversation';
+import {
+  constructTikTokVideo,
+  fetchTikTokVideo
+} from '@fxembed/atmosphere/providers/tiktok/conversation';
 import { versionRoute } from '../common/version';
 
 export const tiktok = new Hono();

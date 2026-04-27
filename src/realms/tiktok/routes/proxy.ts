@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import { fetchTikTokVideo } from '../../../providers/tiktok/conversation';
+import { fetchTikTokVideo } from '@fxembed/atmosphere/providers/tiktok/conversation';
 import { generateUserAgent } from '../../../helpers/useragent';
 import { ContentfulStatusCode } from 'hono/utils/http-status';
 

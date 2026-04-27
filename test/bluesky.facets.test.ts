@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { blueskyFacetsToApiFacets } from '../src/providers/bluesky/facets';
+import { blueskyFacetsToApiFacets } from '@fxembed/atmosphere/providers/bluesky/facets';
 
 test('blueskyFacetsToApiFacets maps link facets to UTF-16 indices', () => {
   const text = 'hello https://ex.com end';

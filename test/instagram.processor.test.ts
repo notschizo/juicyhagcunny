@@ -4,7 +4,7 @@ import {
   fullUserFromWebProfile,
   instagramNodeToStatus,
   mapCommentEdges
-} from '../src/providers/instagram/processor';
+} from '@fxembed/atmosphere/providers/instagram/processor';
 
 describe('instagram processor', () => {
   const ownerFb = {

@@ -11,10 +11,12 @@ import { getSocialProof } from '../helpers/socialproof';
 import { renderPhoto } from '../render/photo';
 import { renderVideo } from '../render/video';
 import { renderInstantView } from '../render/instantview';
-import { constructTwitterThread } from '../providers/twitter/conversation';
+import { constructTwitterThread } from '@fxembed/atmosphere/providers/twitter/conversation';
+import { twitterBuildHostFromContext } from '../providers/twitter/build-host-adapter';
 import { Experiment, experimentCheck } from '../experiments';
 import translationResources from '../../i18n/resources';
-import { constructBlueskyThread } from '../providers/bluesky/conversation';
+import { constructBlueskyThread } from '@fxembed/atmosphere/providers/bluesky/conversation';
+import { blueskyBuildHostFromContext } from '../providers/bluesky/build-host-adapter';
 import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
 import { getBranding } from '../helpers/branding';
@@ -23,7 +25,7 @@ import type { APIStatus, SocialThread } from '../types/apiStatus';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
-import { constructTikTokVideo } from '../providers/tiktok/conversation';
+import { constructTikTokVideo } from '@fxembed/atmosphere/providers/tiktok/conversation';
 import { InputFlags } from '../types/types';
 import { formatRuntime } from '../helpers/runtime';
 
@@ -134,7 +136,7 @@ export const handleStatus = async (
     thread = await constructTwitterThread(
       statusId,
       fetchWithThreads,
-      c,
+      twitterBuildHostFromContext(c),
       useActivity ? undefined : useLanguage,
       flags?.api ?? false
     );
@@ -144,7 +146,7 @@ export const handleStatus = async (
       statusId,
       authorHandle ?? '',
       fetchWithThreads,
-      c,
+      blueskyBuildHostFromContext(c),
       useActivity ? undefined : useLanguage,
       undefined,
       blueskyActivityPdsOut

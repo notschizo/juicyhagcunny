@@ -1,8 +1,10 @@
 /* eslint-disable no-case-declarations */
 import { Strings } from '../strings';
 import { DataProvider, returnError } from './status';
-import { constructTwitterThread } from '../providers/twitter/conversation';
-import { constructBlueskyThread } from '../providers/bluesky/conversation';
+import { constructTwitterThread } from '@fxembed/atmosphere/providers/twitter/conversation';
+import { twitterBuildHostFromContext } from '../providers/twitter/build-host-adapter';
+import { constructBlueskyThread } from '@fxembed/atmosphere/providers/bluesky/conversation';
+import { blueskyBuildHostFromContext } from '../providers/bluesky/build-host-adapter';
 import { Constants } from '../constants';
 import { getActivitySocialProof } from '../helpers/socialproof';
 import i18next from 'i18next';
@@ -14,7 +16,7 @@ import { Experiment, experimentCheck } from '../experiments';
 import { Context } from 'hono';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
-import { constructTikTokVideo } from '../providers/tiktok/conversation';
+import { constructTikTokVideo } from '@fxembed/atmosphere/providers/tiktok/conversation';
 import { renderArticleToHtml, DISCORD_ARTICLE_MAX_LENGTH } from '../helpers/article';
 import {
   facetUtf16RangeOnPlainText,
@@ -399,13 +401,19 @@ export const handleActivity = async (
 
   let thread: SocialThread;
   if (provider === DataProvider.Twitter) {
-    thread = await constructTwitterThread(statusId, false, c, language ?? undefined, false);
+    thread = await constructTwitterThread(
+      statusId,
+      false,
+      twitterBuildHostFromContext(c),
+      language ?? undefined,
+      false
+    );
   } else if (provider === DataProvider.Bluesky) {
     thread = await constructBlueskyThread(
       statusId,
       authorHandle ?? '',
       false,
-      c,
+      blueskyBuildHostFromContext(c),
       language ?? undefined,
       preferredProxyServiceHost ? { preferredProxyServiceHost } : undefined
     );

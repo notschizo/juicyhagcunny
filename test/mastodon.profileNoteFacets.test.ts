@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { mastodonAccountToApiUser } from '../src/providers/mastodon/processor';
+import { mastodonAccountToApiUser } from '@fxembed/atmosphere/providers/mastodon/processor';
 
 const baseAccount = (): MastodonAccount => ({
   id: '1',

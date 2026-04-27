@@ -4,7 +4,7 @@ import {
   decodeThreadsProfileTimelineCursor,
   encodeThreadsConversationCursor,
   encodeThreadsProfileTimelineCursor
-} from '../src/providers/threads/cursors';
+} from '@fxembed/atmosphere/providers/threads/cursors';
 
 describe('threads conversation cursor', () => {
   it('round-trips', () => {

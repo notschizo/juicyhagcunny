@@ -5,7 +5,7 @@
 import fs from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { ClientTransaction } from '../src/providers/twitter/proxy/transaction/transaction';
+import { ClientTransaction } from '@fxembed/atmosphere/providers/twitter/proxy/transaction/transaction';
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 

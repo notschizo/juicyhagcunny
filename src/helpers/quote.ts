@@ -1,23 +1,11 @@
 import i18next from 'i18next';
+import { handleQuote as handleQuoteCore } from '@fxembed/atmosphere/helpers';
 import type { APIStatusTombstone } from '../realms/api/schemas';
-import { isTombstone } from './tombstone';
+import type { APIStatus } from '../types/apiStatus';
 
 /* Helper for Quote Tweets */
-export const handleQuote = (quote: APIStatus | APIStatusTombstone): string | null => {
-  if (isTombstone(quote)) {
-    return `\n${i18next.t('quotedFromTombstone')}: ${quote.message}`;
-  }
-
-  console.log('Quoting status ', quote.id);
-
-  let str = `\n`;
-  str += i18next.t('quotedFrom').format({
-    name: quote.author?.name || '',
-    screen_name: quote.author?.screen_name || ''
+export const handleQuote = (quote: APIStatus | APIStatusTombstone): string | null =>
+  handleQuoteCore(quote, {
+    quotedFromTombstone: i18next.t('quotedFromTombstone'),
+    quotedFrom: i18next.t('quotedFrom')
   });
-
-  str += ` \n\n`;
-  str += quote.text;
-
-  return str;
-};

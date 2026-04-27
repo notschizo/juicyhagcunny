@@ -1,6 +1,6 @@
 /* This file contains types relevant to FxEmbed and the FxTwitter API.
-   Shared API field shapes (including APITwitterStatus) are derived from Zod in realms/api/schemas.ts.
-   For Twitter GraphQL types, see vendor/twitter.d.ts */
+   Shared API field shapes (including APITwitterStatus) are derived from Zod in @fxembed/atmosphere (api-schemas).
+   For Twitter GraphQL types, see packages/atmosphere/src/raw/vendor/twitter.d.ts */
 
 import type { Context } from 'hono';
 
@@ -62,34 +62,35 @@ declare global {
     status?: APITwitterStatus;
   }
 
-  type APIUser = import('../realms/api/schemas').APIUser;
-  type APIFacet = import('../realms/api/schemas').APIFacet;
-  type APITranslate = import('../realms/api/schemas').APITranslate;
-  type APIExternalMedia = import('../realms/api/schemas').APIExternalMedia;
-  type APIBroadcast = import('../realms/api/schemas').APIBroadcast;
-  type APIPollChoice = import('../realms/api/schemas').APIPollChoice;
-  type APIPoll = import('../realms/api/schemas').APIPoll;
-  type APIMedia = import('../realms/api/schemas').APIMedia;
-  type APIPhoto = import('../realms/api/schemas').APIPhoto;
-  type APIVideo = import('../realms/api/schemas').APIVideo;
-  type APIVideoFormat = import('../realms/api/schemas').APIVideoFormat;
-  type APIMosaicPhoto = import('../realms/api/schemas').APIMosaicPhoto;
-  type APITwitterCommunity = import('../realms/api/schemas').APITwitterCommunity;
-  type UserAPIResponse = import('../realms/api/schemas').UserAPIResponse;
-  type APISearchResults = import('../realms/api/schemas').APISearchResults;
-  type APIUserListResults = import('../realms/api/schemas').APIUserListResults;
-  type APITrendGroupedTopic = import('../realms/api/schemas').APITrendGroupedTopic;
-  type APITrend = import('../realms/api/schemas').APITrend;
-  type APITrendsResponse = import('../realms/api/schemas').APITrendsResponse;
+  type APIUser = import('@fxembed/atmosphere/types/api-schemas').APIUser;
+  type APIFacet = import('@fxembed/atmosphere/types/api-schemas').APIFacet;
+  type APITranslate = import('@fxembed/atmosphere/types/api-schemas').APITranslate;
+  type APIExternalMedia = import('@fxembed/atmosphere/types/api-schemas').APIExternalMedia;
+  type APIBroadcast = import('@fxembed/atmosphere/types/api-schemas').APIBroadcast;
+  type APIPollChoice = import('@fxembed/atmosphere/types/api-schemas').APIPollChoice;
+  type APIPoll = import('@fxembed/atmosphere/types/api-schemas').APIPoll;
+  type APIMedia = import('@fxembed/atmosphere/types/api-schemas').APIMedia;
+  type APIPhoto = import('@fxembed/atmosphere/types/api-schemas').APIPhoto;
+  type APIVideo = import('@fxembed/atmosphere/types/api-schemas').APIVideo;
+  type APIVideoFormat = import('@fxembed/atmosphere/types/api-schemas').APIVideoFormat;
+  type APIMosaicPhoto = import('@fxembed/atmosphere/types/api-schemas').APIMosaicPhoto;
+  type APITwitterCommunity = import('@fxembed/atmosphere/types/api-schemas').APITwitterCommunity;
+  type UserAPIResponse = import('@fxembed/atmosphere/types/api-schemas').UserAPIResponse;
+  type APISearchResults = import('@fxembed/atmosphere/types/api-schemas').APISearchResults;
+  type APIUserListResults = import('@fxembed/atmosphere/types/api-schemas').APIUserListResults;
+  type APITrendGroupedTopic = import('@fxembed/atmosphere/types/api-schemas').APITrendGroupedTopic;
+  type APITrend = import('@fxembed/atmosphere/types/api-schemas').APITrend;
+  type APITrendsResponse = import('@fxembed/atmosphere/types/api-schemas').APITrendsResponse;
 
-  type APIStatus = import('./apiStatus').APIStatus;
-  type APITwitterStatus = import('../realms/api/schemas').APITwitterStatus;
-  type APIBlueskyStatus = import('./apiStatus').APIBlueskyStatus;
-  type APITikTokStatus = import('./apiStatus').APITikTokStatus;
-  type APITwitterCommunityNote = import('../realms/api/schemas').APITwitterCommunityNote;
-  type SocialPost = import('./apiStatus').SocialPost;
-  type SocialThread = import('./apiStatus').SocialThread;
-  type SocialConversation = import('./apiStatus').SocialConversation;
+  type APIStatus = import('@fxembed/atmosphere/types/api-status').APIStatus;
+  type APITwitterStatus = import('@fxembed/atmosphere/types/api-schemas').APITwitterStatus;
+  type APIBlueskyStatus = import('@fxembed/atmosphere/types/api-schemas').APIBlueskyStatus;
+  type APITikTokStatus = import('@fxembed/atmosphere/types/api-status').APITikTokStatus;
+  type APITwitterCommunityNote =
+    import('@fxembed/atmosphere/types/api-schemas').APITwitterCommunityNote;
+  type SocialPost = import('@fxembed/atmosphere/types/api-status').SocialPost;
+  type SocialThread = import('@fxembed/atmosphere/types/api-status').SocialThread;
+  type SocialConversation = import('@fxembed/atmosphere/types/api-status').SocialConversation;
 
   interface FetchResults {
     status: number;

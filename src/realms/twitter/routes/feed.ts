@@ -3,8 +3,8 @@ import { ContentfulStatusCode } from 'hono/utils/http-status';
 import {
   profileMediaAPIPaginated,
   profileStatusesAPIPaginated
-} from '../../../providers/twitter/userStatuses';
-import { parseHandleOrId } from '../../../providers/twitter/profile';
+} from '@fxembed/atmosphere/providers/twitter/userStatuses';
+import { parseHandleOrId } from '@fxembed/atmosphere/providers/twitter/profile';
 import { isParamTruthy } from '../../../helpers/utils';
 import type { APITwitterStatus } from '../../../realms/api/schemas';
 import {
@@ -14,6 +14,7 @@ import {
   type SyndicationFeedMeta
 } from '../../../helpers/syndicationFeeds';
 import { getBranding } from '../../../helpers/branding';
+import { twitterBuildHostFromContext } from '../../../providers/twitter/build-host-adapter';
 
 const DEFAULT_FEED_COUNT = 90;
 const FEED_CACHE_CONTROL = 'public, max-age=120';
@@ -152,11 +153,22 @@ async function serveFeed(
   if (kind === 'timeline') {
     const q = parseFeedQuery(c);
     omitSensitive = q.safe;
-    apiResult = await profileStatusesAPIPaginated(parsed, q.count, c, q.withReplies, q.language);
+    apiResult = await profileStatusesAPIPaginated(
+      parsed,
+      q.count,
+      twitterBuildHostFromContext(c),
+      q.withReplies,
+      q.language
+    );
   } else {
     const q = parseMediaFeedQuery(c);
     omitSensitive = q.safe;
-    apiResult = await profileMediaAPIPaginated(parsed, q.count, c, q.language);
+    apiResult = await profileMediaAPIPaginated(
+      parsed,
+      q.count,
+      twitterBuildHostFromContext(c),
+      q.language
+    );
   }
 
   const meta = buildMeta(c, handle, kind, apiResult.results);

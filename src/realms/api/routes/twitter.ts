@@ -3,27 +3,28 @@ import {
   constructTwitterThread,
   constructTwitterConversation,
   type TweetDetailRankingMode
-} from '../../../providers/twitter/conversation';
+} from '@fxembed/atmosphere/providers/twitter/conversation';
 import { Constants } from '../../../constants';
 import {
   userAPI,
   userAPIById,
   parseHandleOrId,
   profileAboutAPI
-} from '../../../providers/twitter/profile';
-import { attachAboutAccountData } from '../../../providers/twitter/aboutAccount';
-import { searchAPI } from '../../../providers/twitter/search';
+} from '@fxembed/atmosphere/providers/twitter/profile';
+import { attachAboutAccountData } from '@fxembed/atmosphere/providers/twitter/aboutAccount';
+import { searchAPI } from '@fxembed/atmosphere/providers/twitter/search';
 import {
   profileArticlesAPI,
   profileFollowersAPI,
   profileFollowingAPI,
   profileMediaAPI,
   profileStatusesAPI
-} from '../../../providers/twitter/userStatuses';
-import { statusRepostsAPI } from '../../../providers/twitter/statusReposts';
-import { statusQuotesAPI } from '../../../providers/twitter/statusQuotes';
-import { trendsAPI } from '../../../providers/twitter/trends';
-import { typeaheadAPI } from '../../../providers/twitter/typeahead';
+} from '@fxembed/atmosphere/providers/twitter/userStatuses';
+import { statusRepostsAPI } from '@fxembed/atmosphere/providers/twitter/statusReposts';
+import { statusQuotesAPI } from '@fxembed/atmosphere/providers/twitter/statusQuotes';
+import { trendsAPI } from '@fxembed/atmosphere/providers/twitter/trends';
+import { typeaheadAPI } from '@fxembed/atmosphere/providers/twitter/typeahead';
+import { twitterBuildHostFromContext } from '../../../providers/twitter/build-host-adapter';
 import { Context } from 'hono';
 import { jsonAfterNormalize, normalizeApiJsonResponse } from '../normalizeApiJsonResponse';
 import { isParamTruthy } from '../../../helpers/utils';
@@ -51,12 +52,13 @@ const shouldIncludeAboutAccount = (c: Context) => {
 };
 
 export const statusAPIRequest: RouteHandler<typeof statusV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { id } = c.req.valid('param');
   const { lang } = c.req.valid('query');
 
-  let processedResponse = await constructTwitterThread(id, false, c, lang, undefined);
+  let processedResponse = await constructTwitterThread(id, false, host, lang, undefined);
   if (processedResponse.code === 200 && shouldIncludeAboutAccount(c)) {
-    processedResponse = await attachAboutAccountData(c, processedResponse);
+    processedResponse = await attachAboutAccountData(host, processedResponse);
   }
 
   const { httpStatus, payload } = normalizeApiJsonResponse(
@@ -72,13 +74,14 @@ export const statusAPIRequest: RouteHandler<typeof statusV2Route> = async c => {
 };
 
 export const statusRepostsAPIRequest: RouteHandler<typeof statusRepostsV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { id } = c.req.valid('param');
   const query = c.req.valid('query');
 
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await statusRepostsAPI(id, count, cursor, c);
+  const response = await statusRepostsAPI(id, count, cursor, host);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -92,13 +95,14 @@ export const statusRepostsAPIRequest: RouteHandler<typeof statusRepostsV2Route> 
 };
 
 export const statusQuotesAPIRequest: RouteHandler<typeof statusQuotesV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { id } = c.req.valid('param');
   const query = c.req.valid('query');
 
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await statusQuotesAPI(id, count, cursor, c, query.lang);
+  const response = await statusQuotesAPI(id, count, cursor, host, query.lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -112,12 +116,13 @@ export const statusQuotesAPIRequest: RouteHandler<typeof statusQuotesV2Route> = 
 };
 
 export const threadAPIRequest: RouteHandler<typeof threadV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { id } = c.req.valid('param');
   const { lang } = c.req.valid('query');
 
-  let processedResponse = await constructTwitterThread(id, true, c, lang);
+  let processedResponse = await constructTwitterThread(id, true, host, lang);
   if (processedResponse.code === 200 && shouldIncludeAboutAccount(c)) {
-    processedResponse = await attachAboutAccountData(c, processedResponse);
+    processedResponse = await attachAboutAccountData(host, processedResponse);
   }
 
   const { httpStatus, payload } = normalizeApiJsonResponse(
@@ -139,6 +144,7 @@ const rankingModeMap: Record<string, TweetDetailRankingMode> = {
 };
 
 export const conversationAPIRequest: RouteHandler<typeof conversationV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { id } = c.req.valid('param');
   const query = c.req.valid('query');
 
@@ -147,7 +153,7 @@ export const conversationAPIRequest: RouteHandler<typeof conversationV2Route> = 
 
   const processedResponse = await constructTwitterConversation(
     id,
-    c,
+    host,
     rankingMode,
     cursor,
     query.lang
@@ -165,13 +171,14 @@ export const conversationAPIRequest: RouteHandler<typeof conversationV2Route> = 
 };
 
 export const profileAPIRequest: RouteHandler<typeof profileV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { handle } = c.req.valid('param');
   const parsed = parseHandleOrId(handle);
 
   const profileResponse =
     parsed.type === 'userId'
-      ? await userAPIById(parsed.value, c, false, shouldIncludeAboutAccount(c))
-      : await userAPI(parsed.value, c, false, shouldIncludeAboutAccount(c));
+      ? await userAPIById(parsed.value, host, false, shouldIncludeAboutAccount(c))
+      : await userAPI(parsed.value, host, false, shouldIncludeAboutAccount(c));
   const { httpStatus, payload } = normalizeApiJsonResponse(
     profileResponse,
     [200, 400, 404] as const,
@@ -185,8 +192,9 @@ export const profileAPIRequest: RouteHandler<typeof profileV2Route> = async c =>
 };
 
 export const profileAboutAPIRequest: RouteHandler<typeof profileAboutV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { handle } = c.req.valid('param');
-  const aboutResponse = await profileAboutAPI(handle, c);
+  const aboutResponse = await profileAboutAPI(handle, host);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     aboutResponse,
     [200, 400, 404] as const,
@@ -207,6 +215,7 @@ type TwitterProfileStatusesResult = Awaited<
 >;
 
 export const profileStatusesAPIRequest = (async (c): Promise<TwitterProfileStatusesResult> => {
+  const host = twitterBuildHostFromContext(c);
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
 
@@ -220,7 +229,7 @@ export const profileStatusesAPIRequest = (async (c): Promise<TwitterProfileStatu
     parseHandleOrId(handle),
     count,
     cursor,
-    c,
+    host,
     withReplies,
     query.lang,
     groupThreads
@@ -264,6 +273,7 @@ export const profileStatusesAPIRequest = (async (c): Promise<TwitterProfileStatu
 }) as RouteHandler<typeof profileStatusesV2Route>;
 
 export const profileArticlesAPIRequest: RouteHandler<typeof profileArticlesV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
 
@@ -274,7 +284,7 @@ export const profileArticlesAPIRequest: RouteHandler<typeof profileArticlesV2Rou
     parseHandleOrId(handle),
     count,
     cursor,
-    c,
+    host,
     query.lang
   );
 
@@ -291,6 +301,7 @@ export const profileArticlesAPIRequest: RouteHandler<typeof profileArticlesV2Rou
 };
 
 export const profileMediaAPIRequest: RouteHandler<typeof profileMediaV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
 
@@ -301,7 +312,7 @@ export const profileMediaAPIRequest: RouteHandler<typeof profileMediaV2Route> = 
     parseHandleOrId(handle),
     count,
     cursor,
-    c,
+    host,
     query.lang
   );
 
@@ -318,13 +329,14 @@ export const profileMediaAPIRequest: RouteHandler<typeof profileMediaV2Route> = 
 };
 
 export const profileFollowersAPIRequest: RouteHandler<typeof profileFollowersV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
 
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await profileFollowersAPI(parseHandleOrId(handle), count, cursor, c);
+  const response = await profileFollowersAPI(parseHandleOrId(handle), count, cursor, host);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -338,13 +350,14 @@ export const profileFollowersAPIRequest: RouteHandler<typeof profileFollowersV2R
 };
 
 export const profileFollowingAPIRequest: RouteHandler<typeof profileFollowingV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const { handle } = c.req.valid('param');
   const query = c.req.valid('query');
 
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await profileFollowingAPI(parseHandleOrId(handle), count, cursor, c);
+  const response = await profileFollowingAPI(parseHandleOrId(handle), count, cursor, host);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -358,6 +371,7 @@ export const profileFollowingAPIRequest: RouteHandler<typeof profileFollowingV2R
 };
 
 export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const query = c.req.valid('query');
   const q = query.q;
 
@@ -365,7 +379,7 @@ export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {
   const count = query.count ?? 30;
   const cursor = query.cursor ?? null;
 
-  const searchResponse = await searchAPI(q, feed, count, cursor, c, query.lang);
+  const searchResponse = await searchAPI(q, feed, count, cursor, host, query.lang);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     searchResponse,
     [200, 400, 404, 500] as const,
@@ -379,11 +393,12 @@ export const searchAPIRequest: RouteHandler<typeof searchV2Route> = async c => {
 };
 
 export const trendsAPIRequest: RouteHandler<typeof trendsV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const query = c.req.valid('query');
   const type = query.type ?? 'trending';
   const count = query.count ?? 20;
 
-  const trendsResponse = await trendsAPI(c, type, count);
+  const trendsResponse = await trendsAPI(host, type, count);
   const { httpStatus, payload } = normalizeApiJsonResponse(
     trendsResponse,
     [200, 400, 404, 500] as const,
@@ -397,8 +412,9 @@ export const trendsAPIRequest: RouteHandler<typeof trendsV2Route> = async c => {
 };
 
 export const typeaheadAPIRequest: RouteHandler<typeof typeaheadV2Route> = async c => {
+  const host = twitterBuildHostFromContext(c);
   const query = c.req.valid('query');
-  const response = await typeaheadAPI(query.q, c, {
+  const response = await typeaheadAPI(query.q, host, {
     resultType: query.result_type,
     src: query.src
   });

@@ -1,4 +1,8 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import {
+  setBlueskyProviderEnv,
+  setBlueskyProxyRuntime
+} from '@fxembed/atmosphere/providers/bluesky-runtime';
 
 const credMocks = vi.hoisted(() => ({
   initCredentials: vi.fn().mockResolvedValue(undefined),
@@ -14,27 +18,37 @@ const sessionMocks = vi.hoisted(() => ({
   invalidateBlueskySession: vi.fn()
 }));
 
-vi.mock('../src/providers/twitter/proxy/credentials', async importOriginal => {
-  const actual =
-    await importOriginal<typeof import('../src/providers/twitter/proxy/credentials')>();
-  return {
-    ...actual,
-    initCredentials: credMocks.initCredentials,
-    hasBundledEncryptedCredentials: credMocks.hasBundledEncryptedCredentials,
-    hasBlueskyProxyAccounts: credMocks.hasBlueskyProxyAccounts,
-    getShuffledBlueskyAccounts: credMocks.getShuffledBlueskyAccounts
-  };
-});
-
-vi.mock('../src/providers/bluesky/session', () => sessionMocks);
+vi.mock('@fxembed/atmosphere/providers/bluesky/session', () => sessionMocks);
 
 import {
   fetchActorProfile,
   fetchPostThread,
   fetchPostThreadResult
-} from '../src/providers/bluesky/client';
+} from '@fxembed/atmosphere/providers/bluesky/client';
 
 beforeEach(() => {
+  setBlueskyProviderEnv({
+    apiRoot: 'https://public.api.bsky.app',
+    webRoot: 'https://bsky.app',
+    videoBase: 'https://video.bsky.app',
+    mosaicBskyDomainList: [],
+    polyglotDomainList: []
+  });
+  setBlueskyProxyRuntime({
+    initCredentials: credMocks.initCredentials,
+    hasBundledEncryptedCredentials: credMocks.hasBundledEncryptedCredentials,
+    hasBlueskyProxyAccounts: credMocks.hasBlueskyProxyAccounts,
+    getShuffledBlueskyAccounts: credMocks.getShuffledBlueskyAccounts,
+    blueskyProxyServiceHostname: (service: string) => {
+      try {
+        const s = service.trim();
+        const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+        return new URL(withProto).hostname.toLowerCase();
+      } catch {
+        return '';
+      }
+    }
+  });
   credMocks.initCredentials.mockClear();
   sessionMocks.getBlueskyAccessJwt.mockClear();
 });

@@ -2,6 +2,15 @@
 
 This is the repository for FxEmbed, the home of FxTwitter, FixupX, and FxBluesky. FxEmbed generates rich embeds for social media posts (X/Twitter, Bluesky, TikTok) for chat platforms like Discord and Telegram. There is a public API provided for X/Twitter, Bluesky and such, the modern v2 API generates an OpenAPI spec. Typically deployed using Cloudflare Workers, this TypeScript app uses Hono for routing, i18next localization, zod API validation.
 
+## @fxembed/atmosphere (monorepo package)
+
+- **Path:** `packages/atmosphere/`. The worker and tests import it via `"@fxembed/atmosphere"`.
+- **Build:** `npm run build:atmosphere` (runs before the worker build).
+- **Transports:** `public` | `anonymous-proxy` (credentials) | `proxy-relay` (to another host’s OpenAPI) | `authenticated` (interface stub, not implemented) — see `packages/atmosphere/src/transports/`.
+- **Bluesky:** runtime wiring (API roots, proxy) — `setBlueskyProviderEnv` + `setBlueskyProxyRuntime` from `worker.ts` and `@fxembed/atmosphere/providers/bluesky-runtime`.
+- **Proxy-relay OpenAPI (optional):** `npm run openapi:atmosphere` fetches public specs and writes `packages/atmosphere/src/relay/generated/`. Use `createRelayFetch` from `@fxembed/atmosphere` for `User-Agent` + API key injection.
+- **Self-hosting:** docs site `/deployment/atmosphere-transports/` — public-only, own proxy pool, relay to `https://api.fxtwitter.com` / `https://api.fxbsky.app`, or mixed. Mastodon / Twitter / TikTok providers remain under `src/providers/*`; follow the Bluesky → `@fxembed/atmosphere` migration pattern when moving more code.
+
 ## Environment variables
 
 Environment variables are generally set in .env, not in Wrangler, except for certain secrets such as CREDENTIAL_KEY. When adding an environment variable, you generally have to add them in the following places for them to be included correctly during a build:
