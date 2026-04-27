@@ -1,7 +1,7 @@
 import type { AnyNode } from 'domhandler';
 import { load, CheerioAPI } from 'cheerio';
-import { Cubic } from './cubic';
-import { isOdd, interpolate, convertRotationToMatrix, floatToHex } from './utils';
+import { Cubic } from './cubic.js';
+import { isOdd, interpolate, convertRotationToMatrix, floatToHex } from './utils.js';
 
 // Cached fetch helper that uses Cloudflare Worker cache
 async function cachedFetch(

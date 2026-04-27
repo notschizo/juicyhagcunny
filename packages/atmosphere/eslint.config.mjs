@@ -25,5 +25,12 @@ export default defineConfig([
     },
     languageOptions: { globals: { ...globals.browser, ...globals.node } }
   },
-  tseslint.configs.recommended
+  tseslint.configs.recommended,
+  {
+    // Ambient vendor typings (twitter.d.ts, bluesky.d.ts) are loaded via `///` refs.
+    files: ['src/helpers/link-fixer.ts', 'src/helpers/palette.ts'],
+    rules: {
+      '@typescript-eslint/triple-slash-reference': 'off'
+    }
+  }
 ]);

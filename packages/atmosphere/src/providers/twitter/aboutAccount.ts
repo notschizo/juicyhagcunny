@@ -1,9 +1,11 @@
-import { Context } from 'hono';
-import { isTombstone } from '../../helpers/tombstone';
-import { AboutAccountQuery } from './graphql/queries';
-import { validateAboutAccountQuery } from './graphql/validators';
-import { graphQLOrchestrator, GraphQLOrchestratorResult } from './graphql/orchestrator';
-import { mergeAboutAccountData } from './profile';
+import { isTombstone } from '../../helpers/tombstone.js';
+import type { APIUser } from '../../types/api-schemas.js';
+import type { SocialThread } from '../../types/api-status.js';
+import { AboutAccountQuery } from './graphql/queries.js';
+import { validateAboutAccountQuery } from './graphql/validators.js';
+import { graphQLOrchestrator, GraphQLOrchestratorResult } from './graphql/orchestrator.js';
+import { mergeAboutAccountData } from './profile.js';
+import type { TwitterBuildHost } from './build-host.js';
 
 const collectScreenNames = (response: SocialThread): Map<string, string> => {
   const screenNames = new Map<string, string>();
@@ -19,16 +21,16 @@ const collectScreenNames = (response: SocialThread): Map<string, string> => {
   };
 
   if (response.author) {
-    addScreenName(response.author);
+    addScreenName(response.author as APIUser);
   }
 
   if (response.status?.author) {
-    addScreenName(response.status.author);
+    addScreenName(response.status.author as APIUser);
   }
 
   response.thread?.forEach(status => {
     if (!isTombstone(status)) {
-      addScreenName(status.author);
+      addScreenName(status.author as APIUser);
     }
   });
 
@@ -49,15 +51,15 @@ const applyAboutAccountData = (response: SocialThread, results: GraphQLOrchestra
     }
   };
 
-  apply(response.author);
-  apply(response.status?.author);
+  apply(response.author as APIUser);
+  apply(response.status?.author as APIUser);
   response.thread?.forEach(status => {
-    if (!isTombstone(status)) apply(status.author);
+    if (!isTombstone(status)) apply(status.author as APIUser);
   });
 };
 
 export const attachAboutAccountData = async (
-  c: Context,
+  host: TwitterBuildHost,
   response: SocialThread
 ): Promise<SocialThread> => {
   const screenNames = collectScreenNames(response);
@@ -74,7 +76,7 @@ export const attachAboutAccountData = async (
     required: false
   }));
 
-  const results = await graphQLOrchestrator(c, requests);
+  const results = await graphQLOrchestrator(host, requests);
   applyAboutAccountData(response, results);
 
   return response;

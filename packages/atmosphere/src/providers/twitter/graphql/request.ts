@@ -1,7 +1,7 @@
-import { Context } from 'hono';
-import { Constants } from '../../../constants';
-import { twitterFetch } from '../fetch';
-import { pickTwitterGqlFeatures, type TwitterGqlFeatureKey } from './features';
+import { getTwitterProviderEnv } from '../../twitter-runtime.js';
+import { twitterFetch } from '../fetch.js';
+import { pickTwitterGqlFeatures, type TwitterGqlFeatureKey } from './features.js';
+import type { TwitterBuildHost } from '../build-host.js';
 
 export interface GraphQLQuery {
   httpMethod: string;
@@ -22,12 +22,16 @@ interface GraphQLRequest {
   headers?: Record<string, string>;
 }
 
-export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promise<unknown> => {
+export const graphqlRequest = async (
+  host: TwitterBuildHost,
+  request: GraphQLRequest
+): Promise<unknown> => {
   const { query, validator, variables, headers: requestHeaders } = request;
   console.log(`📤 ${query.queryName} (${JSON.stringify(variables)})`);
   const allVariables = { ...query.variables, ...(variables ?? {}) };
+  const { apiRoot } = getTwitterProviderEnv();
 
-  let url = `${Constants.TWITTER_API_ROOT}/graphql/${query.queryId}/${query.queryName}`;
+  let url = `${apiRoot}/graphql/${query.queryId}/${query.queryName}`;
   url += `?variables=${encodeURIComponent(JSON.stringify(allVariables))}`;
   if (query.featureKeys && query.featureKeys.length > 0) {
     const features = pickTwitterGqlFeatures(query.featureKeys);
@@ -36,7 +40,7 @@ export const graphqlRequest = async (c: Context, request: GraphQLRequest): Promi
   if (query.fieldToggles) {
     url += `&fieldToggles=${encodeURIComponent(JSON.stringify(query.fieldToggles))}`;
   }
-  return twitterFetch(c, {
+  return twitterFetch(host, {
     url,
     method: 'GET',
     headers: requestHeaders,

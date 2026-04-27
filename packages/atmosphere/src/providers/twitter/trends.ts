@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Context } from 'hono';
-import { ExplorePageQuery } from './graphql/queries';
-import { graphqlRequest } from './graphql/request';
+import { ExplorePageQuery } from './graphql/queries.js';
+import { graphqlRequest } from './graphql/request.js';
+import type { APITrend, APITrendsResponse } from '../../types/api-schemas.js';
+import type { TwitterBuildHost } from './build-host.js';
 
 export type PublicExploreTimelineKind = 'trending';
 
@@ -129,13 +130,13 @@ export function getExploreInitialTimelineInstructions(
 }
 
 export const trendsAPI = async (
-  c: Context,
+  host: TwitterBuildHost,
   kind: PublicExploreTimelineKind,
   count: number
 ): Promise<APITrendsResponse> => {
   let exploreResponse: TwitterExplorePageResponse;
   try {
-    exploreResponse = (await graphqlRequest(c, {
+    exploreResponse = (await graphqlRequest(host, {
       query: ExplorePageQuery,
       variables: { cursor: '' },
       validator: (r: unknown) => {

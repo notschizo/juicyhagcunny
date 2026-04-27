@@ -8,7 +8,7 @@ import {
   validateProfileWithRepliesTimelineResponse,
   validateUserMediaTimelineResponse,
   validateUserTweetsTimeline
-} from '../src/providers/twitter/graphql/validators';
+} from '@fxembed/atmosphere/providers/twitter/graphql/validators';
 
 describe('profile statuses timeline (UserTweets vs ProfileTimeline)', () => {
   const instructions = [{ type: 'TimelineClearCache', entries: [] }];

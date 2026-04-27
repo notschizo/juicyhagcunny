@@ -1,28 +1,27 @@
-import { renderCard } from './card';
-import { Constants } from '../../constants';
-import { linkFixer } from '../../helpers/linkFixer';
-import { handleMosaic } from '../../helpers/mosaic';
-import { unescapeText } from '../../helpers/utils';
-import { processMedia, convertFormatToVariant } from '../../helpers/media';
-import { convertToApiUser } from './profile';
-import { Context } from 'hono';
-import { DataProvider } from '../../enum';
+import { renderCard } from './card.js';
+import { getTwitterProviderEnv } from '../twitter-runtime.js';
+import { linkFixer } from '../../helpers/link-fixer.js';
+import { handleMosaic } from '../../helpers/mosaic.js';
+import { unescapeText } from '../../helpers/unescape-text.js';
+import { processMedia, convertFormatToVariant } from '../../helpers/media.js';
+import { convertToApiUser } from './profile.js';
+import { DataProvider } from '../../types/data-provider.js';
 import type {
   APIFacet,
+  APIPhoto,
   APIRepostedBy,
   APIStatusTombstone,
   APITombstoneReason,
-  APITwitterStatus
-} from '../../realms/api/schemas';
-import { isTombstone, tombstoneMessageForReason } from '../../helpers/tombstone';
-import { shouldTranscodeGif } from '../../helpers/giftranscode';
-import { translateStatusAI } from '../../helpers/translateAI';
-import { translateStatus } from '../../helpers/translate';
-import i18next from 'i18next';
-import { translateStatusGrok } from '../../helpers/translateGrok';
-import { experimentCheck, Experiment } from '../../experiments';
-import { normalizeLanguage } from '../../helpers/language';
-import { tcoResolver } from './tcoResolver';
+  APITwitterStatus,
+  APIUser,
+  APIVideo
+} from '../../types/api-schemas.js';
+import type { FetchResults } from '../../types/fetch-results.js';
+import { isTombstone, tombstoneMessageForReason } from '../../helpers/tombstone.js';
+import { translateStatusGrok } from '../../helpers/translate-grok.js';
+import { normalizeLanguage } from '../../helpers/language.js';
+import { tcoResolver } from './tcoResolver.js';
+import type { TwitterBuildHost } from './build-host.js';
 
 /** GraphQL sometimes nests the Tweet under `tweet` (ProfileTimeline / other v2 shapes). Merge before retweet logic. */
 function mergeTweetShellIntoStatus(status: GraphQLTwitterStatus): void {
@@ -143,7 +142,7 @@ function repostedByFromGraphQLUser(user: GraphQLUser | undefined): APIRepostedBy
       user.avatar?.image_url?.replace?.('_normal', '_200x200') ??
       user.legacy?.profile_image_url_https?.replace?.('_normal', '_200x200') ??
       null,
-    url: screenName ? `${Constants.TWITTER_ROOT}/${screenName}` : undefined
+    url: screenName ? `${getTwitterProviderEnv().webRoot}/${screenName}` : undefined
   };
 }
 
@@ -310,7 +309,7 @@ export const twitterTweetTombstoneFromGraphQL = (
   const id = idHint;
   return twitterTombstone(reason, {
     id,
-    url: id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+    url: id ? `${getTwitterProviderEnv().webRoot}/i/status/${id}` : undefined
   });
 };
 
@@ -325,7 +324,7 @@ const tweetUnavailableToTombstone = (
       ? (status as GraphQLTwitterStatus).rest_id
       : undefined) ??
     (status as GraphQLTwitterStatus).legacy?.id_str;
-  const url = urlHint ?? (id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined);
+  const url = urlHint ?? (id ? `${getTwitterProviderEnv().webRoot}/i/status/${id}` : undefined);
   const meta = { id, url };
 
   if ((status as TweetStub).__typename !== 'TweetUnavailable') {
@@ -358,7 +357,7 @@ const unwrapQuoteGraphql = (quote: unknown): unknown => {
 };
 
 export const buildAPITwitterStatus = async (
-  c: Context,
+  host: TwitterBuildHost,
   status: GraphQLTwitterStatus,
   language: string | undefined,
   threadAuthor: null | APIUser,
@@ -408,13 +407,13 @@ export const buildAPITwitterStatus = async (
         return tweetUnavailableToTombstone(
           status as TweetStub,
           id,
-          id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+          id ? `${getTwitterProviderEnv().webRoot}/i/status/${id}` : undefined
         );
       }
       const id = tombstoneIdHint ?? status.rest_id;
       return twitterTombstone('unavailable', {
         id,
-        url: id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+        url: id ? `${getTwitterProviderEnv().webRoot}/i/status/${id}` : undefined
       });
     }
     if (status.__typename === 'TweetUnavailable' && status.reason === 'Protected') {
@@ -426,7 +425,7 @@ export const buildAPITwitterStatus = async (
       return tweetUnavailableToTombstone(
         status as TweetStub,
         id,
-        id ? `${Constants.TWITTER_ROOT}/i/status/${id}` : undefined
+        id ? `${getTwitterProviderEnv().webRoot}/i/status/${id}` : undefined
       );
     }
     return { status: 404 };
@@ -458,7 +457,7 @@ export const buildAPITwitterStatus = async (
   if (!legacyAPI) {
     apiStatus.type = 'status';
   }
-  apiStatus.url = `${Constants.TWITTER_ROOT}/${apiUser.screen_name}/status/${id}`;
+  apiStatus.url = `${getTwitterProviderEnv().webRoot}/${apiUser.screen_name}/status/${id}`;
   apiStatus.id = id;
   apiStatus.text = unescapeText(
     linkFixer(status.legacy.entities?.urls, status.legacy.full_text || '')
@@ -694,8 +693,8 @@ export const buildAPITwitterStatus = async (
     apiStatus.replying_to = {
       screen_name: replyScreenName,
       status: replyStatusId,
-      url: `${Constants.TWITTER_ROOT}/${replyScreenName}/status/${replyStatusId}`,
-      profile_url: `${Constants.TWITTER_ROOT}/${replyScreenName}`,
+      url: `${getTwitterProviderEnv().webRoot}/${replyScreenName}/status/${replyStatusId}`,
+      profile_url: `${getTwitterProviderEnv().webRoot}/${replyScreenName}`,
       ...(displayName ? { display_name: displayName } : {})
     };
   } else {
@@ -720,7 +719,7 @@ export const buildAPITwitterStatus = async (
     if (isEmptyUnwrapped && !legacyAPI) {
       apiStatus.quote = twitterTombstone('unavailable', {
         id: qid,
-        url: qPerm ?? (qid ? `${Constants.TWITTER_ROOT}/i/status/${qid}` : undefined)
+        url: qPerm ?? (qid ? `${getTwitterProviderEnv().webRoot}/i/status/${qid}` : undefined)
       });
     } else if (unwrapped?.__typename === 'TweetTombstone' && !legacyAPI) {
       apiStatus.quote = twitterTweetTombstoneFromGraphQL(
@@ -730,7 +729,7 @@ export const buildAPITwitterStatus = async (
       );
     } else if (!isEmptyUnwrapped) {
       const buildQuote = await buildAPITwitterStatus(
-        c,
+        host,
         quote as GraphQLTwitterStatus,
         language,
         threadAuthor,
@@ -743,7 +742,7 @@ export const buildAPITwitterStatus = async (
         if (!legacyAPI && qid) {
           apiStatus.quote = twitterTombstone('unavailable', {
             id: qid,
-            url: qPerm ?? `${Constants.TWITTER_ROOT}/i/status/${qid}`
+            url: qPerm ?? `${getTwitterProviderEnv().webRoot}/i/status/${qid}`
           });
         } else {
           apiStatus.quote = undefined;
@@ -754,7 +753,7 @@ export const buildAPITwitterStatus = async (
         if (!legacyAPI && qid) {
           apiStatus.quote = twitterTombstone('unavailable', {
             id: qid,
-            url: qPerm ?? `${Constants.TWITTER_ROOT}/i/status/${qid}`
+            url: qPerm ?? `${getTwitterProviderEnv().webRoot}/i/status/${qid}`
           });
         } else {
           apiStatus.quote = undefined;
@@ -784,10 +783,10 @@ export const buildAPITwitterStatus = async (
       original: media.url,
       replacement: media.expanded_url
     });
-    const mediaObject = processMedia(c, media);
+    const mediaObject = processMedia(host, media);
     if (mediaObject) {
       apiStatus.media.all = apiStatus.media?.all ?? [];
-      const shouldTranscodeGifs = shouldTranscodeGif(c);
+      const shouldTranscodeGifs = host.shouldTranscodeGif?.() ?? false;
       apiStatus.media?.all?.push(mediaObject);
       if (mediaObject.type === 'photo' || (mediaObject.type === 'gif' && shouldTranscodeGifs)) {
         apiStatus.embed_card = 'summary_large_image';
@@ -817,9 +816,13 @@ export const buildAPITwitterStatus = async (
   if (
     (apiStatus?.media.photos?.length || 0) > 1 &&
     !threadAuthor &&
-    Constants.MOSAIC_DOMAIN_LIST.length > 0
+    getTwitterProviderEnv().mosaicDomainList.length > 0
   ) {
-    const mosaic = await handleMosaic(apiStatus.media?.photos || [], id, DataProvider.Twitter);
+    const twEnv = getTwitterProviderEnv();
+    const mosaic = await handleMosaic(apiStatus.media?.photos || [], id, DataProvider.Twitter, {
+      twitterLikeDomains: twEnv.mosaicDomainList,
+      blueskyDomains: twEnv.mosaicBskyDomainList
+    });
     if (typeof apiStatus.media !== 'undefined' && mosaic !== null) {
       apiStatus.media.mosaic = mosaic;
     }
@@ -836,7 +839,7 @@ export const buildAPITwitterStatus = async (
   /* Populate a Twitter card */
 
   if (status.card ?? status.tweet_card) {
-    const card = await renderCard(c, status.card ?? status.tweet_card);
+    const card = await renderCard(host, status.card ?? status.tweet_card);
     if (card.external_media) {
       apiStatus.embed_card = 'player';
       apiStatus.media.external = card.external_media;
@@ -848,7 +851,7 @@ export const buildAPITwitterStatus = async (
         )}/maxresdefault.jpg`;
       }
     }
-    if (card.broadcast && experimentCheck(Experiment.BROADCAST_STREAM_API)) {
+    if (card.broadcast && host.broadcastStreamApi) {
       apiStatus.media = apiStatus.media ?? { all: [] };
       apiStatus.embed_card = 'player';
       apiStatus.media.broadcast = card.broadcast;
@@ -887,7 +890,7 @@ export const buildAPITwitterStatus = async (
     if (card.media) {
       if (card.media.videos) {
         card.media.videos.forEach(video => {
-          const mediaObject = processMedia(c, video) as APIVideo;
+          const mediaObject = processMedia(host, video) as APIVideo;
           if (mediaObject) {
             apiStatus.media.all = apiStatus.media?.all ?? [];
             apiStatus.media?.all?.push(mediaObject);
@@ -898,7 +901,7 @@ export const buildAPITwitterStatus = async (
       }
       if (card.media.photos) {
         card.media.photos.forEach(photo => {
-          const mediaObject = processMedia(c, photo) as APIPhoto;
+          const mediaObject = processMedia(host, photo) as APIPhoto;
           if (mediaObject) {
             apiStatus.media.all = apiStatus.media?.all ?? [];
             apiStatus.media?.all?.push(mediaObject);
@@ -1002,7 +1005,7 @@ export const buildAPITwitterStatus = async (
         ),
         source_lang: srcLang,
         target_lang: normalizedTarget,
-        source_lang_en: i18next.t(`language_${srcLang}`, { lng: 'en' }),
+        source_lang_en: host.t(`language_${srcLang}`, { lng: 'en' }),
         provider: 'grok'
       };
       didTranslate = true;
@@ -1010,7 +1013,7 @@ export const buildAPITwitterStatus = async (
     if (manualTranslationFallback) {
       try {
         if (!didTranslate) {
-          const translateGrok = await translateStatusGrok(apiStatus, language, c);
+          const translateGrok = await translateStatusGrok(apiStatus, language, host);
           console.log('Grok translation response:', JSON.stringify(translateGrok));
           if (translateGrok !== null) {
             apiStatus.translation = {
@@ -1019,7 +1022,7 @@ export const buildAPITwitterStatus = async (
               ),
               source_lang: apiStatus.lang ?? 'en',
               target_lang: normalizedTarget,
-              source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+              source_lang_en: host.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
               provider: 'grok'
             };
             didTranslate = true;
@@ -1029,26 +1032,29 @@ export const buildAPITwitterStatus = async (
         console.error('Error translating status with Grok:', error);
       }
 
-      if (Constants.POLYGLOT_DOMAIN_LIST.length > 0 && !didTranslate) {
-        const translatePolyglot = await translateStatus(apiStatus, language, c);
-        if (translatePolyglot !== null) {
+      if (getTwitterProviderEnv().polyglotDomainList.length > 0 && !didTranslate) {
+        const translatePolyglot = await host.translatePolyglot?.(apiStatus, language);
+        if (translatePolyglot != null) {
           apiStatus.translation = {
             text: unescapeText(
               linkFixer(status.legacy?.entities?.urls, translatePolyglot?.translated_text || '')
             ),
-            source_lang: translatePolyglot?.source_lang.toLowerCase() ?? 'en',
+            source_lang: (translatePolyglot?.source_lang ?? 'en').toLowerCase(),
             target_lang: normalizedTarget,
-            source_lang_en: i18next.t(`language_${translatePolyglot?.source_lang.toLowerCase()}`, {
-              lng: 'en'
-            }),
+            source_lang_en: host.t(
+              `language_${(translatePolyglot?.source_lang ?? 'en').toLowerCase()}`,
+              {
+                lng: 'en'
+              }
+            ),
             provider: translatePolyglot?.provider ?? 'polyglot'
           };
           didTranslate = true;
         }
       }
-      if (c.env.AI && !didTranslate) {
+      if (host.aiEnabled && !didTranslate) {
         console.log('Falling back to LLM translation');
-        const translateAPI = await translateStatusAI(apiStatus, language, c);
+        const translateAPI = await host.translateAI?.(apiStatus, language);
         if (translateAPI !== null && translateAPI?.translated_text) {
           apiStatus.translation = {
             text: unescapeText(
@@ -1056,7 +1062,7 @@ export const buildAPITwitterStatus = async (
             ),
             source_lang: apiStatus.lang ?? 'en',
             target_lang: normalizedTarget,
-            source_lang_en: i18next.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
+            source_lang_en: host.t(`language_${apiStatus.lang ?? 'en'}`, { lng: 'en' }),
             provider: 'llm'
           };
           didTranslate = true;

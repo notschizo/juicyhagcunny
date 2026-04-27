@@ -1,7 +1,12 @@
-import { Context } from 'hono';
-import { Constants } from '../../constants';
-import { linkFixer } from '../../helpers/linkFixer';
-import type { APIFacet, ProfileAboutAPIResponse } from '../../realms/api/schemas';
+import { getTwitterProviderEnv } from '../twitter-runtime.js';
+import { linkFixer } from '../../helpers/link-fixer.js';
+import type {
+  APIFacet,
+  APIUser,
+  ProfileAboutAPIResponse,
+  UserAPIResponse
+} from '../../types/api-schemas.js';
+import type { TwitterBuildHost } from './build-host.js';
 import {
   UserByScreenNameQuery,
   UserResultByScreenNameQuery,
@@ -9,9 +14,9 @@ import {
   UserByRestIdQuery,
   UserResultByRestIdQuery,
   UserProfileAboutQuery
-} from './graphql/queries';
-import { validateAboutAccountQuery, validateUserProfileAboutQuery } from './graphql/validators';
-import { graphQLOrchestrator, type GraphQLOrchestratorRequest } from './graphql/orchestrator';
+} from './graphql/queries.js';
+import { validateAboutAccountQuery, validateUserProfileAboutQuery } from './graphql/validators.js';
+import { graphQLOrchestrator, type GraphQLOrchestratorRequest } from './graphql/orchestrator.js';
 
 function asUnknownRecord(value: unknown): Record<string, unknown> | undefined {
   if (value !== null && typeof value === 'object') {
@@ -127,7 +132,7 @@ export const convertToApiUser = (user: GraphQLUser, legacyAPI = false): APIUser 
   const apiUser = {} as APIUser;
   apiUser.screen_name = user.core?.screen_name ?? user.legacy?.screen_name ?? '';
   /* Populating a lot of the basics */
-  apiUser.url = `${Constants.TWITTER_ROOT}/${apiUser.screen_name}`;
+  apiUser.url = `${getTwitterProviderEnv().webRoot}/${apiUser.screen_name}`;
   apiUser.id = user.rest_id;
   apiUser.followers = user.relationship_counts?.followers ?? user.legacy?.followers_count ?? 0;
   apiUser.following = user.relationship_counts?.following ?? user.legacy?.friends_count ?? 0;
@@ -349,7 +354,7 @@ const populateUserProperties = async (
  * Uses weighted endpoint methods for rate limit leveling on user endpoints.
  */
 const fetchUser = async (
-  c: Context,
+  host: TwitterBuildHost,
   screenName: string,
   includeAboutAccount = false
 ): Promise<{
@@ -393,7 +398,7 @@ const fetchUser = async (
   };
 
   const results = await graphQLOrchestrator(
-    c,
+    host,
     includeAboutAccount ? [userRequest, aboutAccountRequest] : [userRequest]
   );
 
@@ -414,7 +419,7 @@ const fetchUser = async (
 };
 
 const fetchUserById = async (
-  c: Context,
+  host: TwitterBuildHost,
   userId: string,
   includeAboutAccount = false
 ): Promise<{
@@ -458,7 +463,7 @@ const fetchUserById = async (
   };
 
   const results = await graphQLOrchestrator(
-    c,
+    host,
     includeAboutAccount ? [userRequest, aboutProfileRequest] : [userRequest]
   );
 
@@ -478,10 +483,10 @@ const fetchUserById = async (
 
 /** Resolve rest_id for timeline queries (e.g. UserTweets, ProfileTimeline) */
 export const getTwitterUserRestIdByScreenName = async (
-  c: Context,
+  host: TwitterBuildHost,
   screenName: string
 ): Promise<string | null> => {
-  const { userResponse } = await fetchUser(c, screenName, false);
+  const { userResponse } = await fetchUser(host, screenName, false);
   if (!userResponse) {
     return null;
   }
@@ -497,11 +502,15 @@ export const getTwitterUserRestIdByScreenName = async (
    Available for free using api.fxtwitter.com. */
 export const userAPI = async (
   username: string,
-  c: Context,
+  host: TwitterBuildHost,
   legacyApiUserCounts = false,
   includeAboutAccount = false
 ): Promise<UserAPIResponse> => {
-  const { userResponse, aboutAccountResponse } = await fetchUser(c, username, includeAboutAccount);
+  const { userResponse, aboutAccountResponse } = await fetchUser(
+    host,
+    username,
+    includeAboutAccount
+  );
 
   if (!userResponse || !Object.keys(userResponse).length) {
     return {
@@ -560,7 +569,7 @@ export const userAPI = async (
  */
 export const profileAboutAPI = async (
   handle: string,
-  c: Context
+  host: TwitterBuildHost
 ): Promise<ProfileAboutAPIResponse> => {
   const parsed = parseHandleOrId(handle);
 
@@ -581,7 +590,7 @@ export const profileAboutAPI = async (
           required: true
         };
 
-  const results = await graphQLOrchestrator(c, [request]);
+  const results = await graphQLOrchestrator(host, [request]);
   const bucket = parsed.type === 'screenName' ? results.aboutAccount : results.aboutProfile;
 
   if (!bucket?.success || bucket.data == null) {
@@ -604,12 +613,12 @@ export const profileAboutAPI = async (
 
 export const userAPIById = async (
   userId: string,
-  c: Context,
+  host: TwitterBuildHost,
   legacyApiUserCounts = false,
   includeAboutAccount = false
 ): Promise<UserAPIResponse> => {
   const { userResponse, aboutProfileResponse } = await fetchUserById(
-    c,
+    host,
     userId,
     includeAboutAccount
   );

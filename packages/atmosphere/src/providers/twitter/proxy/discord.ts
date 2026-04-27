@@ -1,4 +1,4 @@
-import type { ProxyEnv } from './types';
+import type { ProxyEnv } from '../../../types/proxy-credentials.js';
 
 /** Discord embed field values max out at 1024 chars. */
 const DISCORD_FIELD_TRUNCATE = 1000;

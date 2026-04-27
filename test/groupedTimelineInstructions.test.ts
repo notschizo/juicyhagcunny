@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { processGroupedTimelineInstructions } from '../src/providers/twitter/search';
+import { processGroupedTimelineInstructions } from '@fxembed/atmosphere/providers/twitter/search';
 
 const minimalTweet = (id: string, conversationId: string) =>
   ({

@@ -1,4 +1,4 @@
-import { generateUserAgent } from '../../helpers/useragent';
+import { generateUserAgent } from '../../helpers/user-agent.js';
 
 export const tcoResolver = async (links: string[]): Promise<Record<string, string>> => {
   const [userAgent, secChUa] = generateUserAgent();

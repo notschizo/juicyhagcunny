@@ -1,5 +1,5 @@
 /* Twitter API error payloads are loosely typed */
-import type { ErrorResponse } from './types';
+import type { ErrorResponse } from '../../../types/proxy-credentials.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
 

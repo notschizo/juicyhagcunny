@@ -1,5 +1,5 @@
-import { GraphQLQuery } from './request';
-import type { TwitterGqlFeatureKey } from './features';
+import { GraphQLQuery } from './request.js';
+import type { TwitterGqlFeatureKey } from './features.js';
 
 const rwebTweetFeatureKeys = [
   'rweb_video_screen_enabled',

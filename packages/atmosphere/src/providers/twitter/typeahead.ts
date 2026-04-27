@@ -1,12 +1,12 @@
-import { Context } from 'hono';
-import { Constants } from '../../constants';
-import { twitterFetch } from './fetch';
+import { getTwitterProviderEnv } from '../twitter-runtime.js';
+import { twitterFetch } from './fetch.js';
 import type {
   APITypeaheadEvent,
   APITypeaheadResponse,
   APITypeaheadTopic,
   APIUser
-} from '../../realms/api/schemas';
+} from '../../types/api-schemas.js';
+import type { TwitterBuildHost } from './build-host.js';
 
 /** Upstream `1.1/search/typeahead.json` user entry (partial). */
 interface TwitterTypeaheadUser {
@@ -109,7 +109,7 @@ export const typeaheadUserToApiUser = (u: TwitterTypeaheadUser): APIUser | null 
     description: '',
     raw_description: { text: '', facets: [] },
     location: typeof u.location === 'string' ? u.location : '',
-    url: `${Constants.TWITTER_ROOT}/${screen_name}`,
+    url: `${getTwitterProviderEnv().webRoot}/${screen_name}`,
     protected: u.is_protected === true,
     followers: 0,
     following: 0,
@@ -125,7 +125,7 @@ export const typeaheadUserToApiUser = (u: TwitterTypeaheadUser): APIUser | null 
 
 export const typeaheadAPI = async (
   q: string,
-  c: Context,
+  host: TwitterBuildHost,
   options?: { resultType?: string; src?: string }
 ): Promise<APITypeaheadResponse> => {
   const params = new URLSearchParams({
@@ -137,9 +137,10 @@ export const typeaheadAPI = async (
     result_type: normalizeResultTypeParam(options?.resultType)
   });
 
-  const url = `${Constants.TWITTER_API_ROOT}/1.1/search/typeahead.json?${params.toString()}`;
+  const { apiRoot } = getTwitterProviderEnv();
+  const url = `${apiRoot}/1.1/search/typeahead.json?${params.toString()}`;
 
-  const raw = await twitterFetch(c, {
+  const raw = await twitterFetch(host, {
     url,
     method: 'GET',
     validateFunction: isObjectPayload

@@ -1,10 +1,11 @@
-import { Context } from 'hono';
-import { buildLanguageHeaders } from '../../helpers/language';
-import { buildAPITwitterStatus } from './processor';
-import { SearchTimelineQuery } from './graphql/queries';
-import { graphqlRequest } from './graphql/request';
-import { isTombstone } from '../../helpers/tombstone';
-import type { APITwitterStatus } from '../../realms/api/schemas';
+import { buildLanguageHeaders } from '../../helpers/language.js';
+import { buildAPITwitterStatus } from './processor.js';
+import { SearchTimelineQuery } from './graphql/queries.js';
+import { graphqlRequest } from './graphql/request.js';
+import { isTombstone } from '../../helpers/tombstone.js';
+import type { APISearchResults, APITwitterStatus } from '../../types/api-schemas.js';
+import type { FetchResults } from '../../types/fetch-results.js';
+import type { TwitterBuildHost } from './build-host.js';
 
 type SearchFeed = 'latest' | 'top' | 'media';
 
@@ -430,7 +431,7 @@ export const searchAPI = async (
   feed: SearchFeed,
   count: number,
   cursor: string | null,
-  c: Context,
+  host: TwitterBuildHost,
   language?: string
 ): Promise<APISearchResults> => {
   const product = feedToProduct(feed);
@@ -438,7 +439,7 @@ export const searchAPI = async (
   let response: TwitterSearchTimelineResponse | null;
 
   try {
-    response = (await graphqlRequest(c, {
+    response = (await graphqlRequest(host, {
       query: SearchTimelineQuery,
       variables: {
         rawQuery: query,
@@ -470,7 +471,7 @@ export const searchAPI = async (
   const builtStatuses = (
     await Promise.all(
       statuses.map(status =>
-        buildAPITwitterStatus(c, status, language, null, false, false).catch(err => {
+        buildAPITwitterStatus(host, status, language, null, false, false).catch(err => {
           console.error('Error building status', err);
           return null;
         })

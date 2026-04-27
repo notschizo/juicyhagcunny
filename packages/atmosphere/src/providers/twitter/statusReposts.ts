@@ -1,21 +1,21 @@
-import { Context } from 'hono';
-import { convertToApiUser } from './profile';
-import { RetweetersQuery, RetweetersTimelineQuery } from './graphql/queries';
-import { graphQLOrchestrator } from './graphql/orchestrator';
+import { convertToApiUser } from './profile.js';
+import { RetweetersQuery, RetweetersTimelineQuery } from './graphql/queries.js';
+import { graphQLOrchestrator } from './graphql/orchestrator.js';
 import {
   getRetweetersTimelineInstructions,
   validateRetweetersTimelineResponse
-} from './graphql/validators';
-import { processRetweetersUserTimelineInstructions } from './search';
-import type { APIUserListResults } from '../../realms/api/schemas';
+} from './graphql/validators.js';
+import { processRetweetersUserTimelineInstructions } from './search.js';
+import type { APIUserListResults } from '../../types/api-schemas.js';
+import type { TwitterBuildHost } from './build-host.js';
 
 export const statusRepostsAPI = async (
   statusId: string,
   count: number,
   cursor: string | null,
-  c: Context
+  host: TwitterBuildHost
 ): Promise<APIUserListResults> => {
-  const orchestration = await graphQLOrchestrator(c, [
+  const orchestration = await graphQLOrchestrator(host, [
     {
       key: 'reposts',
       required: true,

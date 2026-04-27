@@ -172,8 +172,9 @@ export const getFollowersFollowingInstructions = (
   kind: 'followers' | 'following'
 ): TimelineInstruction[] | undefined => {
   if (validateUserTweetsTimeline(response)) {
-    return (response as TwitterUserTweetsResponse).data.user.result.timeline.timeline
-      .instructions as TimelineInstruction[];
+    const uwt = response as TwitterUserTweetsResponse;
+    return (uwt.data?.user?.result?.timeline?.timeline?.instructions ??
+      []) as TimelineInstruction[];
   }
   const r = response as {
     data?: {

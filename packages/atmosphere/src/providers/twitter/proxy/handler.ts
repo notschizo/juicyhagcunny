@@ -1,16 +1,16 @@
-import { filterObject } from './filter';
-import { ClientTransaction } from './transaction/transaction';
-import { getRandomTwitterAccount } from './credentials';
-import { mergeCookies } from './cookies';
-import { needsTransactionId } from './allowlist';
+import { filterObject } from './filter.js';
+import { ClientTransaction } from './transaction/transaction.js';
+import { getTwitterProxyRuntime } from '../../twitter-runtime.js';
+import { mergeCookies } from './cookies.js';
+import { needsTransactionId } from './allowlist.js';
 import {
   classifyAPIErrors,
   jsonError,
   jsonHasTruthyErrorsProperty,
   twitterResponseLooksEmpty
-} from './errors';
-import { sendDiscordAlert } from './discord';
-import type { ProxyEnv } from './types';
+} from './errors.js';
+import { sendDiscordAlert } from './discord.js';
+import type { ProxyEnv } from '../../../types/proxy-credentials.js';
 
 const redactUsername = false;
 
@@ -59,7 +59,7 @@ export async function proxyTwitterRequest(request: Request, env: ProxyEnv): Prom
 
   do {
     errors = false;
-    const { authToken, csrfToken, username } = getRandomTwitterAccount();
+    const { authToken, csrfToken, username } = getTwitterProxyRuntime().getRandomTwitterAccount();
     const graphql = apiUrl.includes('graphql');
     const authValid = typeof authToken === 'string' && authToken.trim().length > 0;
     const csrfValid = !graphql || (typeof csrfToken === 'string' && csrfToken.trim().length > 0);

@@ -1,7 +1,22 @@
-import { calculateTimeLeftString } from '../../helpers/pollTime';
-import { twitterFetch } from './fetch';
-import { Context } from 'hono';
-import { Constants } from '../../constants';
+import { calculateTimeLeftString, type PollTimeStrings } from '../../helpers/poll-time.js';
+import { twitterFetch } from './fetch.js';
+import { getTwitterProviderEnv } from '../twitter-runtime.js';
+import type { TwitterBuildHost } from './build-host.js';
+import type { APIBroadcast, APIExternalMedia, APIPoll } from '../../types/api-schemas.js';
+
+const enPollTimeStrings: PollTimeStrings = {
+  singularDay: 'day',
+  pluralDays: 'days',
+  singularHour: 'hour',
+  pluralHours: 'hours',
+  singularMinute: 'minute',
+  pluralMinutes: 'minutes',
+  singularSecond: 'second',
+  pluralSeconds: 'seconds',
+  finalResults: 'Final results'
+};
+
+const pollTimeEn = (date: Date) => calculateTimeLeftString(date, enPollTimeStrings);
 
 type CardBindingValue = {
   string_value?: string;
@@ -55,7 +70,7 @@ function pickWebsiteCardImage(
 
 /* Renders card for polls, link previews, and non-Twitter video embeds (i.e. YouTube) */
 export const renderCard = async (
-  c: Context,
+  host: TwitterBuildHost,
   card: GraphQLTwitterStatus['card']
 ): Promise<{
   poll?: APIPoll;
@@ -123,8 +138,9 @@ export const renderCard = async (
       source: binding_values.broadcast_source?.string_value || 'Producer'
     };
     // Fetch https://x.com/i/api/1.1/broadcasts/show.json?ids=media_id&include_events=false
-    const broadcastData = (await twitterFetch(c, {
-      url: `${Constants.TWITTER_API_ROOT}/1.1/live_video_stream/status/${broadcast.media_key}?client=web&use_syndication_guest_id=false&cookie_set_host=x.com`
+    const { apiRoot } = getTwitterProviderEnv();
+    const broadcastData = (await twitterFetch(host, {
+      url: `${apiRoot}/1.1/live_video_stream/status/${broadcast.media_key}?client=web&use_syndication_guest_id=false&cookie_set_host=x.com`
     })) as {
       source: {
         location: string;
@@ -162,9 +178,7 @@ export const renderCard = async (
     return {
       poll: {
         ends_at: binding_values.end_datetime_utc?.string_value || '',
-        time_left_en: calculateTimeLeftString(
-          new Date(binding_values.end_datetime_utc?.string_value || '')
-        ),
+        time_left_en: pollTimeEn(new Date(binding_values.end_datetime_utc?.string_value || '')),
         total_votes,
         choices: Object.keys(choices)
           .filter(label => label !== '')

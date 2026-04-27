@@ -7,7 +7,7 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 export default defineConfig([
   eslintPluginPrettierRecommended,
   {
-    files: ['src/**/*.ts', 'packages/atmosphere/src/**/*.ts'],
+    files: ['src/**/*.ts'],
     ignores: ['**/node_modules/**', '**/dist/**', '**/*.js', '**/*.mjs', '**/*.cjs'],
     plugins: { js },
     extends: ['js/recommended'],

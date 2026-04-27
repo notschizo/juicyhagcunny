@@ -1,4 +1,8 @@
-import type { BlueskyProxyCredentials, CredentialStore, TwitterCredentials } from './types';
+import type {
+  BlueskyProxyCredentials,
+  CredentialStore,
+  TwitterCredentials
+} from '@fxembed/atmosphere/types/proxy-credentials';
 
 let credentialStore: CredentialStore | null = null;
 let initOnce: Promise<void> | null = null;

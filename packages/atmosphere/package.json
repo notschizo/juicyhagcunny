@@ -70,6 +70,18 @@
       "types": "./dist/providers/threads/*.d.ts",
       "import": "./dist/providers/threads/*.js"
     },
+    "./providers/twitter-runtime": {
+      "types": "./dist/providers/twitter-runtime.d.ts",
+      "import": "./dist/providers/twitter-runtime.js"
+    },
+    "./providers/twitter/*": {
+      "types": "./dist/providers/twitter/*.d.ts",
+      "import": "./dist/providers/twitter/*.js"
+    },
+    "./types/proxy-credentials": {
+      "types": "./dist/types/proxy-credentials.d.ts",
+      "import": "./dist/types/proxy-credentials.js"
+    },
     "./relay": {
       "types": "./dist/relay/index.d.ts",
       "import": "./dist/relay/index.js"

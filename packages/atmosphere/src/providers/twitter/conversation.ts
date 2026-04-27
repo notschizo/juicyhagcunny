@@ -1,17 +1,14 @@
-import { Constants } from '../../constants';
-import { Experiment, experimentCheck } from '../../experiments';
-import { hasTwitterAccountProxy } from './accountProxy';
-import { buildLanguageHeaders } from '../../helpers/language';
-import { isGraphQLTwitterStatus } from '../../helpers/graphql';
-import { Context } from 'hono';
-import type { APIStatusTombstone, APITwitterStatus } from '../../realms/api/schemas';
-import {
-  isTombstone,
-  stripTombstones,
-  withLocalizedTombstoneMessage
-} from '../../helpers/tombstone';
-import { buildAPITwitterStatus, twitterTweetTombstoneFromGraphQL } from './processor';
-import { InputFlags } from '../../types/types';
+import { getTwitterProviderEnv } from '../twitter-runtime.js';
+import { hasTwitterAccountProxy } from './accountProxy.js';
+import { buildLanguageHeaders } from '../../helpers/language.js';
+import { isGraphQLTwitterStatus } from '../../helpers/graphql-twitter.js';
+import type { APIStatusTombstone, APITwitterStatus } from '../../types/api-schemas.js';
+import type { FetchResults } from '../../types/fetch-results.js';
+import { isTombstone, stripTombstones } from '../../helpers/tombstone.js';
+import { buildAPITwitterStatus, twitterTweetTombstoneFromGraphQL } from './processor.js';
+import type { TwitterBuildHost } from './build-host.js';
+import { InputFlags } from '../../types/input-flags.js';
+import type { SocialThread, SocialConversation } from '../../types/api-status.js';
 import {
   ConversationTimelineQuery,
   TweetDetailQuery,
@@ -19,10 +16,10 @@ import {
   TweetResultByRestIdQuery,
   TweetResultsByIdsQuery,
   TweetResultsByRestIdsQuery
-} from './graphql/queries';
-import { graphqlRequest } from './graphql/request';
-import { graphQLOrchestrator } from './graphql/orchestrator';
-import { isTwitterNumericStatusId } from '../../helpers/utils';
+} from './graphql/queries.js';
+import { graphqlRequest } from './graphql/request.js';
+import { graphQLOrchestrator } from './graphql/orchestrator.js';
+import { isTwitterNumericStatusId } from '../../helpers/snowflake.js';
 
 type TwitterTimelinePiece = GraphQLTwitterStatus | APIStatusTombstone;
 
@@ -123,14 +120,14 @@ const graphQLThreadChainTweetsForMerge = (
 };
 
 const writeDataPoint = (
-  c: Context,
+  host: TwitterBuildHost,
   language: string | undefined,
   nsfw: boolean | null,
   returnCode: string,
   flags?: InputFlags
 ) => {
   console.log('Writing data point...');
-  if (typeof c.env?.AnalyticsEngine !== 'undefined') {
+  if (typeof host.analyticsEngine !== 'undefined') {
     const flagString =
       Object.keys(flags || {})
         // @ts-expect-error - TypeScript doesn't like iterating over the keys, but that's OK
@@ -138,11 +135,12 @@ const writeDataPoint = (
 
     console.log(flagString);
 
-    c.env?.AnalyticsEngine.writeDataPoint({
+    const cf = host.request?.cf as { colo?: string; country?: string } | undefined;
+    host.analyticsEngine?.writeDataPoint({
       blobs: [
-        c.req.raw.cf?.colo as string /* Datacenter location */,
-        c.req.raw.cf?.country as string /* Country code */,
-        c.req.header('user-agent') ?? '' /* User agent (for aggregating bots calling) */,
+        cf?.colo as string /* Datacenter location */,
+        cf?.country as string /* Country code */,
+        host.request?.userAgent ?? '' /* User agent (for aggregating bots calling) */,
         returnCode /* Return code */,
         flagString /* Type of request */,
         language ?? '' /* For translate feature */
@@ -203,14 +201,14 @@ const validateThreadedConversationResponse = (_conversation: unknown): boolean =
  * @param processThread - When true, uses the same 1000/3000 weights as fetchSingleStatus for these two endpoints.
  */
 export const fetchTweetDetail = async (
-  c: Context,
+  host: TwitterBuildHost,
   status: string,
   cursor: string | null = null,
   rankingMode?: TweetDetailRankingMode,
   language?: string
 ): Promise<TweetDetailResponse> => {
   const langHeaders = buildLanguageHeaders(language);
-  const results = await graphQLOrchestrator(c, [
+  const results = await graphQLOrchestrator(host, [
     {
       key: 'threadedConversation',
       methods: [
@@ -251,11 +249,14 @@ export const fetchTweetDetail = async (
 
 export const fetchByRestId = async (
   status: string,
-  c: Context,
-  useElongator = hasTwitterAccountProxy(c.env),
+  host: TwitterBuildHost,
+  useElongator = hasTwitterAccountProxy({
+    TwitterProxy: host.twitterProxy,
+    CREDENTIAL_KEY: host.credentialKey
+  }),
   language?: string
 ): Promise<TweetResultByRestIdResponse> => {
-  return graphqlRequest(c, {
+  return graphqlRequest(host, {
     query: TweetResultByRestIdQuery,
     variables: {
       tweetId: status
@@ -298,11 +299,14 @@ export const fetchByRestId = async (
 
 export const fetchByRestIds = async (
   statuses: string[],
-  c: Context,
-  useElongator = hasTwitterAccountProxy(c.env),
+  host: TwitterBuildHost,
+  useElongator = hasTwitterAccountProxy({
+    TwitterProxy: host.twitterProxy,
+    CREDENTIAL_KEY: host.credentialKey
+  }),
   language?: string
 ): Promise<TweetResultsByRestIdsResponse> => {
-  return graphqlRequest(c, {
+  return graphqlRequest(host, {
     query: TweetResultsByRestIdsQuery,
     variables: {
       tweetIds: statuses
@@ -349,7 +353,7 @@ export const fetchByRestIds = async (
  * without discarding fields from the first parse.
  */
 const enrichArticleWithFullContent = async (
-  c: Context,
+  host: TwitterBuildHost,
   status: APITwitterStatus,
   tweetRestId: string,
   language: string | undefined,
@@ -361,14 +365,14 @@ const enrichArticleWithFullContent = async (
   }
 
   console.log('Article lacks content blocks, re-fetching with TweetResultsByRestId...');
-  const articleResponse = await fetchByRestIds([tweetRestId], c, undefined, language);
+  const articleResponse = await fetchByRestIds([tweetRestId], host, undefined, language);
   const raw = articleResponse?.data?.tweetResult?.[0]?.result;
   if (!raw || !isGraphQLTwitterStatus(raw)) {
     return status;
   }
 
   const rebuilt = await buildAPITwitterStatus(
-    c,
+    host,
     raw,
     language,
     null,
@@ -390,11 +394,14 @@ const enrichArticleWithFullContent = async (
 
 export const fetchByIds = async (
   statuses: string[],
-  c: Context,
-  useElongator = hasTwitterAccountProxy(c.env),
+  host: TwitterBuildHost,
+  useElongator = hasTwitterAccountProxy({
+    TwitterProxy: host.twitterProxy,
+    CREDENTIAL_KEY: host.credentialKey
+  }),
   language?: string
 ): Promise<TweetResultsByIdsResponse> => {
-  return graphqlRequest(c, {
+  return graphqlRequest(host, {
     query: TweetResultsByIdsQuery,
     variables: {
       rest_ids: statuses
@@ -437,11 +444,14 @@ export const fetchByIds = async (
 
 export const fetchById = async (
   status: string,
-  c: Context,
-  useElongator = hasTwitterAccountProxy(c.env),
+  host: TwitterBuildHost,
+  useElongator = hasTwitterAccountProxy({
+    TwitterProxy: host.twitterProxy,
+    CREDENTIAL_KEY: host.credentialKey
+  }),
   language?: string
 ): Promise<TweetResultByIdResponse> => {
-  return graphqlRequest(c, {
+  return graphqlRequest(host, {
     query: TweetResultByIdQuery,
     variables: {
       rest_id: status
@@ -775,7 +785,7 @@ const filterBucketStatuses = (tweets: GraphQLTwitterStatus[], original: GraphQLT
  */
 const fetchSingleStatus = async (
   id: string,
-  c: Context,
+  host: TwitterBuildHost,
   processThread = false,
   language?: string
 ): Promise<
@@ -788,29 +798,32 @@ const fetchSingleStatus = async (
   // Determine weights based on context
   const isApiHost = (() => {
     try {
-      const url = new URL(c.req.url);
-      return Constants.API_HOST_LIST.includes(url.hostname);
+      const url = new URL(host.request?.url ?? 'https://localhost/');
+      return getTwitterProviderEnv().apiHostList.includes(url.hostname);
     } catch (e) {
       console.error(e);
       return false;
     }
   })();
 
-  const hasElongator = hasTwitterAccountProxy(c.env);
+  const hasElongator = hasTwitterAccountProxy({
+    TwitterProxy: host.twitterProxy,
+    CREDENTIAL_KEY: host.credentialKey
+  });
 
   const langHeaders = buildLanguageHeaders(language);
 
   // If account proxy is not available, only use TweetResultByRestId
   if (!hasElongator) {
     try {
-      return await fetchByRestId(id, c, undefined, language);
+      return await fetchByRestId(id, host, undefined, language);
     } catch (_e) {
       return null;
     }
   }
 
   // Build methods with dynamic weights
-  const results = await graphQLOrchestrator(c, [
+  const results = await graphQLOrchestrator(host, [
     {
       key: 'status',
       headers: langHeaders,
@@ -896,12 +909,12 @@ const fetchSingleStatus = async (
 export const constructTwitterThread = async (
   id: string,
   processThread = false,
-  c: Context,
+  host: TwitterBuildHost,
   language: string | undefined,
   legacyAPI = false
 ): Promise<SocialThread> => {
   if (!isTwitterNumericStatusId(id)) {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
 
@@ -912,11 +925,11 @@ export const constructTwitterThread = async (
     | TweetResultsByRestIdsResponse
     | TweetResultsByIdsResponse
     | TweetResultByIdResponse
-    | null = await fetchSingleStatus(id, c, processThread, language);
+    | null = await fetchSingleStatus(id, host, processThread, language);
   let status: APITwitterStatus;
 
   if (!response) {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
 
@@ -945,12 +958,12 @@ export const constructTwitterThread = async (
     const result = getResultFromResponse(response);
 
     if (!result) {
-      writeDataPoint(c, language, null, '404');
+      writeDataPoint(host, language, null, '404');
       return { status: null, thread: null, author: null, code: 404 };
     }
 
     const buildStatus = await buildAPITwitterStatus(
-      c,
+      host,
       result,
       language,
       null,
@@ -961,9 +974,9 @@ export const constructTwitterThread = async (
     );
 
     if (isTombstone(buildStatus)) {
-      writeDataPoint(c, language, null, '404');
+      writeDataPoint(host, language, null, '404');
       return {
-        status: await withLocalizedTombstoneMessage(buildStatus, language),
+        status: await (host.withLocalizedTombstone ?? (async (t, _l) => t))(buildStatus, language),
         thread: null,
         author: null,
         code: 404
@@ -971,15 +984,15 @@ export const constructTwitterThread = async (
     }
 
     if ((buildStatus as FetchResults)?.status === 401) {
-      writeDataPoint(c, language, null, '401');
+      writeDataPoint(host, language, null, '401');
       return { status: null, thread: null, author: null, code: 401 };
     } else if (buildStatus === null || (buildStatus as FetchResults)?.status === 404) {
-      writeDataPoint(c, language, null, '404');
+      writeDataPoint(host, language, null, '404');
       return { status: null, thread: null, author: null, code: 404 };
     }
 
     status = await enrichArticleWithFullContent(
-      c,
+      host,
       buildStatus as APITwitterStatus,
       id,
       language,
@@ -989,32 +1002,37 @@ export const constructTwitterThread = async (
 
     // If not processing thread, return single tweet
     if (!processThread) {
-      writeDataPoint(c, language, status.possibly_sensitive, '200');
+      writeDataPoint(host, language, status.possibly_sensitive, '200');
       return { status: status, thread: null, author: status.author, code: 200 };
     } // If we need thread but have TweetResultByRestId response, try TweetDetail
-    else if (hasTwitterAccountProxy(c.env)) {
+    else if (
+      hasTwitterAccountProxy({
+        TwitterProxy: host.twitterProxy,
+        CREDENTIAL_KEY: host.credentialKey
+      })
+    ) {
       console.log('Need thread data, trying TweetDetail...');
-      if (experimentCheck(Experiment.TWEET_DETAIL_API)) {
-        const threadResponse = await fetchTweetDetail(c, id, null, undefined, language);
+      if (host.tweetDetailApi) {
+        const threadResponse = await fetchTweetDetail(host, id, null, undefined, language);
         if (threadResponse?.data) {
           response = threadResponse;
         }
       }
       // Return single tweet if TweetDetail fails; otherwise fall through to thread processing
       if (!isTweetDetailResponse(response)) {
-        writeDataPoint(c, language, status.possibly_sensitive, '200');
+        writeDataPoint(host, language, status.possibly_sensitive, '200');
         return { status: status, thread: null, author: status.author, code: 200 };
       }
     } else if (processThread) {
       // Can't process thread without TweetDetail
-      writeDataPoint(c, language, status.possibly_sensitive, '200');
+      writeDataPoint(host, language, status.possibly_sensitive, '200');
       return { status: status, thread: null, author: status.author, code: 200 };
     }
   }
 
   // Process TweetDetail response for thread data
   if (response && !isTweetDetailResponse(response)) {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
 
@@ -1026,14 +1044,14 @@ export const constructTwitterThread = async (
   const originalPiece = findFocalInBucket(id, bucket);
 
   if (originalPiece === null) {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
 
   if (isTombstone(originalPiece)) {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return {
-      status: await withLocalizedTombstoneMessage(originalPiece, language),
+      status: await (host.withLocalizedTombstone ?? (async (t, _l) => t))(originalPiece, language),
       thread: null,
       author: null,
       code: 404
@@ -1041,25 +1059,25 @@ export const constructTwitterThread = async (
   }
 
   const originalStatus = originalPiece as GraphQLTwitterStatus;
-  const builtFocal = await buildAPITwitterStatus(c, originalStatus, language, null, legacyAPI);
+  const builtFocal = await buildAPITwitterStatus(host, originalStatus, language, null, legacyAPI);
 
   if ((builtFocal as FetchResults)?.status === 401) {
-    writeDataPoint(c, language, null, '401');
+    writeDataPoint(host, language, null, '401');
     return { status: null, thread: null, author: null, code: 401 };
   }
   if (builtFocal === null || (builtFocal as FetchResults)?.status === 404) {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
   if (typeof builtFocal === 'object' && typeof (builtFocal as FetchResults).status === 'number') {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return { status: null, thread: null, author: null, code: 404 };
   }
 
   if (isTombstone(builtFocal)) {
-    writeDataPoint(c, language, null, '404');
+    writeDataPoint(host, language, null, '404');
     return {
-      status: await withLocalizedTombstoneMessage(builtFocal, language),
+      status: await (host.withLocalizedTombstone ?? (async (t, _l) => t))(builtFocal, language),
       thread: null,
       author: null,
       code: 404
@@ -1068,13 +1086,13 @@ export const constructTwitterThread = async (
 
   status = builtFocal as APITwitterStatus;
 
-  status = await enrichArticleWithFullContent(c, status, id, language, legacyAPI, true);
+  status = await enrichArticleWithFullContent(host, status, id, language, legacyAPI, true);
 
   const author = status.author;
 
   /* If we're not processing threads, let's be done here */
   if (!processThread) {
-    writeDataPoint(c, language, status.possibly_sensitive, '200');
+    writeDataPoint(host, language, status.possibly_sensitive, '200');
     return { status: status, thread: null, author: author, code: 200 };
   }
 
@@ -1123,7 +1141,7 @@ export const constructTwitterThread = async (
       let loadCursor: TweetDetailResponse;
 
       try {
-        loadCursor = await fetchTweetDetail(c, id, cursor.value, undefined, language);
+        loadCursor = await fetchTweetDetail(host, id, cursor.value, undefined, language);
 
         if (
           typeof loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ===
@@ -1190,7 +1208,7 @@ export const constructTwitterThread = async (
       let loadCursor: TweetDetailResponse;
 
       try {
-        loadCursor = await fetchTweetDetail(c, id, cursor.value, undefined, language);
+        loadCursor = await fetchTweetDetail(host, id, cursor.value, undefined, language);
 
         if (
           typeof loadCursor?.data?.threaded_conversation_with_injections_v2?.instructions ===
@@ -1250,7 +1268,7 @@ export const constructTwitterThread = async (
         return status;
       }
       const built = await buildAPITwitterStatus(
-        c,
+        host,
         graphqlStatus,
         language,
         author,
@@ -1266,7 +1284,7 @@ export const constructTwitterThread = async (
       }
       let builtStatus = built as APITwitterStatus;
       builtStatus = await enrichArticleWithFullContent(
-        c,
+        host,
         builtStatus,
         tweetId,
         language,
@@ -1293,7 +1311,7 @@ export const constructTwitterThread = async (
 /* Fetch and construct a conversation view: full ancestor chain + replies from others */
 export const constructTwitterConversation = async (
   id: string,
-  c: Context,
+  host: TwitterBuildHost,
   rankingMode: TweetDetailRankingMode = 'Likes',
   cursor: string | null = null,
   language?: string
@@ -1302,7 +1320,7 @@ export const constructTwitterConversation = async (
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
   }
 
-  const response = await fetchTweetDetail(c, id, cursor, rankingMode, language);
+  const response = await fetchTweetDetail(host, id, cursor, rankingMode, language);
 
   if (!response?.data?.threaded_conversation_with_injections_v2?.instructions) {
     return { status: null, thread: null, replies: null, author: null, cursor: null, code: 404 };
@@ -1322,7 +1340,10 @@ export const constructTwitterConversation = async (
 
   if (fromOrderedTomb) {
     return {
-      status: await withLocalizedTombstoneMessage(fromOrderedTomb, language),
+      status: await (host.withLocalizedTombstone ?? (async (t, _l) => t))(
+        fromOrderedTomb,
+        language
+      ),
       thread: null,
       replies: null,
       author: null,
@@ -1336,10 +1357,10 @@ export const constructTwitterConversation = async (
   }
 
   const originalStatus = fromChain;
-  const built = await buildAPITwitterStatus(c, originalStatus, language, null, false, false);
+  const built = await buildAPITwitterStatus(host, originalStatus, language, null, false, false);
   if (isTombstone(built)) {
     return {
-      status: await withLocalizedTombstoneMessage(built, language),
+      status: await (host.withLocalizedTombstone ?? (async (t, _l) => t))(built, language),
       thread: null,
       replies: null,
       author: null,
@@ -1355,7 +1376,7 @@ export const constructTwitterConversation = async (
   }
 
   let status = built as APITwitterStatus;
-  status = await enrichArticleWithFullContent(c, status, id, language, false, false);
+  status = await enrichArticleWithFullContent(host, status, id, language, false, false);
 
   const author = status.author;
 
@@ -1387,7 +1408,7 @@ export const constructTwitterConversation = async (
       if (tweetId === id) {
         return status;
       }
-      const built = await buildAPITwitterStatus(c, s, language, author, false, false, 'thread');
+      const built = await buildAPITwitterStatus(host, s, language, author, false, false, 'thread');
       if (isTombstone(built)) {
         return built;
       }
@@ -1396,7 +1417,7 @@ export const constructTwitterConversation = async (
       }
       let builtStatus = built as APITwitterStatus;
       builtStatus = await enrichArticleWithFullContent(
-        c,
+        host,
         builtStatus,
         tweetId,
         language,
@@ -1418,7 +1439,7 @@ export const constructTwitterConversation = async (
     bucket.replyStatuses.map(async s => {
       const tweetId = s.rest_id ?? s.legacy?.id_str ?? '';
       let builtStatus = (await buildAPITwitterStatus(
-        c,
+        host,
         s,
         language,
         null,
@@ -1427,7 +1448,7 @@ export const constructTwitterConversation = async (
       )) as APITwitterStatus;
       if (builtStatus) {
         builtStatus = await enrichArticleWithFullContent(
-          c,
+          host,
           builtStatus,
           tweetId,
           language,

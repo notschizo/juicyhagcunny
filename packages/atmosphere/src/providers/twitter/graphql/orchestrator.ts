@@ -1,6 +1,6 @@
-import { Context } from 'hono';
-import { GraphQLQuery } from './request';
-import { graphqlRequest } from './request';
+import { GraphQLQuery } from './request.js';
+import { graphqlRequest } from './request.js';
+import type { TwitterBuildHost } from '../build-host.js';
 
 export interface GraphQLEndpointMethod {
   name: string;
@@ -48,7 +48,7 @@ const mergeRequestHeaders = (
 };
 
 const executeWithMethods = async (
-  c: Context,
+  host: TwitterBuildHost,
   methods: GraphQLEndpointMethod[],
   variables: Record<string, unknown>,
   requestHeaders?: Record<string, string>
@@ -95,7 +95,7 @@ const executeWithMethods = async (
     try {
       // Merge method-specific variables with request variables (method variables take precedence)
       const mergedVariables = { ...variables, ...selectedMethod.variables };
-      const data = await graphqlRequest(c, {
+      const data = await graphqlRequest(host, {
         query: selectedMethod.query,
         variables: mergedVariables,
         validator: selectedMethod.validator,
@@ -120,7 +120,7 @@ const executeWithMethods = async (
     try {
       // Merge method-specific variables with request variables (method variables take precedence)
       const mergedVariables = { ...variables, ...method.variables };
-      const data = await graphqlRequest(c, {
+      const data = await graphqlRequest(host, {
         query: method.query,
         variables: mergedVariables,
         validator: method.validator,
@@ -150,7 +150,7 @@ const executeWithMethods = async (
  * - Requests with methods use weighted selection for rate limit leveling
  */
 export const graphQLOrchestrator = async (
-  c: Context,
+  host: TwitterBuildHost,
   requests: GraphQLOrchestratorRequest[]
 ): Promise<GraphQLOrchestratorResult> => {
   // Fire all requests concurrently
@@ -160,7 +160,7 @@ export const graphQLOrchestrator = async (
       // Handle methods (for rate limit leveling)
       if (request.methods && request.methods.length > 0) {
         const result = await executeWithMethods(
-          c,
+          host,
           request.methods,
           request.variables ?? {},
           request.headers
@@ -171,7 +171,7 @@ export const graphQLOrchestrator = async (
         data = result.data;
       } else if (request.query && request.validator) {
         // Handle single query
-        data = await graphqlRequest(c, {
+        data = await graphqlRequest(host, {
           query: request.query,
           variables: request.variables ?? {},
           validator: request.validator,

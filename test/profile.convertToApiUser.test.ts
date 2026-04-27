@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { convertToApiUser, parseHandleOrId } from '../src/providers/twitter/profile';
+import { convertToApiUser, parseHandleOrId } from '@fxembed/atmosphere/providers/twitter/profile';
 
 test('convertToApiUser expands bio t.co from entities.description.urls and builds raw_description facets', () => {
   const rawBio = 'https://t.co/fqNKQSiLQB\n@grok it';

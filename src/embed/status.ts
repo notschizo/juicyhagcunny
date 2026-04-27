@@ -11,7 +11,8 @@ import { getSocialProof } from '../helpers/socialproof';
 import { renderPhoto } from '../render/photo';
 import { renderVideo } from '../render/video';
 import { renderInstantView } from '../render/instantview';
-import { constructTwitterThread } from '../providers/twitter/conversation';
+import { constructTwitterThread } from '@fxembed/atmosphere/providers/twitter/conversation';
+import { twitterBuildHostFromContext } from '../providers/twitter/build-host-adapter';
 import { Experiment, experimentCheck } from '../experiments';
 import translationResources from '../../i18n/resources';
 import { constructBlueskyThread } from '../providers/bluesky/conversation';
@@ -135,7 +136,7 @@ export const handleStatus = async (
     thread = await constructTwitterThread(
       statusId,
       fetchWithThreads,
-      c,
+      twitterBuildHostFromContext(c),
       useActivity ? undefined : useLanguage,
       flags?.api ?? false
     );

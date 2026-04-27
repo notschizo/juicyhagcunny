@@ -1,9 +1,9 @@
-import { Context } from 'hono';
-import { Constants } from '../constants';
-import { getGIFTranscodeDomain, shouldTranscodeGif } from './giftranscode';
-import { formatImageUrl, isParamTruthy } from './utils';
-import { Experiment, experimentCheck } from '../experiments';
-import { convertToApiUser } from '../providers/twitter/profile';
+import type { TwitterBuildHost } from '../providers/twitter/build-host.js';
+import { getGIFTranscodeDomain } from './gif-transcode.js';
+import { getTwitterProviderEnv } from '../providers/twitter-runtime.js';
+import { formatImageUrl, isParamTruthy } from './format-image-url.js';
+import { convertToApiUser } from '../providers/twitter/profile.js';
+import type { APIPhoto, APIVideo, APIVideoFormat } from '../types/api-schemas.js';
 
 /**
  * Convert Twitter's TweetMediaVariant to our APIVideoFormat
@@ -13,7 +13,6 @@ const convertVariantToFormat = (variant: TweetMediaVariant): APIVideoFormat => {
   let container: 'mp4' | 'webm' | 'm3u8' | undefined;
   let codec: 'h264' | 'hevc' | 'vp9' | 'av1' | undefined;
 
-  // Detect container from URL
   if (url.includes('.m3u8')) {
     container = 'm3u8';
   } else if (url.includes('.webm')) {
@@ -21,7 +20,6 @@ const convertVariantToFormat = (variant: TweetMediaVariant): APIVideoFormat => {
   } else if (url.includes('.mp4')) {
     container = 'mp4';
   }
-  // Detect codec from URL or content type
   if (url.includes('hevc')) {
     codec = 'hevc';
   } else if (url.includes('vp9')) {
@@ -29,7 +27,7 @@ const convertVariantToFormat = (variant: TweetMediaVariant): APIVideoFormat => {
   } else if (url.includes('av1')) {
     codec = 'av1';
   } else if (container === 'mp4' || variant.content_type?.includes('mp4') || url.includes('avc1')) {
-    codec = 'h264'; // Default for MP4
+    codec = 'h264';
   }
 
   return {
@@ -44,7 +42,6 @@ const convertVariantToFormat = (variant: TweetMediaVariant): APIVideoFormat => {
  * Convert APIVideoFormat back to TweetMediaVariant for legacy API compatibility
  */
 export const convertFormatToVariant = (format: APIVideoFormat): TweetMediaVariant => {
-  // Determine content type from container/codec
   let content_type = 'video/mp4';
   if (format.container === 'webm') {
     content_type = 'video/webm';
@@ -59,9 +56,19 @@ export const convertFormatToVariant = (format: APIVideoFormat): TweetMediaVarian
   };
 };
 
+const defaultShouldTranscodeGifs = (): boolean => false;
+const defaultKitchensink = (): boolean => false;
+
 /* Help populate API response for media */
-export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo | null => {
-  const shouldTranscodeGifs = shouldTranscodeGif(c);
+export const processMedia = (
+  host: TwitterBuildHost,
+  media: TweetMedia
+): APIPhoto | APIVideo | null => {
+  const shouldTranscodeGifs = host.shouldTranscodeGif?.() ?? defaultShouldTranscodeGifs();
+  const userAgent = host.request?.userAgent ?? '';
+  const requestUrl = host.request?.url ?? 'https://localhost/';
+  const env = getTwitterProviderEnv();
+
   if (media.type === 'photo') {
     return {
       type: 'photo',
@@ -72,27 +79,20 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
       altText: media.ext_alt_text
     };
   } else if (media.type === 'video' || media.type === 'animated_gif') {
-    // Convert Twitter variants to our formats
     const formats: APIVideoFormat[] = media.video_info?.variants?.map(convertVariantToFormat) ?? [];
 
-    /* Find the format with the highest bitrate */
     const bestFormat = formats
       .filter(format => {
-        if (c.req.header('user-agent')?.includes('TelegramBot') && format.bitrate) {
-          /* Telegram doesn't support videos over 20 MB, so we need to filter them out */
+        if (userAgent.includes('TelegramBot') && format.bitrate) {
           const bitrate = format.bitrate || 0;
           const length = (media.video_info?.duration_millis || 0) / 1000;
-          /* Calculate file size in bytes */
           const fileSizeBytes: number = (bitrate * length) / 8;
-          /* Convert file size to megabytes (MB) */
           const fileSizeMB: number = fileSizeBytes / (1024 * 1024);
 
           console.log(
             `Estimated file size: ${fileSizeMB.toFixed(2)} MB for bitrate ${bitrate / 1000} kbps`
           );
-          return (
-            fileSizeMB < 30
-          ); /* Currently this calculation is off, so we'll just do it if it's way over */
+          return fileSizeMB < 30;
         }
         return !format.url.includes('hevc');
       })
@@ -101,28 +101,30 @@ export const processMedia = (c: Context, media: TweetMedia): APIPhoto | APIVideo
     if (media.type === 'animated_gif' && shouldTranscodeGifs) {
       let extension = '.gif';
       if (
-        experimentCheck(Experiment.KITCHENSINK_GIF) &&
-        c.req.header('user-agent')?.includes('Discordbot')
+        (host.useWebpInsteadOfGifForKitchensink?.() ?? defaultKitchensink()) &&
+        userAgent.includes('Discordbot')
       ) {
-        const url = new URL(c.req.url);
+        const url = new URL(requestUrl);
         if (!isParamTruthy(url.searchParams.get('gif') ?? undefined)) {
           extension = '.webp';
         }
       }
+      const transcodeHost = getGIFTranscodeDomain(media.id_str, env.gifTranscodeDomainList);
+      const transcodeBase = transcodeHost ? `https://${transcodeHost}` : null;
       return {
         type: 'gif',
         id: media.id_str,
         url: media.media_url_https,
         width: media.original_info?.width,
         height: media.original_info?.height,
-        transcode_url: bestFormat?.url
-          .replace(Constants.TWITTER_VIDEO_BASE, `https://${getGIFTranscodeDomain(media.id_str)}`)
-          .replace('.mp4', extension),
+        transcode_url:
+          bestFormat?.url && transcodeBase
+            ? bestFormat.url.replace(env.videoBase, transcodeBase).replace('.mp4', extension)
+            : undefined,
         altText: media.ext_alt_text
       };
     }
 
-    // Determine content type from best format
     let content_type = 'video/mp4';
     if (bestFormat?.container === 'webm') {
       content_type = 'video/webm';

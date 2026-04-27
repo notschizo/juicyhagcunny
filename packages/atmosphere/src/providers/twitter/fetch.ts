@@ -1,11 +1,11 @@
-import { Context } from 'hono';
-import { Constants } from '../../constants';
-import { generateUserAgent } from '../../helpers/useragent';
-import { generateSnowflake, withTimeout } from '../../helpers/utils';
-import { detokenize } from '../../helpers/detokenize';
-import { hasTwitterAccountProxy } from './accountProxy';
-import { hasDecryptedCredentials, initCredentials } from './proxy/credentials';
-import { proxyTwitterRequest } from './proxy/handler';
+import { generateUserAgent } from '../../helpers/user-agent.js';
+import { generateSnowflake } from '../../helpers/snowflake.js';
+import { withTimeout } from '../../helpers/with-timeout.js';
+import { detokenize } from '../../helpers/detokenize.js';
+import { hasTwitterAccountProxy } from './accountProxy.js';
+import { getTwitterProviderEnv, getTwitterProxyRuntime } from '../twitter-runtime.js';
+import { proxyTwitterRequest } from './proxy/handler.js';
+import type { TwitterBuildHost } from './build-host.js';
 
 const API_ATTEMPTS = 3;
 
@@ -19,56 +19,65 @@ interface TwitterFetchOptions {
   elongatorRequired?: boolean;
 }
 
-export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Promise<unknown> => {
+type TwitterAccountProxyEnv = {
+  TwitterProxy?: { fetch: typeof fetch };
+  CREDENTIAL_KEY?: string;
+};
+
+function accountProxyEnvFromHost(host: TwitterBuildHost): TwitterAccountProxyEnv {
+  return {
+    TwitterProxy: host.twitterProxy,
+    CREDENTIAL_KEY: host.credentialKey
+  };
+}
+
+export const twitterFetch = async (
+  host: TwitterBuildHost,
+  options: TwitterFetchOptions
+): Promise<unknown> => {
+  const env = getTwitterProviderEnv();
   const { url, method, headers: _headers, body, validateFunction, elongatorRequired } = options;
-  let useElongator = options.useElongator ?? hasTwitterAccountProxy(c.env);
+  let useElongator = options.useElongator ?? hasTwitterAccountProxy(accountProxyEnvFromHost(host));
   let apiAttempts = 0;
   let newTokenGenerated = false;
   let wasAccountProxyDisabled = false;
 
   const [userAgent, secChUa] = generateUserAgent();
-  // console.log(`Outgoing useragent for this request:`, userAgent);
 
   const tokenHeaders: { [header: string]: string } = {
-    'Authorization': Constants.GUEST_BEARER_TOKEN,
+    'Authorization': env.guestBearerToken,
     'User-Agent': userAgent,
     'sec-ch-ua': secChUa,
-    ...Constants.BASE_HEADERS
+    ...env.baseHeaders
   };
 
-  const guestTokenRequest = new Request(`${Constants.TWITTER_API_ROOT}/1.1/guest/activate.json`, {
+  const guestTokenRequest = new Request(`${env.apiRoot}/1.1/guest/activate.json`, {
     method: 'POST',
     headers: tokenHeaders,
     cf: {
       cacheEverything: true,
-      cacheTtl: Constants.GUEST_TOKEN_MAX_AGE
+      cacheTtl: env.guestTokenMaxAge
     },
     body: ''
-  });
+  } as RequestInit);
 
-  /* A dummy version of the request only used for Cloudflare caching purposes.
-     The reason it exists at all is because Cloudflare won't cache POST requests. */
-  const guestTokenRequestCacheDummy = new Request(
-    `${Constants.TWITTER_API_ROOT}/1.1/guest/activate.json`,
-    {
-      method: 'GET',
-      cf: {
-        cacheEverything: true,
-        cacheTtl: Constants.GUEST_TOKEN_MAX_AGE
-      }
+  const guestTokenRequestCacheDummy = new Request(`${env.apiRoot}/1.1/guest/activate.json`, {
+    method: 'GET',
+    cf: {
+      cacheEverything: true,
+      cacheTtl: env.guestTokenMaxAge
     }
-  );
+  } as RequestInit);
 
-  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const cache =
+    typeof caches !== 'undefined' ? (caches as unknown as { default: Cache }).default : null;
 
   while (apiAttempts < API_ATTEMPTS) {
-    /* Generate a random CSRF token, Twitter just cares that header and cookie match,
-    REST can use shorter csrf tokens (32 bytes) but graphql uses a 160 byte one. */
     const csrfToken = crypto.randomUUID().replace(/-/g, '');
 
     const headers: Record<string, string> = {
-      Authorization: Constants.GUEST_BEARER_TOKEN,
-      ...Constants.BASE_HEADERS,
+      Authorization: env.guestBearerToken,
+      ...env.baseHeaders,
       ...(_headers ?? {})
     };
 
@@ -98,12 +107,6 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     }
 
     if (newTokenGenerated || (activate === null && !useElongator)) {
-      /* Let's get a guest token to call the API.
-      
-      Back in the day (2022), this was pretty much unlimited and gave us nearly unlimited read-only access to Twitter.
-      
-      Since the Elon buyout, this has become more stringent with rate limits, NSFW tweets not loading with this method,
-      among other seemingly arbitrary restrictions and quirks. */
       const timeBefore = performance.now();
       activate = await fetch(guestTokenRequest.clone());
       const timeAfter = performance.now();
@@ -111,7 +114,6 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       console.log(`Guest token request after ${timeAfter - timeBefore}ms`);
     }
 
-    /* Let's grab that guest_token so we can use it */
     let activateJson: { guest_token: string };
 
     try {
@@ -120,14 +122,12 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       continue;
     }
 
-    /* Elongator doesn't need guestToken, so we just make up a snowflake */
     const guestToken = activateJson?.guest_token || generateSnowflake();
 
     if (activateJson) {
       console.log(newTokenGenerated ? 'Activated guest:' : 'Using guest:', activateJson);
     }
 
-    /* Just some cookies to mimick what the Twitter Web App would send */
     headers['Cookie'] = [
       `guest_id_ads=v1%3A${guestToken}`,
       `guest_id_marketing=v1%3A${guestToken}`,
@@ -142,12 +142,12 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     let apiRequest: Response | null;
 
     try {
-      if (useElongator && typeof c.env?.TwitterProxy !== 'undefined') {
+      if (useElongator && typeof host.twitterProxy !== 'undefined') {
         const performanceStart = performance.now();
         const headers2 = headers;
         headers2['x-twitter-auth-type'] = 'OAuth2Session';
         apiRequest = await withTimeout((signal: AbortSignal) =>
-          c.env?.TwitterProxy!.fetch(url, {
+          host.twitterProxy!.fetch(url, {
             method: method,
             headers: headers2,
             signal: signal,
@@ -156,13 +156,14 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
         );
         const performanceEnd = performance.now();
         console.log(`Account proxy request finished after ${performanceEnd - performanceStart}ms`);
-      } else if (useElongator && c.env?.CREDENTIAL_KEY) {
+      } else if (useElongator && host.credentialKey) {
         const performanceStart = performance.now();
         const headers2 = { ...headers };
         headers2['x-twitter-auth-type'] = 'OAuth2Session';
-        await initCredentials(c.env.CREDENTIAL_KEY);
+        const rt = getTwitterProxyRuntime();
+        await rt.initCredentials(host.credentialKey);
         let usedInProcessAccountProxy = false;
-        if (hasDecryptedCredentials()) {
+        if (rt.hasDecryptedCredentials()) {
           usedInProcessAccountProxy = true;
           apiRequest = await withTimeout((signal: AbortSignal) =>
             proxyTwitterRequest(
@@ -173,8 +174,8 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
                 body
               }),
               {
-                CREDENTIAL_KEY: c.env.CREDENTIAL_KEY,
-                EXCEPTION_DISCORD_WEBHOOK: c.env.EXCEPTION_DISCORD_WEBHOOK
+                CREDENTIAL_KEY: host.credentialKey,
+                EXCEPTION_DISCORD_WEBHOOK: host.exceptionWebhookUrl
               }
             )
           );
@@ -218,19 +219,14 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
         }
       }
     } catch (e: unknown) {
-      /* We'll usually only hit this if we get an invalid response from Twitter.
-         It's uncommon, but it happens */
       console.error('Unknown error while fetching from API', e);
-      /* Account proxy may surface downstream errors as thrown strings */
       if (String(e).indexOf('Status not found') !== -1) {
         console.log('Tweet was not found');
         return null;
       }
       try {
-        if (!useElongator && cache && c.executionCtx) {
-          c.executionCtx.waitUntil(
-            cache.delete(guestTokenRequestCacheDummy.clone(), { ignoreMethod: true })
-          );
+        if (!useElongator && cache && host.waitUntil) {
+          host.waitUntil(cache.delete(guestTokenRequestCacheDummy.clone(), { ignoreMethod: true }));
         }
       } catch (error) {
         console.error((error as Error).stack);
@@ -251,7 +247,7 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
     if (
       !wasAccountProxyDisabled &&
       !useElongator &&
-      hasTwitterAccountProxy(c.env) &&
+      hasTwitterAccountProxy(accountProxyEnvFromHost(host)) &&
       (response as TweetResultByRestIdResponse)?.data?.tweetResult?.result?.reason ===
         'NsfwLoggedOut'
     ) {
@@ -262,14 +258,11 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
 
     const remainingRateLimit = parseInt(apiRequest?.headers.get('x-rate-limit-remaining') || '0');
     console.log(`Remaining rate limit: ${remainingRateLimit} requests`);
-    /* Running out of requests within our rate limit, let's purge the cache */
     if (!useElongator && remainingRateLimit < 10) {
       console.log(`Purging token on this edge due to low rate limit remaining`);
       try {
-        if (c.executionCtx && cache) {
-          c.executionCtx.waitUntil(
-            cache.delete(guestTokenRequestCacheDummy.clone(), { ignoreMethod: true })
-          );
+        if (host.waitUntil && cache) {
+          host.waitUntil(cache.delete(guestTokenRequestCacheDummy.clone(), { ignoreMethod: true }));
         }
       } catch (error) {
         console.error((error as Error).stack);
@@ -291,22 +284,20 @@ export const twitterFetch = async (c: Context, options: TwitterFetchOptions): Pr
       continue;
     }
     try {
-      /* If we've generated a new token, we'll cache it */
-      if (c.executionCtx && newTokenGenerated && activate && cache) {
+      if (host.waitUntil && newTokenGenerated && activate && cache) {
         const cachingResponse = new Response(await activate.clone().text(), {
           headers: {
             ...tokenHeaders,
-            'cache-control': `max-age=${Constants.GUEST_TOKEN_MAX_AGE}`
+            'cache-control': `max-age=${env.guestTokenMaxAge}`
           }
         });
         console.log('Caching guest token');
-        c.executionCtx.waitUntil(cache.put(guestTokenRequestCacheDummy.clone(), cachingResponse));
+        host.waitUntil(cache.put(guestTokenRequestCacheDummy.clone(), cachingResponse));
       }
     } catch (error) {
       console.error((error as Error).stack);
     }
     console.log('twitterFetch is all done here, see you soon!');
-    // console.log('response', JSON.stringify(response));
     return response;
   }
 

@@ -1,7 +1,8 @@
 /* eslint-disable no-case-declarations */
 import { Strings } from '../strings';
 import { DataProvider, returnError } from './status';
-import { constructTwitterThread } from '../providers/twitter/conversation';
+import { constructTwitterThread } from '@fxembed/atmosphere/providers/twitter/conversation';
+import { twitterBuildHostFromContext } from '../providers/twitter/build-host-adapter';
 import { constructBlueskyThread } from '../providers/bluesky/conversation';
 import { blueskyBuildHostFromContext } from '../providers/bluesky/build-host-adapter';
 import { Constants } from '../constants';
@@ -400,7 +401,13 @@ export const handleActivity = async (
 
   let thread: SocialThread;
   if (provider === DataProvider.Twitter) {
-    thread = await constructTwitterThread(statusId, false, c, language ?? undefined, false);
+    thread = await constructTwitterThread(
+      statusId,
+      false,
+      twitterBuildHostFromContext(c),
+      language ?? undefined,
+      false
+    );
   } else if (provider === DataProvider.Bluesky) {
     thread = await constructBlueskyThread(
       statusId,
