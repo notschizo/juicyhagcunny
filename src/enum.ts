@@ -1,7 +1,1 @@
-export enum DataProvider {
-  Twitter = 'twitter',
-  Bluesky = 'bluesky',
-  TikTok = 'tiktok',
-  Mastodon = 'mastodon',
-  Instagram = 'instagram'
-}
+export { DataProvider } from '@fxembed/atmosphere/types/data-provider';

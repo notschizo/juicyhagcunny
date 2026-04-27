@@ -3,6 +3,7 @@ import { Strings } from '../strings';
 import { DataProvider, returnError } from './status';
 import { constructTwitterThread } from '../providers/twitter/conversation';
 import { constructBlueskyThread } from '../providers/bluesky/conversation';
+import { blueskyBuildHostFromContext } from '../providers/bluesky/build-host-adapter';
 import { Constants } from '../constants';
 import { getActivitySocialProof } from '../helpers/socialproof';
 import i18next from 'i18next';
@@ -405,7 +406,7 @@ export const handleActivity = async (
       statusId,
       authorHandle ?? '',
       false,
-      c,
+      blueskyBuildHostFromContext(c),
       language ?? undefined,
       preferredProxyServiceHost ? { preferredProxyServiceHost } : undefined
     );

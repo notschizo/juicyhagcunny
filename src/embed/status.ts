@@ -15,6 +15,7 @@ import { constructTwitterThread } from '../providers/twitter/conversation';
 import { Experiment, experimentCheck } from '../experiments';
 import translationResources from '../../i18n/resources';
 import { constructBlueskyThread } from '../providers/bluesky/conversation';
+import { blueskyBuildHostFromContext } from '../providers/bluesky/build-host-adapter';
 import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
 import { getBranding } from '../helpers/branding';
@@ -144,7 +145,7 @@ export const handleStatus = async (
       statusId,
       authorHandle ?? '',
       fetchWithThreads,
-      c,
+      blueskyBuildHostFromContext(c),
       useActivity ? undefined : useLanguage,
       undefined,
       blueskyActivityPdsOut

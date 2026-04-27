@@ -7,6 +7,7 @@ import {
   constructBlueskyConversation,
   constructBlueskyThread
 } from '../../providers/bluesky/conversation';
+import { blueskyBuildHostFromContext } from '../../providers/bluesky/build-host-adapter';
 import { blueskyUserProfileAPI } from '../../providers/bluesky/profile';
 import {
   blueskyProfileLikesAPI,
@@ -43,7 +44,13 @@ const unixTimestampParamToMs = (unix: number): number =>
 export const blueskyStatusAPIRequest: RouteHandler<typeof blueskyStatusV2Route> = async c => {
   const { handle, rkey } = c.req.valid('param');
   const { lang } = c.req.valid('query');
-  const processedResponse = await constructBlueskyThread(rkey, handle, false, c, lang);
+  const processedResponse = await constructBlueskyThread(
+    rkey,
+    handle,
+    false,
+    blueskyBuildHostFromContext(c),
+    lang
+  );
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500, 503] as const,
@@ -64,7 +71,9 @@ export const blueskyStatusRepostsAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyStatusRepostsAPI(handle, rkey, { count, cursor }, c);
+  const response = await blueskyStatusRepostsAPI(handle, rkey, { count, cursor }, {
+    credentialKey: c.env?.CREDENTIAL_KEY
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -85,7 +94,9 @@ export const blueskyStatusLikesAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyStatusLikesAPI(handle, rkey, { count, cursor }, c);
+  const response = await blueskyStatusLikesAPI(handle, rkey, { count, cursor }, {
+    credentialKey: c.env?.CREDENTIAL_KEY
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -101,7 +112,13 @@ export const blueskyStatusLikesAPIRequest: RouteHandler<
 export const blueskyThreadAPIRequest: RouteHandler<typeof blueskyThreadV2Route> = async c => {
   const { handle, rkey } = c.req.valid('param');
   const { lang } = c.req.valid('query');
-  const processedResponse = await constructBlueskyThread(rkey, handle, true, c, lang);
+  const processedResponse = await constructBlueskyThread(
+    rkey,
+    handle,
+    true,
+    blueskyBuildHostFromContext(c),
+    lang
+  );
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500, 503] as const,
@@ -120,7 +137,7 @@ export const blueskyConversationAPIRequest: RouteHandler<
   const { handle, rkey } = c.req.valid('param');
   const query = c.req.valid('query');
 
-  const result = await constructBlueskyConversation(handle, rkey, c, {
+  const result = await constructBlueskyConversation(handle, rkey, blueskyBuildHostFromContext(c), {
     rankingMode: query.ranking_mode ?? 'likes',
     cursor: query.cursor ?? null,
     count: query.count ?? 20,
@@ -149,7 +166,9 @@ export const blueskyConversationAPIRequest: RouteHandler<
 
 export const blueskyProfileAPIRequest: RouteHandler<typeof blueskyProfileV2Route> = async c => {
   const { handle } = c.req.valid('param');
-  const processedResponse = await blueskyUserProfileAPI(handle, c);
+  const processedResponse = await blueskyUserProfileAPI(handle, {
+    credentialKey: c.env?.CREDENTIAL_KEY
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     processedResponse,
     [200, 400, 404, 500] as const,
@@ -164,7 +183,7 @@ export const blueskyProfileAPIRequest: RouteHandler<typeof blueskyProfileV2Route
 
 export const blueskySearchAPIRequest: RouteHandler<typeof blueskySearchV2Route> = async c => {
   const query = c.req.valid('query');
-  const searchResponse = await blueskySearchAPI(c, {
+  const searchResponse = await blueskySearchAPI(blueskyBuildHostFromContext(c), {
     q: query.q,
     feed: query.feed ?? 'latest',
     count: query.count ?? 30,
@@ -188,7 +207,9 @@ export const blueskyTrendsAPIRequest: RouteHandler<typeof blueskyTrendsV2Route> 
   const query = c.req.valid('query');
   const type = query.type ?? 'trending';
   const count = query.count ?? 20;
-  const trendsResponse = await blueskyTrendsAPI(type, count, c);
+  const trendsResponse = await blueskyTrendsAPI(type, count, {
+    credentialKey: c.env?.CREDENTIAL_KEY
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     trendsResponse,
     [200, 400, 404, 500] as const,
@@ -209,7 +230,9 @@ export const blueskyProfileFollowersAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyProfileFollowersAPI(handle, { count, cursor }, c);
+  const response = await blueskyProfileFollowersAPI(handle, { count, cursor }, {
+    credentialKey: c.env?.CREDENTIAL_KEY
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -230,7 +253,9 @@ export const blueskyProfileFollowingAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyProfileFollowingAPI(handle, { count, cursor }, c);
+  const response = await blueskyProfileFollowingAPI(handle, { count, cursor }, {
+    credentialKey: c.env?.CREDENTIAL_KEY
+  });
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -256,7 +281,7 @@ export const blueskyProfileMediaAPIRequest: RouteHandler<
       cursor: query.cursor ?? null,
       language: query.lang
     },
-    c
+    blueskyBuildHostFromContext(c)
   );
 
   const { httpStatus, payload } = normalizeApiJsonResponse(
@@ -284,7 +309,7 @@ export const blueskyProfileLikesAPIRequest: RouteHandler<
       cursor: query.cursor ?? null,
       language: query.lang
     },
-    c
+    blueskyBuildHostFromContext(c)
   );
 
   const { httpStatus, payload } = normalizeApiJsonResponse(
@@ -324,7 +349,7 @@ export const blueskyProfileStatusesAPIRequest = (async (
       language: query.lang,
       groupThreads
     },
-    c
+    blueskyBuildHostFromContext(c)
   );
 
   const applySinceNoContent =

@@ -7,6 +7,24 @@ import { rewriteFramesIntegration } from 'toucan-js';
 
 import { Strings } from './strings';
 import { Constants } from './constants';
+import { setBlueskyProviderEnv, setBlueskyProxyRuntime } from '@fxembed/atmosphere/providers/bluesky-runtime';
+import * as proxyCreds from './providers/twitter/proxy/credentials';
+
+setBlueskyProviderEnv({
+  apiRoot: Constants.BLUESKY_API_ROOT,
+  webRoot: Constants.BLUESKY_ROOT,
+  videoBase: Constants.BLUESKY_VIDEO_BASE,
+  mosaicBskyDomainList: Constants.MOSAIC_BSKY_DOMAIN_LIST,
+  polyglotDomainList: Constants.POLYGLOT_DOMAIN_LIST
+});
+
+setBlueskyProxyRuntime({
+  initCredentials: proxyCreds.initCredentials,
+  hasBundledEncryptedCredentials: proxyCreds.hasBundledEncryptedCredentials,
+  hasBlueskyProxyAccounts: proxyCreds.hasBlueskyProxyAccounts,
+  getShuffledBlueskyAccounts: proxyCreds.getShuffledBlueskyAccounts,
+  blueskyProxyServiceHostname: proxyCreds.blueskyProxyServiceHostname
+});
 import { api } from './realms/api/router';
 import { twitter } from './realms/twitter/router';
 import { cacheMiddleware } from './caches';
