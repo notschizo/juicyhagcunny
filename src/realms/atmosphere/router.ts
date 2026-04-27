@@ -13,6 +13,7 @@ import type { SocialThread } from '../../types/apiStatus';
 import { constructTikTokVideo } from '../../providers/tiktok/conversation';
 import { registerInstagramAtmosphereRoutes } from '../../providers/instagram/atmosphere-register';
 import { registerMastodonAtmosphereRoutes } from '../../providers/mastodon/atmosphere-register';
+import { registerThreadsAtmosphereRoutes } from '../../providers/threads/atmosphere-register';
 
 export const atmosphere = new OpenAPIHono({ defaultHook: apiOpenapiValidationHook });
 
@@ -55,6 +56,7 @@ atmosphere.get('/', atmosphereRoot);
 
 registerMastodonAtmosphereRoutes(atmosphere);
 registerInstagramAtmosphereRoutes(atmosphere);
+registerThreadsAtmosphereRoutes(atmosphere);
 
 /**
  * FxTwitter API v2 under `/2/twitter/…` — forward to the in-process `api` app (same handlers and
@@ -147,7 +149,7 @@ registerOpenApiJsonRoute(atmosphere, '/2/openapi.json', {
     title: 'FxEmbed Atmosphere API',
     version: '2.0.0',
     description:
-      'Multi-provider JSON API (X/Twitter, Bluesky, Mastodon/ActivityPub, TikTok, Instagram). Mastodon routes are under `/2/mastodon/{instance}/…`, TikTok under `/2/tiktok/…`, Instagram under `/2/instagram/…`. Twitter (`/2/twitter/…`) and Bluesky (`/2/bluesky/…`) are served by forwarding to the same logic as `api.fxtwitter.com` and `api.fxbsky.app`; use their `/2/openapi.json` for full path and schema documentation.'
+      'Multi-provider JSON API (X/Twitter, Bluesky, Mastodon/ActivityPub, TikTok, Instagram, Threads). Mastodon routes are under `/2/mastodon/{instance}/…`, TikTok under `/2/tiktok/…`, Instagram under `/2/instagram/…`, Threads under `/2/threads/…`. Twitter (`/2/twitter/…`) and Bluesky (`/2/bluesky/…`) are served by forwarding to the same logic as `api.fxtwitter.com` and `api.fxbsky.app`; use their `/2/openapi.json` for full path and schema documentation.'
   },
   servers: Constants.ATMOSPHERE_API_HOST_ROOT
     ? [

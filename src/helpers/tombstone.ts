@@ -3,6 +3,7 @@ import icu from 'i18next-icu';
 import type {
   APIBlueskyStatus,
   APIInstagramStatus,
+  APIThreadsStatus,
   APIMastodonStatus,
   APITombstoneReason,
   APITwitterStatus,
@@ -85,7 +86,8 @@ type Statusish =
   | APITwitterStatus
   | APIBlueskyStatus
   | APIMastodonStatus
-  | APIInstagramStatus;
+  | APIInstagramStatus
+  | APIThreadsStatus;
 
 function stripQuotesDeep(s: Statusish): void {
   if (isTombstone(s)) return;

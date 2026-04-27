@@ -483,7 +483,7 @@ export const APIStatusTombstoneSchema = z
     type: z
       .literal('tombstone')
       .openapi({ description: 'Placeholder for an unavailable post (quote/thread).' }),
-    provider: z.enum(['twitter', 'bluesky', 'mastodon', 'tiktok', 'instagram']),
+    provider: z.enum(['twitter', 'bluesky', 'mastodon', 'tiktok', 'instagram', 'threads']),
     reason: APITombstoneReasonSchema,
     message: z.string(),
     id: z.string().optional(),
@@ -583,18 +583,6 @@ export const APITwitterStatusSchema: z.ZodType<APITwitterStatus> = z.lazy(() =>
     .openapi('APITwitterStatus')
 );
 
-export const SocialThreadSchema = z
-  .object({
-    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
-    status: z
-      .union([APITwitterStatusSchema, APIStatusTombstoneSchema])
-      .nullable()
-      .openapi({ description: 'Focal post, or a tombstone when the post is unavailable' }),
-    thread: z.array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema])).nullable(),
-    author: APIUserSchema.nullable()
-  })
-  .openapi('SocialThread');
-
 /** Bluesky normalized post (API v2–shaped; omits Twitter-only fields). */
 export type APIBlueskyStatus = {
   id: string;
@@ -662,21 +650,6 @@ export const APIBlueskyStatusSchema: z.ZodType<APIBlueskyStatus> = z.lazy(() =>
     })
     .openapi('APIBlueskyStatus')
 );
-
-export const SocialConversationSchema = z
-  .object({
-    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
-    status: z.union([APITwitterStatusSchema, APIStatusTombstoneSchema]).nullable(),
-    thread: z.array(z.union([APITwitterStatusSchema, APIStatusTombstoneSchema])).nullable(),
-    replies: z.array(APITwitterStatusSchema).nullable(),
-    author: APIUserSchema.nullable(),
-    cursor: z
-      .object({
-        bottom: z.string().nullable()
-      })
-      .nullable()
-  })
-  .openapi('SocialConversation');
 
 export const UserAPIResponseSchema = z
   .object({
@@ -908,7 +881,9 @@ export type APISubstatus = {
   replying_to?: APIReplyingTo | null;
   source: string | null;
   embed_card?: 'tweet' | 'summary' | 'summary_large_image' | 'player';
-  provider: 'instagram' | 'tiktok';
+  provider: 'instagram' | 'tiktok' | 'threads';
+  /** Provider-native media / comment pk when `id` is a public shortcode or other surface id. */
+  media_pk?: string;
 };
 
 export const APISubstatusSchema: z.ZodType<APISubstatus> = z.lazy(() =>
@@ -939,7 +914,11 @@ export const APISubstatusSchema: z.ZodType<APISubstatus> = z.lazy(() =>
       replying_to: APIReplyingToSchema.nullable().optional(),
       source: z.string().nullable(),
       embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']).optional(),
-      provider: z.enum(['instagram', 'tiktok'])
+      provider: z.enum(['instagram', 'tiktok', 'threads']),
+      media_pk: z.string().optional().openapi({
+        description:
+          'Underlying media or comment pk from the provider when `id` is a shortcode or other canonical surface id.'
+      })
     })
     .openapi('APISubstatus')
 );
@@ -1009,6 +988,125 @@ export const APIInstagramStatusSchema: z.ZodType<APIInstagramStatus> = z.lazy(()
     })
     .openapi('APIInstagramStatus')
 );
+
+/** Threads web-normalized post (same baseline as Instagram API v2). */
+export type APIThreadsStatus = {
+  type: 'status';
+  id: string;
+  url: string;
+  text: string;
+  created_at: string;
+  created_timestamp: number;
+  likes: number;
+  reposts: number;
+  quotes?: number;
+  replies: number;
+  quote?: APIThreadsStatus | APIStatusTombstone;
+  poll?: z.infer<typeof APIPollSchema>;
+  author: z.infer<typeof APIUserSchema>;
+  media: z.infer<typeof APIMediaContainerSchema>;
+  raw_text: {
+    text: string;
+    facets: z.infer<typeof APIFacetSchema>[];
+  };
+  lang: string | null;
+  translation?: z.infer<typeof APITranslateSchema>;
+  possibly_sensitive: boolean;
+  replying_to: APIReplyingTo | null;
+  source: string | null;
+  embed_card: 'tweet' | 'summary' | 'summary_large_image' | 'player';
+  provider: 'threads';
+  reposted_by?: z.infer<typeof APIRepostedBySchema>;
+  /** Numeric media pk (before `_userId` in `id`) for upstream pagination. */
+  media_pk?: string;
+};
+
+export const APIThreadsStatusSchema: z.ZodType<APIThreadsStatus> = z.lazy(() =>
+  z
+    .object({
+      type: z.literal('status').openapi({ description: 'Discriminator: single Threads post.' }),
+      id: z.string(),
+      url: z.string(),
+      text: z.string(),
+      created_at: z.string(),
+      created_timestamp: z.number(),
+      likes: z.number(),
+      reposts: z.number(),
+      quotes: z.number().optional(),
+      replies: z.number(),
+      quote: z.union([APIThreadsStatusSchema, APIStatusTombstoneSchema]).optional(),
+      poll: APIPollSchema.optional(),
+      author: APIUserSchema,
+      media: APIMediaContainerSchema,
+      raw_text: z.object({
+        text: z.string(),
+        facets: z.array(APIFacetSchema)
+      }),
+      lang: z.string().nullable(),
+      translation: APITranslateSchema.optional(),
+      possibly_sensitive: z.boolean(),
+      replying_to: APIReplyingToSchema.nullable(),
+      source: z.string().nullable(),
+      embed_card: z.enum(['tweet', 'summary', 'summary_large_image', 'player']),
+      provider: z.literal('threads'),
+      reposted_by: APIRepostedBySchema.optional(),
+      media_pk: z.string().optional()
+    })
+    .openapi('APIThreadsStatus')
+);
+
+export const APISearchResultsThreadsSchema = z
+  .object({
+    code: z.number(),
+    results: z.array(APIThreadsStatusSchema),
+    cursor: SearchCursorSchema
+  })
+  .openapi('APISearchResultsThreads');
+
+export type APISearchResultsThreads = z.infer<typeof APISearchResultsThreadsSchema>;
+
+/** Status or tombstone row allowed in shared `SocialThread` / `SocialConversation` parents. */
+export const SocialThreadStatusItemSchema = z.union([
+  APITwitterStatusSchema,
+  APIBlueskyStatusSchema,
+  APIMastodonStatusSchema,
+  APIInstagramStatusSchema,
+  APIThreadsStatusSchema,
+  APIStatusTombstoneSchema
+]);
+
+export type SocialThreadStatusItem = z.infer<typeof SocialThreadStatusItemSchema>;
+
+export const SocialConversationReplyItemSchema = z.union([
+  SocialThreadStatusItemSchema,
+  APISubstatusSchema
+]);
+
+export const SocialThreadSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: SocialThreadStatusItemSchema.nullable().openapi({
+      description: 'Focal post, or a tombstone when the post is unavailable'
+    }),
+    thread: z.array(SocialThreadStatusItemSchema).nullable(),
+    author: APIUserSchema.nullable()
+  })
+  .openapi('SocialThread');
+
+export const SocialConversationSchema = z
+  .object({
+    code: z.number().openapi({ description: 'HTTP-style status; mirrors response status code' }),
+    status: SocialThreadStatusItemSchema.nullable(),
+    thread: z.array(SocialThreadStatusItemSchema).nullable(),
+    replies: z.array(SocialConversationReplyItemSchema).nullable(),
+    author: APIUserSchema.nullable(),
+    cursor: z
+      .object({
+        bottom: z.string().nullable()
+      })
+      .nullable()
+  })
+  .openapi('SocialConversation');
 
 export const SocialThreadInstagramSchema = z
   .object({

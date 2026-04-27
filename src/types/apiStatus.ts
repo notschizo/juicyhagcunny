@@ -13,6 +13,7 @@ import type {
   APIReplyingTo,
   APIRepostedBy,
   APIInstagramStatus,
+  APIThreadsStatus,
   APISubstatus,
   APITranslate,
   APITwitterStatus,
@@ -89,7 +90,7 @@ export interface APITikTokStatus extends APIStatus {
   views?: number | null;
 }
 
-export type { APIInstagramStatus, APISubstatus };
+export type { APIInstagramStatus, APIThreadsStatus, APISubstatus };
 
 export interface SocialPost {
   status: APIStatus | APITwitterStatus | null;
@@ -99,6 +100,7 @@ export interface SocialPost {
 export type ThreadOrStatusItem =
   | APIStatus
   | APIInstagramStatus
+  | APIThreadsStatus
   | APITwitterStatus
   | APIStatusTombstone
   | SchemasAPIBlueskyStatus;
@@ -113,7 +115,7 @@ export interface SocialThread {
 
 /** Thread + replies with cursor-based pagination for the conversation endpoint. */
 export interface SocialConversation extends SocialThread {
-  replies: (APIStatus | APITwitterStatus | APISubstatus)[] | null;
+  replies: (APIStatus | APITwitterStatus | APIThreadsStatus | APISubstatus)[] | null;
   cursor: {
     bottom: string | null;
   } | null;
