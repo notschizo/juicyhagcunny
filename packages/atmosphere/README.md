@@ -1,8 +1,10 @@
 # `@fxembed/atmosphere`
 
-Shared **envelope types**, **pure helpers**, **transport** definitions, **Bluesky** implementation (`src/providers/bluesky/`), **relay** helpers, and stubs for authenticated access.
+Shared **envelope types**, **pure helpers**, **transport** definitions, **relay** helpers, and stubs for authenticated access.
 
-Other providers (Twitter, Mastodon, TikTok, …) still live under the FxEmbed worker (`src/providers/`) and can be migrated using the same pattern as Bluesky: move logic here, inject config/`fetch`/`t`/credentials via options, thin-re-export from `src/providers/<name>/`.
+**Providers in this package** (worker keeps Hono/OpenAPI wiring; `src/providers/<name>/` re-exports): Bluesky, Mastodon, TikTok, Instagram, Threads. Twitter and others may follow the same pattern.
+
+Mastodon uses `setMastodonProviderEnv` from `./providers/mastodon-runtime` (user agent, mosaic / polyglot lists); the worker sets it at startup.
 
 ## Transports
 

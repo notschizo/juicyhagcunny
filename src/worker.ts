@@ -11,6 +11,7 @@ import {
   setBlueskyProviderEnv,
   setBlueskyProxyRuntime
 } from '@fxembed/atmosphere/providers/bluesky-runtime';
+import { setMastodonProviderEnv } from '@fxembed/atmosphere/providers/mastodon-runtime';
 import * as proxyCreds from './providers/twitter/proxy/credentials';
 
 setBlueskyProviderEnv({
@@ -27,6 +28,12 @@ setBlueskyProxyRuntime({
   hasBlueskyProxyAccounts: proxyCreds.hasBlueskyProxyAccounts,
   getShuffledBlueskyAccounts: proxyCreds.getShuffledBlueskyAccounts,
   blueskyProxyServiceHostname: proxyCreds.blueskyProxyServiceHostname
+});
+
+setMastodonProviderEnv({
+  userAgent: Constants.FRIENDLY_USER_AGENT,
+  mosaicDomainList: Constants.MOSAIC_DOMAIN_LIST,
+  polyglotDomainList: Constants.POLYGLOT_DOMAIN_LIST
 });
 import { api } from './realms/api/router';
 import { twitter } from './realms/twitter/router';

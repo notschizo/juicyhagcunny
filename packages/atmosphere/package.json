@@ -50,6 +50,26 @@
       "types": "./dist/providers/bluesky/*.d.ts",
       "import": "./dist/providers/bluesky/*.js"
     },
+    "./providers/tiktok/*": {
+      "types": "./dist/providers/tiktok/*.d.ts",
+      "import": "./dist/providers/tiktok/*.js"
+    },
+    "./providers/mastodon-runtime": {
+      "types": "./dist/providers/mastodon-runtime.d.ts",
+      "import": "./dist/providers/mastodon-runtime.js"
+    },
+    "./providers/mastodon/*": {
+      "types": "./dist/providers/mastodon/*.d.ts",
+      "import": "./dist/providers/mastodon/*.js"
+    },
+    "./providers/instagram/*": {
+      "types": "./dist/providers/instagram/*.d.ts",
+      "import": "./dist/providers/instagram/*.js"
+    },
+    "./providers/threads/*": {
+      "types": "./dist/providers/threads/*.d.ts",
+      "import": "./dist/providers/threads/*.js"
+    },
     "./relay": {
       "types": "./dist/relay/index.d.ts",
       "import": "./dist/relay/index.js"

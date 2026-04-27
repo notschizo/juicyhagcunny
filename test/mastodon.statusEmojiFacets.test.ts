@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { Context } from 'hono';
+import type { MastodonBuildHost } from '@fxembed/atmosphere/providers/mastodon/build-host';
 import { buildAPIMastodonPost } from '../src/providers/mastodon/processor';
 
 const baseAccount = (): MastodonAccount => ({
@@ -73,8 +73,10 @@ describe('buildAPIMastodonPost custom emoji facets', () => {
       emojis
     });
 
-    const c = {} as Context;
-    const api = await buildAPIMastodonPost(c, status, 'mastodon.social', undefined);
+    const host: MastodonBuildHost = {
+      t: key => key
+    };
+    const api = await buildAPIMastodonPost(host, status, 'mastodon.social', undefined);
 
     expect(api.raw_text.text).toBe('@x #test :ruby:');
     const types = api.raw_text.facets.map(f => f.type);

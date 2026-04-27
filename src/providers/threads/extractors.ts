@@ -1,1 +1,1 @@
-export { extractLsdFromHtml } from '../instagram/extractors';
+export * from '@fxembed/atmosphere/providers/threads/extractors';

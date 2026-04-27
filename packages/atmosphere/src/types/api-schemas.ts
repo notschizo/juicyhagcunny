@@ -1152,6 +1152,8 @@ export const APISearchResultsInstagramSchema = z
   })
   .openapi('APISearchResultsInstagram');
 
+export type APISearchResultsInstagram = z.infer<typeof APISearchResultsInstagramSchema>;
+
 export const APISearchResultsMastodonSchema = z
   .object({
     code: z.number(),

@@ -1,4 +1,5 @@
 export * from './unescape-text.js';
+export * from './with-timeout.js';
 export * from './unicode-string.js';
 export * from './twitter-text-indices.js';
 export * from './language.js';

@@ -17,6 +17,6 @@
     "esModuleInterop": true,
     "noEmitOnError": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/raw/vendor/*.d.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
