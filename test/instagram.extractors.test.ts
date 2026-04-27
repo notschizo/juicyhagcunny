@@ -3,7 +3,7 @@ import {
   extractCommentsConnection,
   extractShortcodeWebInfo,
   hasUsefulRelayData
-} from '../src/providers/instagram/extractors';
+} from '@fxembed/atmosphere/providers/instagram/extractors';
 
 const MINIMAL_POST_HTML = `<!DOCTYPE html><html><body>
 <script type="application/json" data-sjs>{"xdt_api__v1__media__shortcode__web_info":{"items":[{"code":"DXeh-kYiIge","pk":"3881689364048676894","taken_at":1776953871,"caption":{"text":"Hello #world"},"user":{"pk":"173560420","username":"cristiano","full_name":"CR7","profile_pic_url":"https://cdn.example/p.jpg"},"image_versions2":{"candidates":[{"url":"https://cdn.example/i.jpg","width":640,"height":1136}]}}]},"xdt_api__v1__media__media_id__comments__connection":{"edges":[{"node":{"pk":"17915753442361302","text":"Nice","created_at":1776954000,"user":{"pk":"1","username":"fan","profile_pic_url":null}}}],"page_info":{"has_next_page":false,"end_cursor":null}}}</script>

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { MastodonBuildHost } from '@fxembed/atmosphere/providers/mastodon/build-host';
-import { buildAPIMastodonPost } from '../src/providers/mastodon/processor';
+import { buildAPIMastodonPost } from '@fxembed/atmosphere/providers/mastodon/processor';
 
 const baseAccount = (): MastodonAccount => ({
   id: '1',

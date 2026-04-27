@@ -3,7 +3,7 @@ import { Strings } from '../strings';
 import { DataProvider, returnError } from './status';
 import { constructTwitterThread } from '@fxembed/atmosphere/providers/twitter/conversation';
 import { twitterBuildHostFromContext } from '../providers/twitter/build-host-adapter';
-import { constructBlueskyThread } from '../providers/bluesky/conversation';
+import { constructBlueskyThread } from '@fxembed/atmosphere/providers/bluesky/conversation';
 import { blueskyBuildHostFromContext } from '../providers/bluesky/build-host-adapter';
 import { Constants } from '../constants';
 import { getActivitySocialProof } from '../helpers/socialproof';
@@ -16,7 +16,7 @@ import { Experiment, experimentCheck } from '../experiments';
 import { Context } from 'hono';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
-import { constructTikTokVideo } from '../providers/tiktok/conversation';
+import { constructTikTokVideo } from '@fxembed/atmosphere/providers/tiktok/conversation';
 import { renderArticleToHtml, DISCORD_ARTICLE_MAX_LENGTH } from '../helpers/article';
 import {
   facetUtf16RangeOnPlainText,

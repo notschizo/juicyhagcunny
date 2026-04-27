@@ -6,22 +6,22 @@ import { isParamTruthy } from '../../helpers/utils';
 import {
   constructBlueskyConversation,
   constructBlueskyThread
-} from '../../providers/bluesky/conversation';
+} from '@fxembed/atmosphere/providers/bluesky/conversation';
 import { blueskyBuildHostFromContext } from '../../providers/bluesky/build-host-adapter';
-import { blueskyUserProfileAPI } from '../../providers/bluesky/profile';
+import { blueskyUserProfileAPI } from '@fxembed/atmosphere/providers/bluesky/profile';
 import {
   blueskyProfileLikesAPI,
   blueskyProfileMediaAPI,
   blueskyProfileStatusesAPI
-} from '../../providers/bluesky/profileStatuses';
+} from '@fxembed/atmosphere/providers/bluesky/profileStatuses';
 import {
   blueskyProfileFollowersAPI,
   blueskyProfileFollowingAPI
-} from '../../providers/bluesky/profileFollowers';
-import { blueskySearchAPI } from '../../providers/bluesky/search';
-import { blueskyTrendsAPI } from '../../providers/bluesky/trends';
-import { blueskyStatusLikesAPI } from '../../providers/bluesky/statusLikes';
-import { blueskyStatusRepostsAPI } from '../../providers/bluesky/statusReposts';
+} from '@fxembed/atmosphere/providers/bluesky/profileFollowers';
+import { blueskySearchAPI } from '@fxembed/atmosphere/providers/bluesky/search';
+import { blueskyTrendsAPI } from '@fxembed/atmosphere/providers/bluesky/trends';
+import { blueskyStatusLikesAPI } from '@fxembed/atmosphere/providers/bluesky/statusLikes';
+import { blueskyStatusRepostsAPI } from '@fxembed/atmosphere/providers/bluesky/statusReposts';
 import {
   blueskyConversationV2Route,
   blueskyProfileFollowersV2Route,

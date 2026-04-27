@@ -4,7 +4,7 @@ import {
   threadsPostToStatus,
   userFromThreadsProfilePayload,
   xdtThreadEdgeToSubstatus
-} from '../src/providers/threads/processor';
+} from '@fxembed/atmosphere/providers/threads/processor';
 
 describe('threads processor', () => {
   const ownerFb = {

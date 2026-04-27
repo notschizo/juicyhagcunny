@@ -20,13 +20,22 @@ import {
   mastodonStatusV2Route,
   mastodonThreadV2Route
 } from './atmosphere-routes';
-import { constructMastodonConversation, constructMastodonThread } from './conversation';
-import { mastodonUserProfileAPI } from './profile';
-import { mastodonProfileFollowersAPI, mastodonProfileFollowingAPI } from './profileFollowers';
-import { mastodonProfileMediaAPI, mastodonProfileStatusesAPI } from './profileStatuses';
-import { mastodonSearchAPI } from './search';
-import { mastodonStatusLikesAPI } from './statusLikes';
-import { mastodonStatusRepostsAPI } from './statusReposts';
+import {
+  constructMastodonConversation,
+  constructMastodonThread
+} from '@fxembed/atmosphere/providers/mastodon/conversation';
+import { mastodonUserProfileAPI } from '@fxembed/atmosphere/providers/mastodon/profile';
+import {
+  mastodonProfileFollowersAPI,
+  mastodonProfileFollowingAPI
+} from '@fxembed/atmosphere/providers/mastodon/profileFollowers';
+import {
+  mastodonProfileMediaAPI,
+  mastodonProfileStatusesAPI
+} from '@fxembed/atmosphere/providers/mastodon/profileStatuses';
+import { mastodonSearchAPI } from '@fxembed/atmosphere/providers/mastodon/search';
+import { mastodonStatusLikesAPI } from '@fxembed/atmosphere/providers/mastodon/statusLikes';
+import { mastodonStatusRepostsAPI } from '@fxembed/atmosphere/providers/mastodon/statusReposts';
 import { mastodonBuildHostFromContext } from './build-host-adapter';
 
 const setApiHeaders = (c: Context, options?: { skipContentType?: boolean }) => {

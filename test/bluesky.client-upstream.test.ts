@@ -24,7 +24,7 @@ import {
   fetchActorProfile,
   fetchPostThread,
   fetchPostThreadResult
-} from '../src/providers/bluesky/client';
+} from '@fxembed/atmosphere/providers/bluesky/client';
 
 beforeEach(() => {
   setBlueskyProviderEnv({

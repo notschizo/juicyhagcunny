@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import {
   BLUESKY_APP_OFFICIAL_ISSUER_DID,
   blueskyVerificationToApiUserVerification
-} from '../src/providers/bluesky/verification';
+} from '@fxembed/atmosphere/providers/bluesky/verification';
 
 test('blueskyVerificationToApiUserVerification returns undefined when not valid', () => {
   expect(blueskyVerificationToApiUserVerification(undefined)).toBeUndefined();

@@ -5,7 +5,7 @@ import { Constants } from '../../../constants';
 import { Experiment, experimentCheck } from '../../../experiments';
 import { Strings } from '../../../strings';
 import { InputFlags } from '../../../types/types';
-import { resolveShortUrl, isShortCode } from '../../../providers/tiktok/conversation';
+import { resolveShortUrl, isShortCode } from '@fxembed/atmosphere/providers/tiktok/conversation';
 
 export const tiktokVideoRequest = async (c: Context) => {
   console.log('tiktok video request!!!');

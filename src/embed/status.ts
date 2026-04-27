@@ -15,7 +15,7 @@ import { constructTwitterThread } from '@fxembed/atmosphere/providers/twitter/co
 import { twitterBuildHostFromContext } from '../providers/twitter/build-host-adapter';
 import { Experiment, experimentCheck } from '../experiments';
 import translationResources from '../../i18n/resources';
-import { constructBlueskyThread } from '../providers/bluesky/conversation';
+import { constructBlueskyThread } from '@fxembed/atmosphere/providers/bluesky/conversation';
 import { blueskyBuildHostFromContext } from '../providers/bluesky/build-host-adapter';
 import { DataProvider } from '../enum';
 import { encodeSnowcode } from '../helpers/snowcode';
@@ -25,7 +25,7 @@ import type { APIStatus, SocialThread } from '../types/apiStatus';
 import { shouldTranscodeGif } from '../helpers/giftranscode';
 import { normalizeLanguage } from '../helpers/language';
 import { getVideoTranscodeDomain, getVideoTranscodeDomainBluesky } from '../helpers/transcode';
-import { constructTikTokVideo } from '../providers/tiktok/conversation';
+import { constructTikTokVideo } from '@fxembed/atmosphere/providers/tiktok/conversation';
 import { InputFlags } from '../types/types';
 import { formatRuntime } from '../helpers/runtime';
 

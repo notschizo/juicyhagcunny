@@ -13,7 +13,7 @@ import {
 import {
   BLUESKY_TRENDS_FEED_KINDS,
   type BlueskyTrendsFeedKind
-} from '../../providers/bluesky/trends';
+} from '@fxembed/atmosphere/providers/bluesky/trends';
 
 const langQuery = z.object({
   lang: z.string().optional().openapi({

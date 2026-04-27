@@ -7,9 +7,15 @@ import {
 } from '../../realms/api/normalizeApiJsonResponse';
 import type { APISearchResultsThreads, UserAPIResponse } from '../../realms/api/schemas';
 import type { SocialConversation, SocialThread } from '../../types/apiStatus';
-import { constructThreadsConversation, type ThreadsConversationResult } from './conversation';
-import { constructThreadsPost } from './post';
-import { constructThreadsProfile, constructThreadsProfileStatuses } from './profile';
+import {
+  constructThreadsConversation,
+  type ThreadsConversationResult
+} from '@fxembed/atmosphere/providers/threads/conversation';
+import { constructThreadsPost } from '@fxembed/atmosphere/providers/threads/post';
+import {
+  constructThreadsProfile,
+  constructThreadsProfileStatuses
+} from '@fxembed/atmosphere/providers/threads/profile';
 import {
   threadsConversationV2Route,
   threadsProfileStatusesV2Route,

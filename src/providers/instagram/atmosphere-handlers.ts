@@ -10,14 +10,17 @@ import type {
   SocialThreadInstagram,
   UserAPIResponse
 } from '../../realms/api/schemas';
-import { constructInstagramConversation, type InstagramConversationResult } from './conversation';
-import { constructInstagramPost } from './post';
+import {
+  constructInstagramConversation,
+  type InstagramConversationResult
+} from '@fxembed/atmosphere/providers/instagram/conversation';
+import { constructInstagramPost } from '@fxembed/atmosphere/providers/instagram/post';
 import {
   constructInstagramProfile,
   constructInstagramProfileStatuses,
   constructInstagramProfileVideos
-} from './profile';
-import { normalizeInstagramPostId } from './shortcode';
+} from '@fxembed/atmosphere/providers/instagram/profile';
+import { normalizeInstagramPostId } from '@fxembed/atmosphere/providers/instagram/shortcode';
 import {
   instagramConversationV2Route,
   instagramProfileStatusesV2Route,

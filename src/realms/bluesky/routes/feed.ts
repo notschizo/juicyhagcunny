@@ -4,7 +4,7 @@ import type { APIBlueskyStatus } from '../../../realms/api/schemas';
 import {
   blueskyProfileMediaAPIPaginated,
   blueskyProfileStatusesAPIPaginated
-} from '../../../providers/bluesky/profileStatuses';
+} from '@fxembed/atmosphere/providers/bluesky/profileStatuses';
 import { blueskyBuildHostFromContext } from '../../../providers/bluesky/build-host-adapter';
 import { isParamTruthy } from '../../../helpers/utils';
 import {
