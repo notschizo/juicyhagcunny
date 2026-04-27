@@ -369,7 +369,12 @@ export function threadsPostToStatus(
     possibly_sensitive: false,
     replying_to,
     source: 'threads',
-    embed_card: all.length ? 'player' : 'summary',
+    embed_card:
+      all.length === 0
+        ? 'summary'
+        : all.some(m => m.type === 'video')
+          ? 'player'
+          : 'summary_large_image',
     provider: 'threads',
     media_pk: mediaPk
   };
