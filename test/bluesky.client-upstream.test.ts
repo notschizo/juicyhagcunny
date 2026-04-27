@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { setBlueskyProviderEnv, setBlueskyProxyRuntime } from '@fxembed/atmosphere/providers/bluesky-runtime';
+import {
+  setBlueskyProviderEnv,
+  setBlueskyProxyRuntime
+} from '@fxembed/atmosphere/providers/bluesky-runtime';
 
 const credMocks = vi.hoisted(() => ({
   initCredentials: vi.fn().mockResolvedValue(undefined),

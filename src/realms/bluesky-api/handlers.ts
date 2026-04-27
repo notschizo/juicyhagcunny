@@ -71,9 +71,14 @@ export const blueskyStatusRepostsAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyStatusRepostsAPI(handle, rkey, { count, cursor }, {
-    credentialKey: c.env?.CREDENTIAL_KEY
-  });
+  const response = await blueskyStatusRepostsAPI(
+    handle,
+    rkey,
+    { count, cursor },
+    {
+      credentialKey: c.env?.CREDENTIAL_KEY
+    }
+  );
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -94,9 +99,14 @@ export const blueskyStatusLikesAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyStatusLikesAPI(handle, rkey, { count, cursor }, {
-    credentialKey: c.env?.CREDENTIAL_KEY
-  });
+  const response = await blueskyStatusLikesAPI(
+    handle,
+    rkey,
+    { count, cursor },
+    {
+      credentialKey: c.env?.CREDENTIAL_KEY
+    }
+  );
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -230,9 +240,13 @@ export const blueskyProfileFollowersAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyProfileFollowersAPI(handle, { count, cursor }, {
-    credentialKey: c.env?.CREDENTIAL_KEY
-  });
+  const response = await blueskyProfileFollowersAPI(
+    handle,
+    { count, cursor },
+    {
+      credentialKey: c.env?.CREDENTIAL_KEY
+    }
+  );
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,
@@ -253,9 +267,13 @@ export const blueskyProfileFollowingAPIRequest: RouteHandler<
   const count = query.count ?? 20;
   const cursor = query.cursor ?? null;
 
-  const response = await blueskyProfileFollowingAPI(handle, { count, cursor }, {
-    credentialKey: c.env?.CREDENTIAL_KEY
-  });
+  const response = await blueskyProfileFollowingAPI(
+    handle,
+    { count, cursor },
+    {
+      credentialKey: c.env?.CREDENTIAL_KEY
+    }
+  );
   const { httpStatus, payload } = normalizeApiJsonResponse(
     response,
     [200, 400, 404, 500] as const,

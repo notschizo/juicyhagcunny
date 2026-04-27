@@ -9,6 +9,8 @@
  *
  * Then wrap with `openapi-fetch` + {@link createRelayFetch}.
  */
-export type RelayNotGenerated = { _note: 'OpenAPI types are generated on demand; see generated/README.md' };
+export type RelayNotGenerated = {
+  _note: 'OpenAPI types are generated on demand; see generated/README.md';
+};
 
 export { createRelayFetch, type RelayFetchOptions } from './proxy-relay.js';

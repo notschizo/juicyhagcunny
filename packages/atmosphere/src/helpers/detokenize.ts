@@ -1,4 +1,7 @@
-type DetokenizeLogger = { debug?: (msg: string) => void; error?: (msg: string, err: unknown) => void };
+type DetokenizeLogger = {
+  debug?: (msg: string) => void;
+  error?: (msg: string, err: unknown) => void;
+};
 
 const defaultLog: DetokenizeLogger = {
   debug: msg => console.log(msg),

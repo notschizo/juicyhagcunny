@@ -7,7 +7,10 @@ import { rewriteFramesIntegration } from 'toucan-js';
 
 import { Strings } from './strings';
 import { Constants } from './constants';
-import { setBlueskyProviderEnv, setBlueskyProxyRuntime } from '@fxembed/atmosphere/providers/bluesky-runtime';
+import {
+  setBlueskyProviderEnv,
+  setBlueskyProxyRuntime
+} from '@fxembed/atmosphere/providers/bluesky-runtime';
 import * as proxyCreds from './providers/twitter/proxy/credentials';
 
 setBlueskyProviderEnv({

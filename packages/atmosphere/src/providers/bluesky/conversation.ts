@@ -1,4 +1,8 @@
-import type { APIBlueskyStatus, APIStatusTombstone, APITombstoneReason } from '../../types/api-schemas.js';
+import type {
+  APIBlueskyStatus,
+  APIStatusTombstone,
+  APITombstoneReason
+} from '../../types/api-schemas.js';
 import type { SocialConversation, SocialThread } from '../../types/api-status.js';
 import { isTombstone } from '../../helpers/tombstone.js';
 import { type BlueskyFetchOpts, fetchPostThread, fetchPostThreadResult } from './client.js';

@@ -7,7 +7,11 @@ import type { AtmosphereSocialProvider } from '../types/social-provider.js';
 export type AuthProvider<P extends AtmosphereSocialProvider> = {
   /** Provider key this auth applies to */
   readonly provider: P;
-  getAuthHeadersForRequest(req: { method: string; url: string; body?: unknown }): Promise<Record<string, string>>;
+  getAuthHeadersForRequest(req: {
+    method: string;
+    url: string;
+    body?: unknown;
+  }): Promise<Record<string, string>>;
   /** Optional refresh (e.g. token rotation) */
   refresh?(): Promise<void>;
 };

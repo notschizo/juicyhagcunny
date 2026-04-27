@@ -13,7 +13,10 @@ export const getVideoTranscodeDomain = (twitterId: string, domains: string[]): s
 };
 
 /** Pick a Bluesky-oriented transcode host from `domains` using a hash of `blueskyDid`. */
-export const getVideoTranscodeDomainBluesky = (blueskyDid: string, domains: string[]): string | null => {
+export const getVideoTranscodeDomainBluesky = (
+  blueskyDid: string,
+  domains: string[]
+): string | null => {
   if (domains.length === 0) {
     return null;
   }

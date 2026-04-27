@@ -18,7 +18,10 @@ export type Logger = {
  * i18n hook for providers that emit user-facing strings in processors.
  * Defaults to no-op in the package; FxEmbed injects i18next from the worker.
  */
-export type Translate = (key: string, options?: Record<string, string | number | boolean>) => string;
+export type Translate = (
+  key: string,
+  options?: Record<string, string | number | boolean>
+) => string;
 
 /** Base options for provider clients (Bluesky, Twitter, …). */
 export type ProviderClientOptions<P extends AtmosphereSocialProvider> = {

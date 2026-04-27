@@ -9,8 +9,5 @@ const mosaicConfig = {
 } as const;
 
 /* Handler for mosaic (multi-image combiner) */
-export const handleMosaic = async (
-  mediaList: APIPhoto[],
-  id: string,
-  provider: DataProvider
-) => handleMosaicAtmosphere(mediaList, id, provider, mosaicConfig);
+export const handleMosaic = async (mediaList: APIPhoto[], id: string, provider: DataProvider) =>
+  handleMosaicAtmosphere(mediaList, id, provider, mosaicConfig);

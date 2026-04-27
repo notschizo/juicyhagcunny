@@ -12,4 +12,5 @@ export const getSocialProof = (status: APIStatus): string | null => getSocialPro
 export const getActivitySocialProof = (status: APIStatus): string | null =>
   getActivitySocialProofCore(status, Constants.TWITTER_ROOT);
 
-export const getSocialTextIV = (status: APITwitterStatus): string | null => getSocialTextIVCore(status);
+export const getSocialTextIV = (status: APITwitterStatus): string | null =>
+  getSocialTextIVCore(status);

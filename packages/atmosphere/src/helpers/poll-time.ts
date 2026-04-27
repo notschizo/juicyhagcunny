@@ -23,8 +23,7 @@ export const calculateTimeLeft = (date: Date) => {
 export const calculateTimeLeftString = (date: Date, s: PollTimeStrings) => {
   const { days, hours, minutes, seconds } = calculateTimeLeft(date);
   const daysString = days > 0 ? `${days} ${days === 1 ? s.singularDay : s.pluralDays}` : '';
-  const hoursString =
-    hours > 0 ? `${hours} ${hours === 1 ? s.singularHour : s.pluralHours}` : '';
+  const hoursString = hours > 0 ? `${hours} ${hours === 1 ? s.singularHour : s.pluralHours}` : '';
   const minutesString =
     minutes > 0 ? `${minutes} ${minutes === 1 ? s.singularMinute : s.pluralMinutes}` : '';
   const secondsString =

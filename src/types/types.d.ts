@@ -86,7 +86,8 @@ declare global {
   type APITwitterStatus = import('@fxembed/atmosphere/types/api-schemas').APITwitterStatus;
   type APIBlueskyStatus = import('@fxembed/atmosphere/types/api-schemas').APIBlueskyStatus;
   type APITikTokStatus = import('@fxembed/atmosphere/types/api-status').APITikTokStatus;
-  type APITwitterCommunityNote = import('@fxembed/atmosphere/types/api-schemas').APITwitterCommunityNote;
+  type APITwitterCommunityNote =
+    import('@fxembed/atmosphere/types/api-schemas').APITwitterCommunityNote;
   type SocialPost = import('@fxembed/atmosphere/types/api-status').SocialPost;
   type SocialThread = import('@fxembed/atmosphere/types/api-status').SocialThread;
   type SocialConversation = import('@fxembed/atmosphere/types/api-status').SocialConversation;

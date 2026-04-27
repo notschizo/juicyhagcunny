@@ -8,7 +8,11 @@ export type MosaicDomainConfig = {
   blueskyDomains: string[];
 };
 
-const pickDomain = (id: string, provider: DataProvider, config: MosaicDomainConfig): string | null => {
+const pickDomain = (
+  id: string,
+  provider: DataProvider,
+  config: MosaicDomainConfig
+): string | null => {
   let mosaicDomains: string[] = [];
   if (provider === DataProvider.Twitter || provider === DataProvider.Mastodon) {
     mosaicDomains = config.twitterLikeDomains;
@@ -41,7 +45,9 @@ export const handleMosaic = async (
   }
   let mosaicMedia: string[] = [];
   if (provider === DataProvider.Twitter) {
-    mosaicMedia = mediaList.map(media => media.url?.match(/(?<=\/media\/)[\w-]+(?=[.?])/g)?.[0] || '');
+    mosaicMedia = mediaList.map(
+      media => media.url?.match(/(?<=\/media\/)[\w-]+(?=[.?])/g)?.[0] || ''
+    );
   } else if (provider === DataProvider.Bluesky) {
     mosaicMedia = mediaList.map(media =>
       (media.url?.match(/did:plc:[\w/]+/g)?.[0] || '').replace('/', '_')

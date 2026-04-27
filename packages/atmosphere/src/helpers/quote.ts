@@ -11,7 +11,10 @@ export type QuoteStrings = {
   quotedFrom: string;
 };
 
-export const handleQuote = (quote: APIStatus | APIStatusTombstone, s: QuoteStrings): string | null => {
+export const handleQuote = (
+  quote: APIStatus | APIStatusTombstone,
+  s: QuoteStrings
+): string | null => {
   if (isTombstone(quote)) {
     return `\n${s.quotedFromTombstone}: ${quote.message}`;
   }

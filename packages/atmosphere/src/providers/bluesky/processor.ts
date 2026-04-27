@@ -21,9 +21,7 @@ export const buildBlueskyTombstone = (
   const rkey = rkeyFromPostAtUri(atUri) ?? undefined;
   const repo = didFromAtUri(atUri) ?? '';
   const url =
-    rkey && repo
-      ? `${webRoot}/profile/${encodeURIComponent(repo)}/post/${rkey}`
-      : atUri || webRoot;
+    rkey && repo ? `${webRoot}/profile/${encodeURIComponent(repo)}/post/${rkey}` : atUri || webRoot;
 
   return {
     type: 'tombstone',
@@ -420,7 +418,10 @@ export const buildAPIBlueskyPost = async (
 
   apiStatus.media.all = [...(apiStatus.media.photos ?? []), ...(apiStatus.media.videos ?? [])];
 
-  if ((apiStatus.media.photos?.length || 0) > 1 && getBlueskyProviderEnv().mosaicBskyDomainList.length > 0) {
+  if (
+    (apiStatus.media.photos?.length || 0) > 1 &&
+    getBlueskyProviderEnv().mosaicBskyDomainList.length > 0
+  ) {
     apiStatus.embed_card = 'summary_large_image';
     const env = getBlueskyProviderEnv();
     const mosaic = await handleMosaic(apiStatus.media?.photos || [], ':3', DataProvider.Bluesky, {
@@ -445,9 +446,12 @@ export const buildAPIBlueskyPost = async (
           text: unescapeText(linkFixerBluesky([], translatePolyglot?.translated_text || '')),
           source_lang: (translatePolyglot?.source_lang ?? 'en').toLowerCase(),
           target_lang: language.toLowerCase(),
-          source_lang_en: host.t(`language_${(translatePolyglot?.source_lang ?? 'en').toLowerCase()}`, {
-            lng: 'en'
-          }),
+          source_lang_en: host.t(
+            `language_${(translatePolyglot?.source_lang ?? 'en').toLowerCase()}`,
+            {
+              lng: 'en'
+            }
+          ),
           provider: translatePolyglot?.provider ?? 'polyglot'
         };
         didTranslate = true;

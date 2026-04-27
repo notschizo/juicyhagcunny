@@ -1,6 +1,9 @@
 /* Helps create strings for polls! */
 
-import { calculateTimeLeft, calculateTimeLeftString as calculateTimeLeftStringCore } from '@fxembed/atmosphere/helpers';
+import {
+  calculateTimeLeft,
+  calculateTimeLeftString as calculateTimeLeftStringCore
+} from '@fxembed/atmosphere/helpers';
 import { Strings } from '../strings';
 
 export { calculateTimeLeft };
