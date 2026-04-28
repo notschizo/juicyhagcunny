@@ -100,6 +100,44 @@ const timelineIndexOfGraphQLTweet = (
   return Number.POSITIVE_INFINITY;
 };
 
+/**
+ * When `in_reply_to` points at a deleted/missing id, the upward walk cannot reach the thread root,
+ * but the root tweet may still appear in TweetDetail `ordered`. Merge that one tweet
+ * (`legacy.id_str === conversation_id_str`) so {@link mergeTimelineOrderPreservingTombstones} can
+ * emit tombstones between root and focal. Other same-conversation author tweets (side branches) are
+ * not included.
+ */
+const mergeWalkedChainWithThreadRootFromOrdered = (
+  ordered: TwitterTimelinePiece[],
+  walkedChain: GraphQLTwitterStatus[],
+  focal: GraphQLTwitterStatus
+): GraphQLTwitterStatus[] => {
+  const authorId = focal.core?.user_results?.result?.rest_id;
+  const conv = focal.legacy?.conversation_id_str;
+  const out = new Map<string, GraphQLTwitterStatus>();
+  for (const t of walkedChain) {
+    const tid = t.rest_id ?? t.legacy?.id_str;
+    if (tid) out.set(tid, t);
+  }
+  if (!authorId || !conv) {
+    return walkedChain;
+  }
+  for (const piece of ordered) {
+    if (isTombstone(piece)) continue;
+    const t = piece as GraphQLTwitterStatus;
+    if (t.core?.user_results?.result?.rest_id !== authorId) continue;
+    if (t.legacy?.conversation_id_str !== conv) continue;
+    const lid = t.legacy?.id_str;
+    const tid = t.rest_id ?? lid;
+    if (!tid || !lid) continue;
+    if (lid !== conv) continue;
+    if (!out.has(tid)) {
+      out.set(tid, t);
+    }
+  }
+  return Array.from(out.values());
+};
+
 const writeDataPoint = (
   host: TwitterBuildHost,
   language: string | undefined,
@@ -1244,9 +1282,14 @@ export const constructTwitterThread = async (
     code: 200
   };
 
-  const mergedTimeline = mergeTimelineOrderPreservingTombstones(
+  const chainForMerge = mergeWalkedChainWithThreadRootFromOrdered(
     bucket.ordered,
     threadStatuses,
+    originalStatus
+  );
+  const mergedTimeline = mergeTimelineOrderPreservingTombstones(
+    bucket.ordered,
+    chainForMerge,
     bucket.allStatuses
   );
 
