@@ -83,40 +83,21 @@ const mergeTimelineOrderPreservingTombstones = (
   });
 };
 
-/**
- * GraphQL tweets in timeline order to merge as the "emit" set for {@link mergeTimelineOrderPreservingTombstones}:
- * the reply-walk `threadChain`, plus other tweets from the same conversation that appear in `ordered` with the
- * same author (e.g. the root when `in_reply_to` still points at a missing/deleted id so the walk cannot reach it).
- * This keeps `timelineTweetSources` as bracket-only without stuffing those IDs into the chain set.
- */
-const graphQLThreadChainTweetsForMerge = (
-  ordered: TwitterTimelinePiece[],
-  threadChain: GraphQLTwitterStatus[],
-  focal: GraphQLTwitterStatus
-): GraphQLTwitterStatus[] => {
-  const authorId = focal.core?.user_results?.result?.rest_id;
-  const conv = focal.legacy?.conversation_id_str;
-  if (!authorId || !conv) {
-    return [...threadChain];
-  }
-  const out = new Map<string, GraphQLTwitterStatus>();
-  for (const t of threadChain) {
-    const tid = t.rest_id ?? t.legacy?.id_str;
-    if (tid) {
-      out.set(tid, t);
-    }
-  }
-  for (const piece of ordered) {
+/** Position in TweetDetail timeline order (used to pick one branch when several replies share a parent). */
+const timelineIndexOfGraphQLTweet = (
+  tweet: GraphQLTwitterStatus,
+  ordered: TwitterTimelinePiece[]
+): number => {
+  const tid = tweet.rest_id ?? tweet.legacy?.id_str ?? '';
+  if (!tid) return Number.POSITIVE_INFINITY;
+  for (let i = 0; i < ordered.length; i++) {
+    const piece = ordered[i];
     if (isTombstone(piece)) continue;
     const t = piece as GraphQLTwitterStatus;
-    const tid = t.rest_id ?? t.legacy?.id_str;
-    if (!tid || out.has(tid)) continue;
-    if (t.core?.user_results?.result?.rest_id !== authorId) continue;
-    if (t.legacy?.conversation_id_str === conv) {
-      out.set(tid, t);
-    }
+    const pid = t.rest_id ?? t.legacy?.id_str;
+    if (pid === tid) return i;
   }
-  return Array.from(out.values());
+  return Number.POSITIVE_INFINITY;
 };
 
 const writeDataPoint = (
@@ -730,7 +711,24 @@ const findFocalInBucket = (
 };
 
 const findNextStatus = (id: string, bucket: GraphQLProcessBucket): number => {
-  return bucket.statuses.findIndex(status => status.legacy?.in_reply_to_status_id_str === id);
+  const indices: number[] = [];
+  bucket.statuses.forEach((status, index) => {
+    if (status.legacy?.in_reply_to_status_id_str === id) {
+      indices.push(index);
+    }
+  });
+  if (indices.length === 0) return -1;
+  if (indices.length === 1) return indices[0];
+  /* Several author replies to the same tweet (side branches): follow timeline order, then snowflake. */
+  indices.sort((a, b) => {
+    const ai = timelineIndexOfGraphQLTweet(bucket.statuses[a], bucket.ordered);
+    const bi = timelineIndexOfGraphQLTweet(bucket.statuses[b], bucket.ordered);
+    if (ai !== bi) return ai - bi;
+    const ida = bucket.statuses[a].rest_id ?? bucket.statuses[a].legacy?.id_str ?? '0';
+    const idb = bucket.statuses[b].rest_id ?? bucket.statuses[b].legacy?.id_str ?? '0';
+    return ida.localeCompare(idb, undefined, { numeric: true });
+  });
+  return indices[0];
 };
 
 const findPreviousStatus = (id: string, bucket: GraphQLProcessBucket): number => {
@@ -1246,14 +1244,9 @@ export const constructTwitterThread = async (
     code: 200
   };
 
-  const mergeChainTweets = graphQLThreadChainTweetsForMerge(
-    bucket.ordered,
-    threadStatuses,
-    originalStatus
-  );
   const mergedTimeline = mergeTimelineOrderPreservingTombstones(
     bucket.ordered,
-    mergeChainTweets,
+    threadStatuses,
     bucket.allStatuses
   );
 
