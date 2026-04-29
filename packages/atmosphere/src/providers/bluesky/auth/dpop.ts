@@ -16,7 +16,7 @@ function base64UrlEncodeJson(obj: unknown): string {
  * raw IEEE P1363 R||S (64 bytes for P-256). Normalize to raw for JWT.
  */
 export function ecdsaSignatureToRawP256(sig: Uint8Array): Uint8Array {
-  if (sig.length === 64 && sig[0] !== 0x30) {
+  if (sig.length === 64) {
     return sig;
   }
   return ecdsaDerSignatureToRawP256(sig);
