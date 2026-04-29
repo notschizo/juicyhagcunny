@@ -4,6 +4,7 @@
  */
 import { DataProvider } from './data-provider.js';
 import type {
+  APIBlueskyNotification,
   APIBlueskyStatus,
   APIBroadcast,
   APIExternalMedia,
@@ -79,7 +80,7 @@ export interface APITikTokStatus extends APIStatus {
   views?: number | null;
 }
 
-export type { APIInstagramStatus, APIThreadsStatus, APISubstatus };
+export type { APIBlueskyNotification, APIInstagramStatus, APIThreadsStatus, APISubstatus };
 
 export interface SocialPost {
   status: APIStatus | APITwitterStatus | null;

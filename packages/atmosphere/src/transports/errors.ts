@@ -37,3 +37,31 @@ export class NotImplementedError extends Error {
     this.name = 'NotImplementedError';
   }
 }
+
+/** Bluesky OAuth / DPoP / token failures for pattern-matching in apps (e.g. re-login on `refresh_invalid`). */
+export type BlueskyAuthErrorKind =
+  | 'nonce_required'
+  | 'access_expired'
+  | 'refresh_invalid'
+  | 'scope_insufficient'
+  | 'revoked'
+  | 'network'
+  | 'invalid_request';
+
+export class BlueskyAuthError extends Error {
+  readonly kind: BlueskyAuthErrorKind;
+  readonly status?: number;
+  readonly bodySnippet?: string;
+
+  constructor(
+    kind: BlueskyAuthErrorKind,
+    message: string,
+    opts?: { status?: number; body?: string }
+  ) {
+    super(message);
+    this.name = 'BlueskyAuthError';
+    this.kind = kind;
+    this.status = opts?.status;
+    this.bodySnippet = opts?.body?.slice(0, 500);
+  }
+}

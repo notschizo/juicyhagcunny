@@ -697,6 +697,49 @@ export const APISearchResultsBlueskySchema = z
   })
   .openapi('APISearchResultsBluesky');
 
+/** Normalized `app.bsky.notification.listNotifications` reason (unknown values map to `unknown`). */
+export const APIBlueskyNotificationReasonSchema = z.enum([
+  'like',
+  'repost',
+  'follow',
+  'mention',
+  'reply',
+  'quote',
+  'starterpack-joined',
+  'verified',
+  'unverified',
+  'unknown'
+]);
+
+export const APIBlueskyNotificationSchema = z
+  .object({
+    id: z.string().openapi({ description: 'Notification record CID' }),
+    at_uri: z.string(),
+    reason: APIBlueskyNotificationReasonSchema,
+    reason_subject: z
+      .string()
+      .optional()
+      .openapi({ description: 'AT-URI the reason refers to (e.g. liked post)' }),
+    actor: APIUserSchema,
+    is_read: z.boolean(),
+    created_at: z.string(),
+    created_timestamp: z.number(),
+    subject_status: APIBlueskyStatusSchema.optional()
+  })
+  .openapi('APIBlueskyNotification');
+
+export const APIBlueskyNotificationsResultsSchema = z
+  .object({
+    code: z.number(),
+    results: z.array(APIBlueskyNotificationSchema),
+    cursor: SearchCursorSchema,
+    unread_count: z.number().optional(),
+    seen_at: z.string().optional().openapi({
+      description: 'Opaque cursor / seen marker for pagination when upstream supports it'
+    })
+  })
+  .openapi('APIBlueskyNotificationsResults');
+
 /** Grouped thread snippet in a profile/search-style timeline (`?groupthreads=1`). */
 export const TimelineThreadTwitterSchema = z
   .object({
@@ -1270,6 +1313,9 @@ export type ProfileAboutAPIResponse = z.infer<typeof ProfileAboutAPIResponseSche
 export type SearchCursor = z.infer<typeof SearchCursorSchema>;
 export type APISearchResults = z.infer<typeof APISearchResultsSchema>;
 export type APISearchResultsBluesky = z.infer<typeof APISearchResultsBlueskySchema>;
+export type APIBlueskyNotificationReason = z.infer<typeof APIBlueskyNotificationReasonSchema>;
+export type APIBlueskyNotification = z.infer<typeof APIBlueskyNotificationSchema>;
+export type APIBlueskyNotificationsResults = z.infer<typeof APIBlueskyNotificationsResultsSchema>;
 export type TimelineThreadTwitter = z.infer<typeof TimelineThreadTwitterSchema>;
 export type TimelineEntryTwitter = z.infer<typeof TimelineEntryTwitterSchema>;
 export type APIGroupedSearchResults = z.infer<typeof APIGroupedSearchResultsSchema>;

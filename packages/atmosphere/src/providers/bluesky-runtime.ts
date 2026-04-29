@@ -43,15 +43,19 @@ export type BlueskyProxyRuntime = {
 
 let proxy: BlueskyProxyRuntime | null = null;
 
+/** No-op fallback so clients can call public AppView XRPC without worker proxy wiring. */
+const noopProxy: BlueskyProxyRuntime = {
+  initCredentials: async () => {},
+  hasBundledEncryptedCredentials: () => false,
+  hasBlueskyProxyAccounts: () => false,
+  getShuffledBlueskyAccounts: () => [],
+  blueskyProxyServiceHostname: () => ''
+};
+
 export function setBlueskyProxyRuntime(r: BlueskyProxyRuntime): void {
   proxy = r;
 }
 
 export function getBlueskyProxyRuntime(): BlueskyProxyRuntime {
-  if (!proxy) {
-    throw new Error(
-      'Bluesky proxy runtime not configured: call setBlueskyProxyRuntime() from the FxEmbed worker (see worker.ts)'
-    );
-  }
-  return proxy;
+  return proxy ?? noopProxy;
 }
