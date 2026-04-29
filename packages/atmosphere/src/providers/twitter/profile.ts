@@ -481,6 +481,31 @@ const fetchUserById = async (
   };
 };
 
+/**
+ * GraphQL `TweetResultByRestId` can omit `core.user_results.result` (e.g. when the tweet quotes
+ * unavailable/deleted content) while `legacy.user_id_str` is still present. Use this to hydrate
+ * the author from a user id query.
+ */
+export async function fetchTwitterGraphQLUserByRestId(
+  host: TwitterBuildHost,
+  userId: string
+): Promise<GraphQLUser | null> {
+  const trimmed = userId.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const { userResponse } = await fetchUserById(host, trimmed, false);
+  const node = extractUserResultNode(userResponse);
+  if (!node || isUserUnavailableResult(node.result)) {
+    return null;
+  }
+  const user = node.result as GraphQLUser;
+  if ((user as { __typename?: string }).__typename !== 'User') {
+    return null;
+  }
+  return user;
+}
+
 /** Resolve rest_id for timeline queries (e.g. UserTweets, ProfileTimeline) */
 export const getTwitterUserRestIdByScreenName = async (
   host: TwitterBuildHost,
