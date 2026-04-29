@@ -4,7 +4,7 @@ import { linkFixer } from '../../helpers/link-fixer.js';
 import { handleMosaic } from '../../helpers/mosaic.js';
 import { unescapeText } from '../../helpers/unescape-text.js';
 import { processMedia, convertFormatToVariant } from '../../helpers/media.js';
-import { convertToApiUser } from './profile.js';
+import { convertToApiUser, fetchTwitterGraphQLUserByRestId } from './profile.js';
 import { DataProvider } from '../../types/data-provider.js';
 import type {
   APIFacet,
@@ -433,9 +433,13 @@ export const buildAPITwitterStatus = async (
 
   // console.log('status', JSON.stringify(status));
 
-  const graphQLUser = (status.core.user_results?.result ?? status.core.user_result?.result) as
+  let graphQLUser = (status.core.user_results?.result ?? status.core.user_result?.result) as
     | GraphQLUser
     | undefined;
+  if (!graphQLUser && typeof status.legacy?.user_id_str === 'string') {
+    graphQLUser =
+      (await fetchTwitterGraphQLUserByRestId(host, status.legacy.user_id_str)) ?? undefined;
+  }
   if (!graphQLUser) {
     console.log('Tweet missing author on core', status.rest_id ?? status.legacy?.id_str);
     return null;

@@ -408,6 +408,7 @@ type GraphQLTwitterStatusLegacy = {
   bookmarked: boolean; // false
   favorite_count: number; // 28
   full_text: string; // "This is a test tweet"
+  user_id_str?: string;
   in_reply_to_screen_name: string; // "username"
   in_reply_to_status_id_str: string; // "1674824189176590336"
   in_reply_to_user_id_str: string; // "783214"
