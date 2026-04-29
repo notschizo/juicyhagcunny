@@ -1,5 +1,9 @@
 import { expect, test } from 'vitest';
-import { blueskyWebPostUrl, didFromAtUri, rkeyFromPostAtUri } from '@fxembed/atmosphere/providers/bluesky/uris';
+import {
+  blueskyWebPostUrl,
+  didFromAtUri,
+  rkeyFromPostAtUri
+} from '@fxembed/atmosphere/providers/bluesky/uris';
 
 test('rkeyFromPostAtUri extracts record key', () => {
   expect(rkeyFromPostAtUri('at://did:plc:abc123/app.bsky.feed.post/3lhzfc23cc22v')).toEqual(

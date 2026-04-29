@@ -7,7 +7,11 @@ import {
   jwkThumbprintS256,
   signDpopProof
 } from '@fxembed/atmosphere/providers/bluesky/auth/dpop';
-import { generatePkceVerifier, isValidPkceVerifier, pkceChallengeFromVerifier } from '@fxembed/atmosphere/providers/bluesky/auth/pkce';
+import {
+  generatePkceVerifier,
+  isValidPkceVerifier,
+  pkceChallengeFromVerifier
+} from '@fxembed/atmosphere/providers/bluesky/auth/pkce';
 
 describe('pkce', () => {
   it('generates verifier in RFC length bounds', () => {
@@ -80,7 +84,9 @@ describe('dpop', () => {
   it('ath matches SHA-256 of access token', async () => {
     const tok = 'some.access.token';
     const ath = await dpopAthFromAccessToken(tok);
-    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(tok)));
+    const digest = new Uint8Array(
+      await crypto.subtle.digest('SHA-256', new TextEncoder().encode(tok))
+    );
     let bin = '';
     for (let i = 0; i < digest.length; i++) bin += String.fromCharCode(digest[i]!);
     const expected = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -97,12 +103,18 @@ describe('dpop', () => {
       ['sign']
     );
     const msg = new TextEncoder().encode('hello');
-    const der = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, priv, msg));
+    const der = new Uint8Array(
+      await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, priv, msg)
+    );
     const raw = ecdsaSignatureToRawP256(der);
     expect(raw.length).toBe(64);
-    const pub = await crypto.subtle.importKey('jwk', kp.publicJwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, [
-      'verify'
-    ]);
+    const pub = await crypto.subtle.importKey(
+      'jwk',
+      kp.publicJwk,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
     const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, pub, raw, msg);
     expect(ok).toBe(true);
   });

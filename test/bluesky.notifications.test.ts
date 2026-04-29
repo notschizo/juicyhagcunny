@@ -16,7 +16,9 @@ const credMocks = vi.hoisted(() => ({
   initCredentials: vi.fn().mockResolvedValue(undefined),
   hasBundledEncryptedCredentials: vi.fn(() => false),
   hasBlueskyProxyAccounts: vi.fn(() => false),
-  getShuffledBlueskyAccounts: vi.fn(() => [] as { identifier: string; appPassword: string; service: string }[]),
+  getShuffledBlueskyAccounts: vi.fn(
+    () => [] as { identifier: string; appPassword: string; service: string }[]
+  ),
   blueskyProxyServiceHostname: vi.fn(() => '')
 }));
 
@@ -65,7 +67,11 @@ describe('Bluesky notifications API', () => {
         displayName: 'Other',
         createdAt: '2024-01-01T00:00:00.000Z'
       },
-      record: { text: 'liked post', createdAt: '2024-01-01T00:00:00.000Z', $type: 'app.bsky.feed.post' },
+      record: {
+        text: 'liked post',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        $type: 'app.bsky.feed.post'
+      },
       indexedAt: '2024-01-01T00:00:00.000Z',
       labels: [],
       likeCount: 1,

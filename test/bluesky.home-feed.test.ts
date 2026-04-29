@@ -12,7 +12,9 @@ const credMocks = vi.hoisted(() => ({
   initCredentials: vi.fn().mockResolvedValue(undefined),
   hasBundledEncryptedCredentials: vi.fn(() => false),
   hasBlueskyProxyAccounts: vi.fn(() => false),
-  getShuffledBlueskyAccounts: vi.fn(() => [] as { identifier: string; appPassword: string; service: string }[]),
+  getShuffledBlueskyAccounts: vi.fn(
+    () => [] as { identifier: string; appPassword: string; service: string }[]
+  ),
   blueskyProxyServiceHostname: vi.fn(() => '')
 }));
 

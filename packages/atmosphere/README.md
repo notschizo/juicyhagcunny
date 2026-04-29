@@ -17,7 +17,10 @@ See the FxEmbed docs: **Deployment → Atmosphere transports** (`/deployment/atm
 OAuth + DPoP + PKCE + PAR (when the auth server advertises it) live under **`@fxembed/atmosphere/providers/bluesky/auth`**. The library is **stateless**: you persist the returned `BlueskyAuthSession` (and short-lived `BlueskyOAuthTransientState` across the redirect).
 
 ```ts
-import { createBlueskyOAuthClient, DEFAULT_BLUESKY_OAUTH_SCOPE } from '@fxembed/atmosphere/providers/bluesky/auth';
+import {
+  createBlueskyOAuthClient,
+  DEFAULT_BLUESKY_OAUTH_SCOPE
+} from '@fxembed/atmosphere/providers/bluesky/auth';
 import { fetchBlueskyHomeFeed } from '@fxembed/atmosphere/providers/bluesky/home-feed';
 
 const oauth = createBlueskyOAuthClient({

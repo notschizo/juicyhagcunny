@@ -45,7 +45,10 @@ describe('Bluesky OAuth flow pieces', () => {
             }
           });
         }
-        return Response.json({ request_uri: 'urn:ietf:params:oauth:request_uri:test', expires_in: 90 });
+        return Response.json({
+          request_uri: 'urn:ietf:params:oauth:request_uri:test',
+          expires_in: 90
+        });
       }
       throw new Error(`unexpected fetch: ${url}`);
     });
@@ -86,7 +89,10 @@ describe('Bluesky OAuth flow pieces', () => {
             }
           );
         }
-        return Response.json({ request_uri: 'urn:ietf:params:oauth:request_uri:test', expires_in: 90 });
+        return Response.json({
+          request_uri: 'urn:ietf:params:oauth:request_uri:test',
+          expires_in: 90
+        });
       }
       throw new Error(`unexpected fetch: ${url}`);
     });

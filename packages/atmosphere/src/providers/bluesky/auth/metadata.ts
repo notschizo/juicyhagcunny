@@ -72,7 +72,14 @@ export async function fetchOAuthProtectedResourceMetadata(
   if (!res.ok) {
     throw new Error(`oauth-protected-resource failed: ${res.status} ${text.slice(0, 200)}`);
   }
-  const j = JSON.parse(text) as Record<string, unknown>;
+  let j: Record<string, unknown>;
+  try {
+    j = JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new Error(
+      `oauth-protected-resource: invalid JSON (HTTP ${res.status}) ${text.slice(0, 200)}`
+    );
+  }
   const raw = j.authorization_servers ?? j.authorizationServers;
   const authorizationServers: string[] = Array.isArray(raw)
     ? raw.filter((x): x is string => typeof x === 'string').map(trimOrigin)

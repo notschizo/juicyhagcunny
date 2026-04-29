@@ -65,7 +65,9 @@ describe('authenticatedXrpc', () => {
       if (url.includes('/xrpc/app.bsky.notification.getUnreadCount')) {
         xrpc += 1;
         if (xrpc === 1) {
-          return new Response(JSON.stringify({ error: 'ExpiredToken', message: 'exp' }), { status: 401 });
+          return new Response(JSON.stringify({ error: 'ExpiredToken', message: 'exp' }), {
+            status: 401
+          });
         }
         return Response.json({ count: 3 });
       }
@@ -104,7 +106,9 @@ describe('refreshBlueskyTokens', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('invalid_grant', { status: 400, statusText: 'Bad Request' })
     );
-    await expect(refreshBlueskyTokens({ session, fetchImpl: globalThis.fetch })).rejects.toMatchObject({
+    await expect(
+      refreshBlueskyTokens({ session, fetchImpl: globalThis.fetch })
+    ).rejects.toMatchObject({
       kind: 'refresh_invalid'
     });
   });
