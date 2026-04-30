@@ -3,7 +3,6 @@
  * matches production shape; production still uses esbuild `define` from `.env` at build time.
  */
 export const WORKER_TEST_PROCESS_ENV = {
-  VITEST: 'true',
   RELEASE_NAME: 'fixtweet-test',
   TEXT_ONLY_DOMAINS: 't.fxtwitter.com,t.twittpr.com,t.fixupx.com',
   INSTANT_VIEW_DOMAINS: 'i.fxtwitter.com,i.twittpr.com,i.fixupx.com',

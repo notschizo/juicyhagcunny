@@ -31,14 +31,6 @@ function accountProxyEnvFromHost(host: TwitterBuildHost): TwitterAccountProxyEnv
   };
 }
 
-/** Production uses `cacheEverything` + `cacheTtl` for guest subrequests; Miniflare (Vitest) rejects that pair. */
-function guestActivateSubrequestCf(ttlSeconds: number): { cacheEverything: true; cacheTtl: number } | { cacheTtl: number } {
-  if (typeof process !== 'undefined' && process.env?.VITEST === 'true') {
-    return { cacheTtl: ttlSeconds };
-  }
-  return { cacheEverything: true, cacheTtl: ttlSeconds };
-}
-
 export const twitterFetch = async (
   host: TwitterBuildHost,
   options: TwitterFetchOptions
@@ -59,18 +51,22 @@ export const twitterFetch = async (
     ...env.baseHeaders
   };
 
-  const guestCf = guestActivateSubrequestCf(env.guestTokenMaxAge);
-
   const guestTokenRequest = new Request(`${env.apiRoot}/1.1/guest/activate.json`, {
     method: 'POST',
     headers: tokenHeaders,
-    cf: guestCf,
+    cf: {
+      cacheEverything: true,
+      cacheTtl: env.guestTokenMaxAge
+    },
     body: ''
   } as RequestInit);
 
   const guestTokenRequestCacheDummy = new Request(`${env.apiRoot}/1.1/guest/activate.json`, {
     method: 'GET',
-    cf: guestCf
+    cf: {
+      cacheEverything: true,
+      cacheTtl: env.guestTokenMaxAge
+    }
   } as RequestInit);
 
   const cache =
