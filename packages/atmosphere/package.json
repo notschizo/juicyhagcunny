@@ -50,6 +50,14 @@
       "types": "./dist/providers/bluesky/*.d.ts",
       "import": "./dist/providers/bluesky/*.js"
     },
+    "./providers/bluesky/auth": {
+      "types": "./dist/providers/bluesky/auth/index.d.ts",
+      "import": "./dist/providers/bluesky/auth/index.js"
+    },
+    "./providers/bluesky/auth/*": {
+      "types": "./dist/providers/bluesky/auth/*.d.ts",
+      "import": "./dist/providers/bluesky/auth/*.js"
+    },
     "./providers/tiktok/*": {
       "types": "./dist/providers/tiktok/*.d.ts",
       "import": "./dist/providers/tiktok/*.js"
