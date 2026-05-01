@@ -7,7 +7,8 @@ export enum Experiment {
   BROADCAST_STREAM_API = 'BROADCAST_STREAM_API',
   KITCHENSINK_VIDEO = 'KITCHENSINK_VIDEO',
   KITCHENSINK_GIF = 'KITCHENSINK_GIF',
-  USE_HORIZON_WEB = 'USE_HORIZON_WEB'
+  USE_HORIZON_WEB = 'USE_HORIZON_WEB',
+  ENABLE_CUSTOM_BRANDING = 'ENABLE_CUSTOM_BRANDING'
 }
 
 type ExperimentConfig = {
@@ -60,6 +61,11 @@ const Experiments: { [key in Experiment]: ExperimentConfig } = {
   [Experiment.USE_HORIZON_WEB]: {
     name: 'Use Horizon Web',
     description: 'Use Horizon Web to load X/Twitter pages',
+    percentage: 0
+  },
+  [Experiment.ENABLE_CUSTOM_BRANDING]: {
+    name: 'Enable custom branding',
+    description: 'Enable custom branding',
     percentage: 0
   }
 };

@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import branding from '../../branding.json';
+import { experimentCheck, Experiment } from '../experiments';
 
 type ActivityIcon = {
   default: string;
@@ -30,18 +31,20 @@ export const getBranding = (c: Context | Request): Branding => {
       (branding.activityIcons as ActivityIcon[])?.[0]?.default ??
       '';
 
-    if (url.searchParams.get('brandingName')) {
-      branding.name = url.searchParams.get('brandingName') ?? branding.name;
-    }
-    if (url.searchParams.get('brandingIcon')) {
-      branding.activityIcons = {
-        default: decodeURIComponent(url.searchParams.get('brandingIcon') ?? fallbackIcon)
-      };
-    }
-    if (url.searchParams.get('brandingRedirectUrl')) {
-      branding.redirect = decodeURIComponent(
-        url.searchParams.get('brandingRedirectUrl') ?? branding.redirect
-      );
+    if (experimentCheck(Experiment.ENABLE_CUSTOM_BRANDING)) {
+      if (url.searchParams.get('brandingName')) {
+        branding.name = url.searchParams.get('brandingName') ?? branding.name;
+      }
+      if (url.searchParams.get('brandingIcon')) {
+        branding.activityIcons = {
+          default: decodeURIComponent(url.searchParams.get('brandingIcon') ?? fallbackIcon)
+        };
+      }
+      if (url.searchParams.get('brandingRedirectUrl')) {
+        branding.redirect = decodeURIComponent(
+          url.searchParams.get('brandingRedirectUrl') ?? branding.redirect
+        );
+      }
     }
 
     return branding;
